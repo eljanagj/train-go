@@ -1,0 +1,76 @@
+.reservation-page {
+  background: #111;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.reservation-header {
+  position: relative;
+  padding: 4rem 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.6));
+  text-align: center;
+}
+
+.reservation-header h1 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  background: linear-gradient(to right, #ff416c, #ff4b2b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.reservation-container {
+  padding: 3rem 0;
+}
+
+.info-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.info-card h4 {
+  color: #ff4b2b;
+  font-weight: 700;
+}
+
+.form-control {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff !important;
+}
+
+.form-control:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #ff4b2b;
+  color: #fff !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 75, 43, 0.25);
+}
+
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.form-label {
+  color: #fff;
+}
+
+.btn-reserve {
+  background: linear-gradient(to right, #ff416c, #ff4b2b);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-reserve:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 75, 43, 0.4);
+}

@@ -1,0 +1,125 @@
+.search-page {
+  background: #111;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-header {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, rgba(255,65,108,0.15), rgba(255,75,43,0.15));
+  position: relative;
+  overflow: hidden;
+}
+
+.search-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, #ff416c15, #ff4b2b15);
+  animation: gradientBG 8s ease infinite;
+}
+
+.search-title {
+  font-weight: 800;
+  background: linear-gradient(to right, #ff416c, #ff4b2b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.search-container {
+  position: relative;
+  z-index: 1;
+}
+
+.form-select {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  color: #fff !important;
+
+}
+
+.form-select:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #ff4b2b;
+  box-shadow: 0 0 0 0.2rem rgba(255, 75, 43, 0.25);
+  color: #fff !important;
+
+}
+
+.form-select option {
+  background: #222;
+  color: #fff !important;
+}
+
+.search-btn {
+  background: linear-gradient(to right, #ff416c, #ff4b2b);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 75, 43, 0.4);
+}
+
+.results-container {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  padding: 2rem;
+  margin-top: 3rem;
+}
+
+.route-table {
+  color: #fff;
+  background: transparent;
+}
+
+.route-table thead th {
+  background: #ff4b2b;
+  color: #fff;
+  border: none;
+}
+
+.route-table tbody td {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.route-row {
+  background: rgba(255, 255, 255, 0.05) !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.route-row:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.route-link {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.route-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.route-link span {
+  color: #fff;
+}
+
+
+
+section.py-5 {
+  flex: 1 0 auto;
+}
