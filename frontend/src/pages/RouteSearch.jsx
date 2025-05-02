@@ -5,6 +5,8 @@ import { NavBar } from "../components/NavBar";
 import { Footer } from "../components/Footer";
 import { Link } from "react-router-dom";
 import { FaTrain, FaClock, FaMapMarkerAlt, FaEuroSign } from "react-icons/fa";
+import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
+import { PageLoader } from "../components/PageLoader";
 
 const mockResults = [
   { from: "Berlin", to: "Munich", time: "08:30", price: 45, duration: "4h 10m", platform: "5A" },
@@ -25,7 +27,7 @@ const mockResults = [
 
 const cities = ["Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt"];
 
-export default function TrainSearchPage() {
+function TrainSearchPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [time, setTime] = useState("");
@@ -139,3 +141,8 @@ export default function TrainSearchPage() {
     </div>
   );
 }
+
+
+export default withAuthenticationRequired(TrainSearchPage, {
+  onRedirecting: () => <PageLoader />,
+});

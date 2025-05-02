@@ -5,6 +5,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RouteModule } from './modules/route/route.module';
 import { TrainModule } from './modules/train/train.module';
+import { AuthzModule } from './modules/authz/authz.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { TrainModule } from './modules/train/train.module';
       }),
       inject: [ConfigService],
     }),
+    UserModule,
+    AuthzModule,
     RouteModule,
     TrainModule,
   ],

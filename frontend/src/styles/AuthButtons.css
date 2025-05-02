@@ -1,0 +1,49 @@
+/* src/styles/AuthButtons.css */
+
+.nav-bar__buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  /* Base styles for both buttons */
+  .button__login,
+  .button__sign-up {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.3rem 0.9rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.1s ease;
+  }
+  
+  /* Log In: filled gradient */
+  .button__login {
+    background: linear-gradient(to right, #ff416c, #ff4b2b);
+    color: #fff;
+    border: none;
+  }
+  
+  .button__login:hover {
+    background: linear-gradient(to right, #ff4b2b, #ff416c);
+  }
+  
+  .button__login:active {
+    transform: scale(0.97);
+  }
+  
+  /* Sign Up: outline style */
+  .button__sign-up {
+    background: transparent;
+    color: #ff416c;
+    border: 2px solid #ff416c;
+  }
+  
+  .button__sign-up:hover {
+    background: #ff416c;
+    color: #fff;
+  }
+  
+  .button__sign-up:active {
+    transform: scale(0.97);
+  }
+  
