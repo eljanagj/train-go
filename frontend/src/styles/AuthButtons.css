@@ -1,11 +1,8 @@
-/* src/styles/AuthButtons.css */
-
 .nav-bar__buttons {
     display: flex;
     gap: 0.5rem;
   }
   
-  /* Base styles for both buttons */
   .button__login,
   .button__sign-up {
     font-size: 0.9rem;

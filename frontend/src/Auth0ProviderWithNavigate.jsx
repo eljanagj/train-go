@@ -23,6 +23,8 @@ export const Auth0ProviderWithNavigate = ({ children }) => {
       clientId={clientId}
       authorizationParams={{
         redirect_uri: redirectUri,
+        audience: "http://traingo.ks",
+        scope: "openid profile email"
       }}
       onRedirectCallback={onRedirectCallback}
     >

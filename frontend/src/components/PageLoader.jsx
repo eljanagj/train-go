@@ -1,4 +1,3 @@
-// src/components/PageLoader.jsx
 import React from "react";
 import "../styles/PageLoader.css"; 
 
