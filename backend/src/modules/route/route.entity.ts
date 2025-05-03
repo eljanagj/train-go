@@ -1,12 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Schedule } from '../schedule/schedule.entity';
 
 @Entity()
 export class Route {
     @PrimaryGeneratedColumn()
     id: number;
-
-    @Column()
-    trainId: number;
 
     @Column()
     departureStation: string;
@@ -16,5 +14,10 @@ export class Route {
 
     @Column('decimal')
     price: number;
+
+    @OneToMany(() => Schedule, (s) => s.route)
+    schedules: Schedule[];
+
+
   }
   

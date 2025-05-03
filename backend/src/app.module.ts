@@ -7,6 +7,7 @@ import { RouteModule } from './modules/route/route.module';
 import { TrainModule } from './modules/train/train.module';
 import { AuthzModule } from './modules/authz/authz.module';
 import { UserModule } from './modules/user/user.module';
+import { ScheduleModule } from './modules/schedule/schedule.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { UserModule } from './modules/user/user.module';
     AuthzModule,
     RouteModule,
     TrainModule,
+    ScheduleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

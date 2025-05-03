@@ -1,6 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { TrainStatus } from './train-status.enum';
-//import { TrainStatusHistory } from './train-status-history.entity';
+import { Schedule } from '../../schedule/schedule.entity';
 
 @Entity('trains')
 export class Train {
@@ -32,10 +32,7 @@ export class Train {
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 
-  // Future relationship example: when you implement a Seat entity
-  // @OneToMany(() => Seat, (seat) => seat.train)
-  // seats: Seat[];
+  @OneToMany(() => Schedule, (s) => s.train)
+  schedules: Schedule[];
 
-  //@OneToMany(() => TrainStatusHistory, (h) => h.train)
-  //statusHistory: TrainStatusHistory[];
 }
