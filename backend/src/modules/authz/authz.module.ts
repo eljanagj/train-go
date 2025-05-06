@@ -9,10 +9,11 @@ import { UserModule }    from '../user/user.module';
 @Module({
     imports: [PassportModule.register({ defaultStrategy: 'jwt' }),UserModule,],
     controllers: [AuthController],
-    providers: [JwtStrategy, {
-        provide: APP_GUARD,        
-        useClass: JwtAuthGuard,
-      }],
+    // providers: [JwtStrategy, {
+    //     provide: APP_GUARD,        
+    //     useClass: JwtAuthGuard,
+    //   }],
+    providers: [JwtStrategy],
     exports: [PassportModule],
 })
 export class AuthzModule {}
