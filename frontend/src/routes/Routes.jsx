@@ -5,6 +5,9 @@ import Home from "../pages/Home";
 import RouteSearch from "../pages/RouteSearch";
 import ReservationPage from "../pages/Reservation";
 import ProfilePage from "../pages/ProfilePage";
+import TrainManagement from '../pages/TrainManagement';
+import RouteManagement from '../pages/RouteManagement';
+import ScheduleManagement from '../pages/ScheduleManagement';
 
 export default function AppRoutes() {
   return (
@@ -13,6 +16,9 @@ export default function AppRoutes() {
         <Route path="/search" element={<RouteSearch />} />
         <Route path="/reservation" element={<ReservationPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/trains" element={<TrainManagement />} />
+        <Route path="/routes" element={<RouteManagement />} />
+        <Route path="/schedules" element={<ScheduleManagement />} />
     </Routes>
   );
 }

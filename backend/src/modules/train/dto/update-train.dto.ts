@@ -1,6 +1,11 @@
-import { IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
+import { TrainStatus } from '../entities/train-status.enum';
 
 export class UpdateTrainDto {
+  @IsOptional()
+  @IsString()
+  trainName?: string;
+
   @IsOptional()
   @IsString()
   model?: string;
@@ -16,4 +21,8 @@ export class UpdateTrainDto {
   @IsOptional()
   @IsNumber()
   productionYear?: number;  
+
+  @IsOptional()
+  @IsEnum(TrainStatus)
+  status?: TrainStatus;
 }

@@ -40,6 +40,30 @@ export class ScheduleService {
     return this.scheduleRepo.save(schedule);
   }
 
+  async updateSchedule(
+    id: number,
+    trainID: number,
+    routeID: number,
+    departureTime: Date,
+    arrivalTime: Date,
+  ): Promise<Schedule> {
+    const schedule = await this.scheduleRepo.findOneBy({ id });
+    if (!schedule) throw new NotFoundException('Schedule not found');
+
+    const train = await this.trainRepo.findOneBy({ trainID });
+    if (!train) throw new NotFoundException('Train not found');
+
+    const route = await this.routeRepo.findOneBy({ id: routeID });
+    if (!route) throw new NotFoundException('Route not found');
+
+    schedule.train = train;
+    schedule.route = route;
+    schedule.departureTime = departureTime;
+    schedule.arrivalTime = arrivalTime;
+
+    return this.scheduleRepo.save(schedule);
+  }
+
   async getAll(): Promise<Schedule[]> {
     return this.scheduleRepo.find();
   }

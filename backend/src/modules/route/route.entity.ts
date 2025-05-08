@@ -6,18 +6,17 @@ export class Route {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({ type: 'varchar', length: 100 })
     departureStation: string;
 
-    @Column()
+    @Column({ type: 'varchar', length: 100 })
     arrivalStation: string;
 
-    @Column('decimal')
+    @Column('decimal', { precision: 10, scale: 2, default: 0.00 })
     price: number;
 
     @OneToMany(() => Schedule, (s) => s.route)
     schedules: Schedule[];
-
-
-  }
+    
+}
   

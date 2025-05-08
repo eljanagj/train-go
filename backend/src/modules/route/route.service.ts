@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRouteDto } from './dto/create-route.dto';
@@ -22,12 +22,19 @@ export class RouteService {
   }
 
   async findOne(id: number): Promise<Route | null> {
-    return this.routeRepository.findOneBy({ id });
+    return this.routeRepository.findOne({
+      where: { id }
+    });
   }
 
   async update(id: number, updateRouteDto: UpdateRouteDto): Promise<Route | null> {
+    const existingRoute = await this.routeRepository.findOneBy({ id });
+    if (!existingRoute) {
+      throw new NotFoundException(`Route with ID ${id} not found`);
+    }
+
     await this.routeRepository.update(id, updateRouteDto);
-    return this.routeRepository.findOneBy({ id });
+    return this.findOne(id);
   }
 
   async remove(id: number): Promise<{ deleted: boolean }> {

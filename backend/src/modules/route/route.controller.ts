@@ -5,7 +5,9 @@ import { UpdateRouteDto } from './dto/update-route.dto';
 
 @Controller('routes')
 export class RouteController {
-  constructor(private readonly routeService: RouteService) {}
+  constructor(
+    private readonly routeService: RouteService,
+  ) {}
 
   @Post()
   create(@Body() createRouteDto: CreateRouteDto) {

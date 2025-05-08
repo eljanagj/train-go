@@ -7,6 +7,9 @@ export class Train {
   @PrimaryGeneratedColumn({ name: 'trainID' })
   trainID: number;
 
+  @Column({type: 'varchar', length: 100})
+  trainName: string;
+
   @Column({ type: 'varchar', length: 100 })
   model: string;
 

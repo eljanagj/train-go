@@ -2,6 +2,8 @@ import { IsString, IsNotEmpty, IsNumber, Min } from 'class-validator';
 
 export class CreateTrainDto {
   @IsString()
+  trainName: string;
+
   @IsNotEmpty()
   model: string;
 

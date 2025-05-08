@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Put,
   Delete,
   Body,
   Param,
@@ -36,6 +37,25 @@ export class ScheduleController {
   @Get('train/:trainID')
   async findByTrain(@Param('trainID', ParseIntPipe) trainID: number) {
     return this.scheduleService.getByTrain(trainID);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: {
+      trainID: number;
+      routeID: number;
+      departureTime: string;
+      arrivalTime: string;
+    },
+  ) {
+    return this.scheduleService.updateSchedule(
+      id,
+      body.trainID,
+      body.routeID,
+      new Date(body.departureTime),
+      new Date(body.arrivalTime),
+    );
   }
 
   @Delete(':id')
