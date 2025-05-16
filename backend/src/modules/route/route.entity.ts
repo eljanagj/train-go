@@ -15,6 +15,9 @@ export class Route {
     @Column('decimal', { precision: 10, scale: 2, default: 0.00 })
     price: number;
 
+    @Column({ type: 'int', default: 0 })
+    capacity: number;
+
     @OneToMany(() => Schedule, (s) => s.route)
     schedules: Schedule[];
     

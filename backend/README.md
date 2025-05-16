@@ -96,3 +96,32 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Advanced Redis Integration
+
+This backend uses Redis for advanced route search and autocomplete:
+
+- **Indexes all routes in Redis** for fast lookup by departure/arrival stations.
+- **Keeps Redis in sync** with Postgres on create, update, and delete.
+- **Autocomplete endpoint** for station names using Redis sorted sets.
+- **Fallback to Postgres** if Redis misses, then updates Redis.
+
+### Environment Variables
+
+Add these to your `.env`:
+```
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
+
+### Endpoints
+
+- `GET /routes/search?from=...&to=...` — Fast search for routes (uses Redis, falls back to Postgres).
+- `GET /routes/autocomplete?prefix=...` — Autocomplete station names (uses Redis).
+
+### How it works
+
+- On app startup, all routes are indexed in Redis.
+- On route create/update/delete, Redis is updated.
+- Search is performed using Redis set intersections for speed.
+- Autocomplete uses Redis sorted sets and prefix search.

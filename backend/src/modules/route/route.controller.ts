@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { RouteService } from './route.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
@@ -19,9 +19,22 @@ export class RouteController {
     return this.routeService.findAll();
   }
 
+  @Get('search')
+  async search(
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.routeService.search(from, to);
+  }
+
+  @Get('autocomplete')
+  async autocomplete(@Query('prefix') prefix: string) {
+    return this.routeService.autocompleteStations(prefix);
+  }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.routeService.findOne(Number(id));
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.routeService.findOne(id);
   }
 
   @Put(':id')

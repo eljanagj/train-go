@@ -1,24 +1,21 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/Reservation.css";
 import { NavBar } from "../components/NavBar";
 import { Footer } from "../components/Footer";
 import { FaTrain, FaClock, FaMapMarkerAlt, FaEuroSign, FaChair } from "react-icons/fa";
 
-const mockSelectedRoute = {
-  from: "Berlin",
-  to: "Munich",
-  time: "08:30",
-  price: 45,
-  duration: "4h 10m",
-  platform: "5A",
-  trainNumber: "ICE 789"
-};
-
 export default function ReservationPage() {
+  const { user } = useAuth0();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const route = location.state?.route;
+
   const [formData, setFormData] = useState({
-    name: "",
-    surname: "",
+    name: user?.given_name || user?.name?.split(' ')[0] || "",
+    surname: user?.family_name || user?.name?.split(' ')[1] || "",
     seat: "",
     discountCode: ""
   });
@@ -30,6 +27,20 @@ export default function ReservationPage() {
   const handleReserve = () => {
     alert(`Reservation made for ${formData.name} ${formData.surname}`);
   };
+
+  if (!route) {
+    return (
+      <div className="reservation-page">
+        <NavBar />
+        <div className="container mt-5">
+          <div className="alert alert-warning text-center">
+            No route selected. Please <button className="btn btn-link p-0" onClick={() => navigate("/search")}>search for a route</button> first.
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="reservation-page">
@@ -46,13 +57,11 @@ export default function ReservationPage() {
           <div className="col-md-6">
             <div className="info-card">
               <h4 className="mb-4">Your Route</h4>
-              <p><FaMapMarkerAlt className="me-2" />From: <strong>{mockSelectedRoute.from}</strong></p>
-              <p><FaMapMarkerAlt className="me-2" />To: <strong>{mockSelectedRoute.to}</strong></p>
-              <p><FaClock className="me-2" />Departure Time: <strong>{mockSelectedRoute.time}</strong></p>
-              <p><FaTrain className="me-2" />Train Number: <strong>{mockSelectedRoute.trainNumber}</strong></p>
-              <p><FaChair className="me-2" />Platform: <strong>{mockSelectedRoute.platform}</strong></p>
-              <p>Duration: <strong>{mockSelectedRoute.duration}</strong></p>
-              <p><FaEuroSign className="me-2" />Price: <strong>€{mockSelectedRoute.price}</strong></p>
+              <p><FaMapMarkerAlt className="me-2" />From: <strong>{route.departureStation}</strong></p>
+              <p><FaMapMarkerAlt className="me-2" />To: <strong>{route.arrivalStation}</strong></p>
+              <p><FaEuroSign className="me-2" />Price: <strong>€{route.price}</strong></p>
+              <p>Capacity: <strong>{route.capacity}</strong></p>
+              {/* Add more fields if your backend provides them */}
             </div>
           </div>
 
@@ -97,7 +106,9 @@ export default function ReservationPage() {
               </div>
 
               <div className="mb-4">
-                <label className="form-label">Discount Code <small className="text-muted">(Optional)</small></label>
+                <label className="form-label">
+                  Discount Code <small className="text-muted">(Optional)</small>
+                </label>
                 <input
                   type="text"
                   className="form-control"

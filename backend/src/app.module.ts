@@ -8,6 +8,7 @@ import { TrainModule } from './modules/train/train.module';
 import { AuthzModule } from './modules/authz/authz.module';
 import { UserModule } from './modules/user/user.module';
 import { ScheduleModule } from './modules/schedule/schedule.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ScheduleModule } from './modules/schedule/schedule.module';
     RouteModule,
     TrainModule,
     ScheduleModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],
