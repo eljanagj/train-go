@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="180" viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bodyRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff4b2b"/>
+      <stop offset="100%" stop-color="#b71c1c"/>
+    </linearGradient>
+    <linearGradient id="bodyBlack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#444"/>
+      <stop offset="100%" stop-color="#111"/>
+    </linearGradient>
+    <radialGradient id="window" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#b3e5fc" stop-opacity="0.7"/>
+    </radialGradient>
+  </defs>
+  <!-- Train body -->
+  <rect x="40" y="70" width="300" height="60" rx="18" fill="url(#bodyRed)" stroke="#222" stroke-width="4"/>
+  <rect x="60" y="50" width="220" height="40" rx="12" fill="url(#bodyBlack)" stroke="#222" stroke-width="2"/>
+  <!-- Front nose -->
+  <ellipse cx="340" cy="100" rx="30" ry="30" fill="url(#bodyRed)" stroke="#222" stroke-width="4"/>
+  <ellipse cx="340" cy="100" rx="18" ry="18" fill="url(#bodyBlack)" stroke="#222" stroke-width="2"/>
+  <!-- Windows -->
+  <rect x="80" y="60" width="40" height="20" rx="6" fill="url(#window)"/>
+  <rect x="130" y="60" width="40" height="20" rx="6" fill="url(#window)"/>
+  <rect x="180" y="60" width="40" height="20" rx="6" fill="url(#window)"/>
+  <rect x="230" y="60" width="40" height="20" rx="6" fill="url(#window)"/>
+  <!-- Doors -->
+  <rect x="280" y="80" width="18" height="40" rx="4" fill="#222" fill-opacity="0.7"/>
+  <!-- Wheels -->
+  <ellipse cx="80" cy="140" rx="18" ry="18" fill="#222" stroke="#900" stroke-width="4"/>
+  <ellipse cx="180" cy="140" rx="18" ry="18" fill="#222" stroke="#900" stroke-width="4"/>
+  <ellipse cx="280" cy="140" rx="18" ry="18" fill="#222" stroke="#900" stroke-width="4"/>
+  <ellipse cx="340" cy="140" rx="14" ry="14" fill="#222" stroke="#900" stroke-width="3"/>
+  <!-- Headlights -->
+  <ellipse cx="370" cy="100" rx="6" ry="6" fill="#fff200" stroke="#bdb76b" stroke-width="2"/>
+  <!-- Details -->
+  <rect x="60" y="110" width="220" height="8" rx="2" fill="#fff" fill-opacity="0.2"/>
+  <rect x="60" y="120" width="220" height="4" rx="2" fill="#fff" fill-opacity="0.1"/>
+</svg> 

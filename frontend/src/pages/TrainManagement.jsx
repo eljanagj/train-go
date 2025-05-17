@@ -14,7 +14,7 @@ const TRAIN_STATUS = {
   DECOMMISSIONED: 'DECOMMISSIONED',
 };
 
-const TrainManagement = () => {
+const TrainManagement = ({ theme, toggleTheme }) => {
   const [trains, setTrains] = useState([]);
   const [newTrain, setNewTrain] = useState({
     trainName: '',
@@ -109,7 +109,7 @@ const TrainManagement = () => {
 
   return (
     <div className="page-container">
-      <Sidebar />
+      <Sidebar theme={theme} onToggleTheme={toggleTheme} />
       <div className="management-page">
         <h1>Train Management</h1>
         

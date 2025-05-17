@@ -1,0 +1,50 @@
+.train-animation-container {
+  position: fixed;
+  top: 35%;
+  left: 0;
+  width: 100vw;
+  height: 200px;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.train-track {
+  position: relative;
+  width: 100vw;
+  height: 180px;
+  overflow: visible;
+}
+
+.train-image {
+  height: 180px;
+  width: auto;
+  filter: drop-shadow(0 4px 12px #222) brightness(1.1);
+  /* Make the train pop visually */
+}
+
+.train {
+  /* Remove font-size and flex for image */
+  position: absolute;
+  left: -400px;
+  top: 0;
+  animation: train-move 1.5s cubic-bezier(0.7, 0.1, 0.9, 0.3) forwards;
+}
+
+@keyframes train-move {
+  0% {
+    left: -400px;
+    filter: blur(0.5px) brightness(1.2);
+  }
+  10% {
+    filter: blur(1.5px) brightness(1.3);
+  }
+  80% {
+    filter: blur(0.5px) brightness(1.1);
+  }
+  100% {
+    left: 100vw;
+    filter: blur(0px) brightness(1);
+  }
+}
+
+/* Remove .engine, .car styles since we use an image now */ 

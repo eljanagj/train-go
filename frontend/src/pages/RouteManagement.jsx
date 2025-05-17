@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import { routeService } from '../services/routeService';
 import '../styles/management.css';
 
-const RouteManagement = () => {
+const RouteManagement = ({ theme, toggleTheme }) => {
   const [routes, setRoutes] = useState([]);
   const [newRoute, setNewRoute] = useState({
     departureStation: '',
@@ -89,7 +89,7 @@ const RouteManagement = () => {
 
   return (
     <div className="page-container">
-      <Sidebar />
+      <Sidebar theme={theme} onToggleTheme={toggleTheme} />
       <div className="management-page">
         <h1>Route Management</h1>
         

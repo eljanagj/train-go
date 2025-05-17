@@ -7,7 +7,7 @@ import { trainService } from '../services/trainService';
 import { routeService } from '../services/routeService';
 import '../styles/management.css';
 
-const ScheduleManagement = () => {
+const ScheduleManagement = ({ theme, toggleTheme }) => {
   const [schedules, setSchedules] = useState([]);
   const [trains, setTrains] = useState([]);
   const [routes, setRoutes] = useState([]);
@@ -157,7 +157,7 @@ const ScheduleManagement = () => {
 
   return (
     <div className="page-container">
-      <Sidebar />
+      <Sidebar theme={theme} onToggleTheme={toggleTheme} />
       <div className="management-page">
         <h1>Schedule Management</h1>
         
