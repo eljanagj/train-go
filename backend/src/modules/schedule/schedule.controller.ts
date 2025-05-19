@@ -42,6 +42,11 @@ export class ScheduleController {
     return this.scheduleService.getByTrain(trainID);
   }
 
+  @Get('route/:routeId')
+  async findByRoute(@Param('routeId', ParseIntPipe) routeId: number) {
+    return this.scheduleService.getByRoute(routeId);
+  }
+
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
