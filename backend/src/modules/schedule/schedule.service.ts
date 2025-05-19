@@ -75,6 +75,24 @@ export class ScheduleService {
           trainID,
         },
       },
+      relations: ['route', 'train'],
+      order: {
+        departureTime: 'ASC',
+      },
+    });
+  }
+
+  async getByRoute(routeId: number): Promise<Schedule[]> {
+    return this.scheduleRepo.find({
+      where: {
+        route: {
+          id: routeId,
+        },
+      },
+      relations: ['route', 'train'],
+      order: {
+        departureTime: 'ASC',
+      },
     });
   }
 

@@ -1,6 +1,15 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { TrainStatus } from './train-status.enum';
 import { Schedule } from '../../schedule/schedule.entity';
+import { Seat } from '../../seats/entities/seat.entity';
+
+export enum TrainStatus {
+  ACTIVE = 'ACTIVE',
+  IN_TRANSIT = 'IN_TRANSIT',
+  ARRIVED = 'ARRIVED',
+  DELAYED = 'DELAYED',
+  MAINTENANCE = 'MAINTENANCE',
+  DECOMMISSIONED = 'DECOMMISSIONED'
+}
 
 @Entity('trains')
 export class Train {
@@ -14,7 +23,10 @@ export class Train {
   model: string;
 
   @Column({ type: 'int' })
-  capacity: number;
+  totalCapacity: number;
+
+  @Column({ type: 'int' })
+  availableSeats: number;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   manufacturer?: string;
@@ -29,13 +41,15 @@ export class Train {
   })
   status: TrainStatus;
 
+  @OneToMany(() => Schedule, schedule => schedule.train)
+  schedules: Schedule[];
+
+  @OneToMany(() => Seat, seat => seat.train)
+  seats: Seat[];
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
-
-  @OneToMany(() => Schedule, (s) => s.train)
-  schedules: Schedule[];
-
 }

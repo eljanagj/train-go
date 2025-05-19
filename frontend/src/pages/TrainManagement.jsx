@@ -4,6 +4,8 @@ import { PageLoader } from '../components/PageLoader';
 import Sidebar from '../components/Sidebar';
 import { trainService } from '../services/trainService';
 import '../styles/management.css';
+import { FaTrain, FaEdit, FaTrash, FaPlus, FaChair } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const TRAIN_STATUS = {
   ACTIVE: 'ACTIVE',
@@ -18,13 +20,13 @@ const TrainManagement = ({ theme, toggleTheme }) => {
   const [trains, setTrains] = useState([]);
   const [newTrain, setNewTrain] = useState({
     trainName: '',
-    model: '', 
-    capacity: '', 
-    manufacturer: '', 
-    productionYear: '', 
-    status: TRAIN_STATUS.ACTIVE 
+    model: '',
+    manufacturer: '',
+    productionYear: '',
+    status: TRAIN_STATUS.ACTIVE
   });
   const [editingTrain, setEditingTrain] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchTrains();
@@ -45,11 +47,10 @@ const TrainManagement = ({ theme, toggleTheme }) => {
       fetchTrains();
       setNewTrain({ 
         trainName: '',
-        model: '', 
-        capacity: '', 
-        manufacturer: '', 
-        productionYear: '', 
-        status: TRAIN_STATUS.ACTIVE 
+        model: '',
+        manufacturer: '',
+        productionYear: '',
+        status: TRAIN_STATUS.ACTIVE
       });
     } catch (error) {
       console.error('Error creating train:', error);
@@ -62,12 +63,11 @@ const TrainManagement = ({ theme, toggleTheme }) => {
       return;
     }
     try {
-      const { trainID: id, createdAt, updatedAt, schedules, status, ...updateData } = editingTrain;
+      const { trainID: id, createdAt, updatedAt, schedules, status, totalCapacity, availableSeats, ...updateData } = editingTrain;
       
       // Ensure all number fields are actually numbers
       const finalUpdateData = {
         ...updateData,
-        capacity: typeof updateData.capacity === 'string' ? parseInt(updateData.capacity, 10) : updateData.capacity,
         productionYear: typeof updateData.productionYear === 'string' ? parseInt(updateData.productionYear, 10) : updateData.productionYear,
       };
 
@@ -107,6 +107,10 @@ const TrainManagement = ({ theme, toggleTheme }) => {
     setEditingTrain(null);
   };
 
+  const handleManageSeats = (trainId) => {
+    navigate(`/trains/${trainId}/seats`);
+  };
+
   return (
     <div className="page-container">
       <Sidebar theme={theme} onToggleTheme={toggleTheme} />
@@ -128,12 +132,6 @@ const TrainManagement = ({ theme, toggleTheme }) => {
               placeholder="Train Model"
               value={newTrain.model}
               onChange={(e) => setNewTrain({ ...newTrain, model: e.target.value })}
-            />
-            <input
-              type="number"
-              placeholder="Capacity"
-              value={newTrain.capacity}
-              onChange={(e) => setNewTrain({ ...newTrain, capacity: e.target.value ? parseInt(e.target.value, 10) : '' })}
             />
             <input
               type="text"
@@ -169,7 +167,6 @@ const TrainManagement = ({ theme, toggleTheme }) => {
               <tr>
                 <th>Train Name</th>
                 <th>Model</th>
-                <th>Capacity</th>
                 <th>Manufacturer</th>
                 <th>Production Year</th>
                 <th>Status</th>
@@ -193,14 +190,6 @@ const TrainManagement = ({ theme, toggleTheme }) => {
                           type="text"
                           value={editingTrain.model}
                           onChange={(e) => setEditingTrain({ ...editingTrain, model: e.target.value })}
-                        />
-                      </td>
-            
-                      <td>
-                        <input
-                          type="number"
-                          value={editingTrain.capacity}
-                          onChange={(e) => setEditingTrain({ ...editingTrain, capacity: parseInt(e.target.value, 10) })}
                         />
                       </td>
                       <td>
@@ -238,13 +227,19 @@ const TrainManagement = ({ theme, toggleTheme }) => {
                     <>
                       <td>{train.trainName}</td>
                       <td>{train.model}</td>
-                      <td>{train.capacity}</td>
                       <td>{train.manufacturer}</td>
                       <td>{train.productionYear}</td>
                       <td>{train.status}</td>
                       <td className="action-buttons">
                         <button className="edit-button" onClick={() => startEditing(train)}>Edit</button>
                         <button className="delete-button" onClick={() => deleteTrain(train.trainID)}>Delete</button>
+                        <button 
+                          className="seat-button"
+                          onClick={() => handleManageSeats(train.trainID)}
+                        >
+                          <FaChair className="me-1" />
+                          Seats
+                        </button>
                       </td>
                     </>
                   )}

@@ -14,7 +14,7 @@
 .reservation-header h1 {
   font-size: 2.8rem;
   font-weight: 800;
-  background: linear-gradient(to right, #ff416c, #ff4b2b);
+  background-color: #fff;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

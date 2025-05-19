@@ -118,8 +118,63 @@
   color: #fff;
 }
 
-
-
 section.py-5 {
   flex: 1 0 auto;
+}
+
+.schedules-container {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.schedules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.schedule-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.schedule-info {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.time-info {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.departure, .arrival {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+}
+
+.duration {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.train-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+}
+
+.icon {
+  color: #ff4b2b;
 }

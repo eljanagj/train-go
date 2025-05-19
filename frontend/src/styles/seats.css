@@ -1,0 +1,1967 @@
+.management-page {
+    padding: 20px;
+    margin-left: 250px; /* Add margin to account for sidebar width */
+    width: calc(100% - 250px); /* Subtract sidebar width from total width */
+    box-sizing: border-box;
+    overflow-x: hidden;
+    position: relative; /* Add position relative */
+    min-height: 100vh; /* Ensure full height */
+  }
+  
+  .management-page h1 {
+    color: #333;
+    margin-bottom: 30px;
+  }
+  
+  .management-form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+  
+  .management-form h2 {
+    color: #444;
+    margin-bottom: 20px;
+  }
+  
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: start;
+  }
+  
+  .form-grid input,
+  .form-grid select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+  }
+  
+  .form-grid input[type="time"] {
+    padding: 8px;
+  }
+  
+  .form-grid select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+  }
+  
+  .add-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+  }
+  
+  .add-button:hover {
+    background-color: #45a049;
+  }
+  
+  .management-table-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+  }
+  
+  .management-table-container h2 {
+    color: #444;
+    margin-bottom: 20px;
+  }
+  
+  .management-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  
+  .management-table th,
+  .management-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .management-table th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+  }
+  
+  .management-table tr:hover {
+    background-color: #f9f9f9;
+  }
+  
+  .management-table td input,
+  .management-table td select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .management-table select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+  }
+  
+  /* General action button container style - exclude seat management */
+  .action-buttons:not(.seat-management) {
+    display: flex;
+    gap: 10px;
+  }
+  
+  /* General button styles - exclude seat management */
+  .edit-button:not(.seat-management),
+  .delete-button:not(.seat-management),
+  .save-button:not(.seat-management),
+  .cancel-button:not(.seat-management) {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    color: white;
+  }
+  
+  .edit-button:not(.seat-management) {
+    background-color: #007bff;
+  }
+  
+  .edit-button:not(.seat-management):hover {
+    background-color: #0056b3;
+  }
+  
+  .save-button:not(.seat-management) {
+    background-color: #28a745;
+  }
+  
+  .save-button:not(.seat-management):hover {
+    background-color: #218838;
+  }
+  
+  .cancel-button:not(.seat-management) {
+    background-color: #6c757d;
+  }
+  
+  .cancel-button:not(.seat-management):hover {
+    background-color: #5a6268;
+  }
+  
+  .delete-button:not(.seat-management) {
+    color: #f44336;
+  }
+  
+  .delete-button:not(.seat-management):hover {
+     background-color: rgba(244, 67, 54, 0.1);
+  }
+  
+  /* Seat Management specific styles for buttons within train layout - Increased specificity */
+  .seat-management .train-layout .seat .seat-actions .edit-button,
+  .seat-management .train-layout .seat .seat-actions .delete-button {
+    background: none !important; /* Use !important to strongly override */
+    border: none !important; /* Use !important to strongly override */
+    cursor: pointer;
+    padding: 4px !important; /* Keep the smaller padding */
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0.8rem !important; /* Keep the smaller font size */
+    color: inherit; /* Inherit color first, then set specific color below */
+  }
+  
+  .seat-management .train-layout .seat .seat-actions .edit-button {
+    color: #2196f3 !important; /* Specific color for edit button in train layout */
+  }
+  
+  .seat-management .train-layout .seat .seat-actions .edit-button:hover {
+     background-color: rgba(33, 150, 243, 0.1) !important; /* Specific hover for edit button */
+  }
+  
+  .seat-management .train-layout .seat .seat-actions .delete-button {
+    color: #f44336 !important; /* Specific color for delete button in train layout */
+  }
+  
+  .seat-management .train-layout .seat .seat-actions .delete-button:hover {
+     background-color: rgba(244, 67, 54, 0.1) !important; /* Specific hover for delete button */
+  }
+  
+  /* Seat Management table specific styles */
+  .seat-management .table .seat-actions {
+    position: static;
+    margin: 0;
+    padding: 0;
+    display: flex; /* Ensure flex display */
+    gap: 8px; /* Standard gap for table actions */
+    justify-content: flex-start;
+  }
+  
+  .seat-management .table .edit-button,
+  .seat-management .table .delete-button {
+    font-size: 1rem;
+    padding: 6px;
+    background: none; /* Ensure no background */
+    border: none; /* Ensure no border */
+    color: inherit; /* Inherit color from parent */
+  }
+  
+  .seat-management .table .edit-button {
+    color: #2196f3; /* Specific color for table edit button */
+  }
+  
+  .seat-management .table .delete-button {
+    color: #f44336; /* Specific color for table delete button */
+  }
+  
+  /* Seat Management responsive adjustments */
+  @media (max-width: 768px) {
+    .seat-management .seat {
+      min-height: 90px;
+      padding-bottom: 25px;
+    }
+  
+    .seat-management .seat .seat-actions {
+      bottom: 2px;
+    }
+  
+    .seat-management .train-layout .edit-button,
+    .seat-management .train-layout .delete-button {
+      font-size: 0.7rem;
+      padding: 3px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .management-page {
+      padding: 1rem;
+      margin-left: 0; /* Remove margin when sidebar is collapsed */
+      width: 100%; /* Take full width when sidebar is collapsed */
+    }
+    
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .management-table {
+      display: block;
+      overflow-x: auto;
+    }
+    
+    .management-table th,
+    .management-table td {
+      padding: 0.75rem;
+    }
+  }
+  
+  .train-layout-container {
+    margin: 1rem auto; /* Keep centering and add top/bottom margin */
+    padding: 1rem; /* Increase padding */
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-x: auto; /* Allow horizontal scrolling *within* this container if content is too wide */
+    max-width: 100%; /* Ensures the container doesn't exceed the width of its parent (.management-content) */
+    box-sizing: border-box;
+    display: flex; /* Use flexbox for internal layout */
+    flex-direction: column;
+    gap: 1rem; /* Add gap between layout elements like train header and sections */
+  }
+  
+  .train-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Increase gap between sections */
+    width: auto; /* Allow width to be determined by content, but constrained by its container's max-width */
+    min-width: 0; /* Override default flex item minimum width based on content */
+    background: #e9ecef;
+    padding: 1.5rem; /* Increase padding */
+    border-radius: 8px;
+    position: relative;
+    max-width: 100%; /* Ensure layout itself doesn't cause overflow beyond its container */
+    box-sizing: border-box;
+  }
+  
+  .train-layout::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 20px; /* Increase height */
+    background: #495057;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  .train-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* Increase gap */
+    padding-bottom: 0.75rem; /* Increase padding */
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 1.5rem; /* Increase margin */
+  }
+  
+  .train-icon {
+    font-size: 1.8rem; /* Increase icon size */
+    color: #0d6efd;
+  }
+  
+  .train-header h3 {
+    margin: 0; /* Reset margin */
+    font-size: 1.2rem; /* Increase font size */
+    color: #333;
+  }
+  
+  .train-section {
+    background: white;
+    padding: 1.5rem; /* Increase padding */
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    display: flex; /* Use flexbox for rows */
+    flex-direction: column;
+    gap: 1.5rem; /* Gap between section title and rows */
+  }
+  
+  .train-section h4 {
+    margin-bottom: 1rem;
+    color: #495057;
+    font-size: 1rem;
+    text-align: center;
+    padding: 0.25rem;
+    background: #e9ecef;
+    border-radius: 4px;
+    position: relative;
+  }
+  
+  .train-section h4::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 2px;
+    background: #dee2e6;
+  }
+  
+  .train-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%; /* Ensure rows take full width of the train-layout */
+  }
+  
+  .train-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    position: relative;
+    width: 100%; /* Ensure row takes full width */
+    flex-wrap: wrap; /* Allow items inside the row to wrap */
+  }
+  
+  .row-number {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9ecef;
+    border-radius: 50%;
+    font-weight: bold;
+    color: #495057;
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    font-size: 0.8rem;
+  }
+  
+  .row-seats {
+    display: flex;
+    gap: 1rem;
+    flex: 1; /* Allow to grow and shrink */
+    justify-content: space-between;
+    position: relative;
+    padding: 0 0.5rem;
+    width: 100%; /* Ensure it takes full width */
+    flex-wrap: wrap; /* Explicitly allow seat groups to wrap within this container */
+  }
+  
+  .seat-group {
+    display: flex;
+    gap: 0.25rem;
+    flex: 1; /* Allow seat groups to share space */
+    justify-content: center;
+    min-width: 0; /* Prevent flex item from taking minimum content width and causing overflow */
+  }
+  
+  .seat-group.left {
+    justify-content: flex-end;
+  }
+  
+  .seat-group.right {
+    justify-content: flex-start;
+  }
+  
+  .aisle {
+    width: 40px;
+    background: #dee2e6;
+    position: relative;
+    border-radius: 4px;
+    flex-shrink: 0; /* Prevent aisle from shrinking when space is limited */
+  }
+  
+  .aisle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background: #adb5bd;
+  }
+  
+  /* Base seat style - gray for unadded seats */
+  .seat-management .seat {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem; /* Increase padding */
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: #e9ecef;
+    opacity: 1;
+    width: min-content; /* Adjust width to fit content */
+    flex-grow: 0; /* Prevent seats from growing excessively and pushing other seats */
+    flex-shrink: 1; /* Allow seats to shrink when space is limited */
+    min-width: 0; /* Allow width to be smaller if content is very small */
+    box-sizing: border-box;
+  }
+  
+  /* Seat status styles */
+  .seat-management .train-layout .seat.available {
+    opacity: 1;
+    border: 2px solid #198754; /* Green border */
+  }
+  
+  .seat-management .train-layout .seat.reserved {
+    background-color: #f8d7da; /* Keep background for visual distinction */
+    border: 2px solid #dc3545; /* Add a red border */
+    color: #721c24; /* Keep text color */
+    cursor: not-allowed; /* Indicate it's not clickable */
+    /* Add or modify other styles as needed, e.g., opacity */
+  }
+  
+  .seat-management .train-layout .seat.occupied {
+    opacity: 1;
+    border: 2px solid #6c757d; /* Changed to dark gray border for occupied seats */
+  }
+  
+  /* Seat type colors - only apply when seat is added */
+  .seat.business.available,
+  .seat.business.occupied {
+    background: #cff4fc;
+  }
+  
+  .seat.premium.available,
+  .seat.premium.occupied {
+    background: #d1e7dd;
+  }
+  
+  .seat.window.available,
+  .seat.window.occupied {
+    background: #e2e3e5;
+  }
+  
+  .seat.aisle.available,
+  .seat.aisle.occupied {
+    background: #f8d7da;
+  }
+  
+  /* Hover effects */
+  .seat:hover {
+    transform: scale(1.1);
+    z-index: 2;
+    opacity: 1;
+  }
+  
+  .seat.available:hover {
+    box-shadow: 0 0 0 2px #198754;
+  }
+  
+  .seat.occupied:hover {
+    box-shadow: 0 0 0 2px #dc3545;
+  }
+  
+  /* Seat content styles */
+  .seat-management .seat svg {
+    font-size: 1.2rem; /* Increase icon size */
+    margin-bottom: 0.2rem; /* Adjust margin */
+    color: #495057;
+  }
+  
+  .seat-management .seat span {
+    font-size: 0.7rem; /* Increase text size */
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap; /* Keep seat number/type on one line */
+    overflow: hidden; /* Hide overflow text if any */
+    text-overflow: ellipsis; /* Add ellipsis if text overflows */
+    margin-bottom: 0.1rem; /* Add a small margin below the name */
+    display: block; /* Ensure span takes up its own line in the flex container */
+  }
+  
+  .seat-management .seat-price {
+    font-size: 0.6rem; /* Increase price text size */
+    color: #28a745;
+    margin-top: 0.1rem; /* Adjust margin */
+    font-weight: bold;
+    white-space: nowrap; /* Keep price on one line */
+    overflow: hidden; /* Hide overflow text if any */
+    text-overflow: ellipsis; /* Add ellipsis if text overflows */
+    margin-bottom: 0.2rem; /* Add a small margin below the price before buttons */
+    display: block; /* Ensure price takes up its own line in the flex container */
+  }
+  
+  /* Ensure visibility for added seats */
+  .seat-management .seat.available span,
+  .seat-management .seat.occupied span,
+  .seat-management .seat.available .seat-price,
+  .seat-management .seat.occupied .seat-price {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+  }
+  
+  /* Tooltip for unadded seats */
+  .seat:not(.available):not(.occupied)::before {
+    content: 'Click to add price';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.25rem 0.5rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.6rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 3;
+  }
+  
+  .seat:not(.available):not(.occupied):hover::before {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 5px);
+  }
+  
+  /* Section dividers */
+  .train-section:not(:last-child) {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px dashed #dee2e6;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .seat-management .train-layout {
+      min-width: 500px;
+      padding: 0.75rem;
+    }
+  
+    .seat-management .seat svg {
+      font-size: 1.2rem;
+    }
+  
+    .seat-management .seat span {
+      font-size: 0.7rem;
+    }
+  
+    .seat-management .aisle {
+      width: 30px;
+    }
+  
+    /* Responsive adjustments for seat actions in train layout */
+    .seat-management .train-layout .edit-button,
+    .seat-management .train-layout .delete-button {
+      font-size: 0.8rem;
+      padding: 3px;
+    }
+  }
+  
+  .price-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .price-popup {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+  }
+  
+  .price-popup .close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
+  }
+  
+  .price-popup .close-button:hover {
+    color: #333;
+  }
+  
+  .price-popup h3 {
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+  
+  .seat-info {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+  }
+  
+  .seat-info p {
+    margin: 0.5rem 0;
+    color: #495057;
+  }
+  
+  .price-input {
+    margin-bottom: 1.5rem;
+  }
+  
+  .price-input label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #495057;
+  }
+  
+  .price-input input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .seat-price {
+    font-size: 0.7rem;
+    color: #28a745;
+    margin-top: 0.25rem;
+  }
+  
+  /* Update seat styles */
+  .seat {
+    position: relative;
+    min-height: 100px;
+    padding-bottom: 30px;
+  }
+  
+  .seat.window {
+    background: #e2e3e5;
+    border: 1px solid #c4c8cb;
+  }
+  
+  .seat.aisle {
+    background: #f8d7da;
+    border: 1px solid #f5c2c7;
+  }
+  
+  .seat.business {
+    background: #cff4fc;
+    border: 1px solid #9eeaf9;
+  }
+  
+  .seat.premium {
+    background: #d1e7dd;
+    border: 1px solid #a3cfbb;
+  }
+  
+  .seat.economy {
+    background: #fff3cd;
+    border: 1px solid #ffe69c;
+  }
+  
+  /* Add section dividers */
+  .train-section {
+    position: relative;
+    margin-bottom: 2rem;
+  }
+  
+  .train-section:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: -1rem;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #dee2e6;
+    border-radius: 2px;
+  }
+  
+  .management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+    justify-content: flex-start; /* Changed from flex-end to flex-start to align left */
+    margin-top: 1rem; /* Add some space between title and buttons */
+  }
+  
+  .bulk-price-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .form-group label {
+    font-weight: 500;
+    color: #495057;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+    width: 100%;
+  }
+  
+  .form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+  }
+  
+  .price-popup {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+  }
+  
+  .price-popup h3 {
+    margin-bottom: 1.5rem;
+    color: #333;
+    text-align: center;
+  }
+  
+  .price-popup .close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #666;
+    padding: 0.25rem;
+    line-height: 1;
+  }
+  
+  .price-popup .close-button:hover {
+    color: #333;
+  }
+  
+  .seat-info {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+  }
+  
+  .seat-info p {
+    margin: 0.5rem 0;
+    color: #495057;
+  }
+  
+  .price-input {
+    margin-bottom: 1.5rem;
+  }
+  
+  .price-input label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #495057;
+    font-weight: 500;
+  }
+  
+  .price-input input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-primary {
+    background: #0d6efd;
+    color: white;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background: #0b5ed7;
+  }
+  
+  .btn-primary:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+  }
+  
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+  }
+  
+  .btn-secondary:hover {
+    background: #5c636a;
+  }
+  
+  .me-2 {
+    margin-right: 0.5rem;
+  }
+  
+  @media (max-width: 992px) {
+    .management-page {
+      padding: 1.5rem;
+      margin-left: 200px; /* Adjust margin for smaller sidebar */
+      width: calc(100% - 200px); /* Adjust width for smaller sidebar */
+    }
+  }
+  
+  .available-seats-info {
+    background: #e9ecef;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin: 0.5rem 0;
+    text-align: center;
+  }
+  
+  .available-seats-info p {
+    margin: 0;
+    color: #495057;
+    font-weight: 500;
+  }
+  
+  .form-group input[type="number"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .form-group input[type="number"]:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+  
+  .form-group input[type="number"]::-webkit-inner-spin-button,
+  .form-group input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+    height: 2em;
+  }
+  
+  .bulk-price-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .bulk-price-form .form-group {
+    margin-bottom: 0.5rem;
+  }
+  
+  .bulk-price-form .btn {
+    margin-top: 1rem;
+  }
+  
+  /* Error message styling */
+  .error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Success message styling */
+  .success-message {
+    color: #198754;
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .seat-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    justify-content: center;
+  }
+  
+  .submit-button {
+    background: #2196f3;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .submit-button:hover {
+    background: #1976d2;
+  }
+  
+  .submit-button:disabled {
+    background: #90caf9;
+    cursor: not-allowed;
+  }
+  
+  /* Seat actions within the train layout */
+  .seat-management .train-layout .seat-actions {
+    display: flex;
+    gap: 2px; /* Reduced gap */
+    margin-top: 2px; /* Reduced margin */
+    justify-content: center;
+    flex-wrap: wrap; /* Allow buttons to wrap if necessary */
+    position: static; /* Ensure no absolute or fixed positioning */
+    width: 100%; /* Ensure it takes full width to center buttons if wrapped */
+    box-sizing: border-box; /* Include padding in width */
+  }
+  
+  .seat-management .train-layout .edit-button,
+  .seat-management .train-layout .delete-button {
+    padding: 2px; /* Keep the smaller padding */
+    font-size: 0.7rem; /* Keep the smaller font size */
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: inherit;
+    flex-shrink: 0; /* Prevent buttons from shrinking too much */
+  }
+  
+  /* Compact styles for seat management table */
+  /* Using more specific selectors to target the table within management-content if needed */
+  .management-content .table-responsive .table {
+    margin-bottom: 0;
+    width: 100%; /* Table takes full width of its container */
+    min-width: 0; /* Allow table to shrink */
+    table-layout: auto; /* Let the browser automatically size columns based on content */
+  }
+  
+  .management-content .table-responsive {
+    overflow-x: auto; /* Allow horizontal scrolling *within the table container* if content is too wide */
+    max-width: 100%; /* Ensure responsive container doesn't exceed parent width */
+    box-sizing: border-box;
+  }
+  
+  .management-content .table th,
+  .management-content .table td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    vertical-align: middle;
+    /* white-space: nowrap; */ /* Allow text wrapping in table cells by default */
+    width: auto; /* Allow cells to size automatically based on content and table-layout */
+  }
+  
+  /* Keep other table-specific styles */
+  .management-content .table th { font-weight: 600; background-color: #f8f9fa; }
+  .management-content .table .badge { font-size: 0.75rem; padding: 0.25rem 0.5rem; display: inline-block; white-space: nowrap; }
+  .management-content .table .seat-actions { position: static; margin: 0; padding: 0; display: flex; gap: 8px; justify-content: flex-start; white-space: nowrap; }
+  .management-content .table .edit-button, .management-content .table .delete-button { font-size: 1rem; padding: 6px; background: none; border: none; color: inherit; }
+  .management-content .table .edit-button { color: #2196f3; }
+  .management-content .table .delete-button { color: #f44336; }
+  
+  /* Responsive adjustments for overall layout */
+  @media (max-width: 992px) {
+    .management-page {
+      padding: 1.5rem;
+      margin-left: 200px; /* Adjust margin for smaller sidebar */
+      width: calc(100% - 200px); /* Adjust width for smaller sidebar */
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .management-page {
+      padding: 1rem;
+      margin-left: 0; /* Remove margin when sidebar is collapsed */
+      width: 100%; /* Take full width when sidebar is collapsed */
+    }
+
+    .management-content {
+      padding: 0; /* Remove padding here, managed by .management-page */
+    }
+
+    .management-header {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start; /* Changed from stretch to flex-start */
+    }
+
+    .header-actions {
+      flex-direction: row; /* Keep buttons in a row on mobile */
+      gap: 0.75rem;
+      justify-content: flex-start; /* Keep left alignment on mobile */
+      align-items: center; /* Center buttons vertically */
+      width: 100%; /* Take full width */
+    }
+
+    .btn {
+      width: auto; /* Remove full width on mobile */
+    }
+
+    /* Adjustments for train layout and table containers on smaller screens */
+    .train-layout-container,
+    .management-table-container {
+      padding: 0.75rem; /* Reduce padding */
+    }
+
+    /* Adjustments for train layout internal elements on smaller screens */
+    .train-layout {
+      padding: 1rem; /* Reduce padding */
+      gap: 1rem; /* Reduce gap between sections */
+    }
+
+    .train-section {
+      padding: 1rem; /* Reduce padding */
+      margin-bottom: 1.5rem; /* Reduce margin */
+      padding-bottom: 1.5rem; /* Reduce padding */
+    }
+
+    .train-section h4 {
+      font-size: 1rem; /* Reduce font size */
+      margin-bottom: 1rem; /* Reduce margin */
+      padding: 0.4rem; /* Reduce padding */
+    }
+
+    .train-section h4::after {
+      bottom: -7px; /* Adjust position */
+      width: 40px; /* Reduce width */
+      height: 2px; /* Reduce height */
+    }
+
+    .train-rows {
+      gap: 0.75rem; /* Reduce gap between rows */
+    }
+
+    .train-row {
+      gap: 0.75rem; /* Reduce gap */
+      padding: 0.5rem; /* Reduce padding */
+    }
+
+    .row-number {
+      width: 25px; /* Reduce size */
+      height: 25px; /* Reduce size */
+      left: -12.5px; /* Adjust position */
+      font-size: 0.8rem; /* Reduce font size */
+    }
+
+    .row-seats {
+      gap: 1rem; /* Reduce gap between seat groups */
+      padding: 0 0.5rem; /* Reduce padding */
+    }
+
+    .seat-group {
+      gap: 0.4rem; /* Reduce gap between seats */
+    }
+
+    .aisle {
+      width: 40px; /* Reduce aisle width */
+    }
+
+    .seat {
+      min-width: 35px; /* Reduce minimum width */
+      padding: 0.5rem; /* Reduce padding */
+    }
+
+     .seat svg {
+      font-size: 1rem; /* Reduce icon size */
+    }
+
+    .seat span,
+    .seat-price {
+      font-size: 0.5rem; /* Reduce text size */
+    }
+
+    .train-layout .seat-actions {
+      gap: 1px; /* Smaller gap between buttons */
+      margin-top: 1px; /* Reduced margin */
+    }
+
+    .train-layout .edit-button,
+    .train-layout .delete-button {
+      padding: 1px; /* Smaller button padding */
+      font-size: 0.6rem; /* Smaller button icon size */
+    }
+
+    /* Adjustments for table on smaller screens */
+    .management-content .table th,
+    .management-content .table td {
+      padding: 0.4rem; /* Further reduce table cell padding */
+      font-size: 0.75rem; /* Further reduce table text size */
+    }
+
+     .management-content .table .badge {
+      font-size: 0.55rem; /* Further reduce badge size */
+      padding: 0.1rem 0.2rem; /* Further reduce badge padding */
+    }
+
+    .management-content .table .seat-actions {
+      gap: 6px; /* Adjust gap between table action buttons */
+    }
+  }
+
+  @media (max-width: 576px) { /* Extra small devices (phones) */
+    .management-page {
+      padding: 0.5rem; /* Further reduce padding */
+    }
+
+    .management-content {
+      gap: 1rem; /* Reduce gap */
+    }
+
+    .train-layout-container,
+    .management-table-container {
+      padding: 0.5rem; /* Further reduce padding */
+    }
+
+     .train-section {
+      padding: 0.75rem; /* Further reduce padding */
+      margin-bottom: 1rem; /* Further reduce margin */
+      padding-bottom: 1rem; /* Further reduce padding */
+    }
+
+    .train-section h4 {
+      font-size: 0.9rem; /* Further reduce font size */
+      margin-bottom: 0.75rem; /* Further reduce margin */
+      padding: 0.3rem; /* Further reduce padding */
+    }
+
+    .train-section h4::after {
+      bottom: -6px; /* Adjust position */
+      width: 30px; /* Reduce width */
+    }
+
+
+    .train-rows {
+      gap: 0.5rem; /* Further reduce gap */
+    }
+
+    .train-row {
+      gap: 0.5rem; /* Further reduce gap */
+      padding: 0.3rem; /* Further reduce padding */
+    }
+
+    .row-number {
+      width: 20px; /* Further reduce size */
+      height: 20px; /* Further reduce size */
+      left: -10px; /* Adjust position */
+      font-size: 0.7rem; /* Further reduce font size */
+    }
+
+    .row-seats {
+      gap: 0.75rem; /* Further reduce gap between seat groups */
+      padding: 0 0.3rem; /* Further reduce padding */
+    }
+
+    .seat-group {
+      gap: 0.3rem; /* Further reduce gap between seats */
+    }
+
+    .aisle {
+      width: 30px; /* Further reduce aisle width */
+    }
+
+    .seat {
+      min-width: 30px; /* Further reduce minimum width */
+      padding: 0.4rem; /* Further reduce padding */
+    }
+
+     .seat svg {
+      font-size: 0.9rem; /* Further reduce icon size */
+    }
+
+    .seat span,
+    .seat-price {
+      font-size: 0.4rem; /* Further reduce text size */
+    }
+
+    .train-layout .seat-actions {
+      gap: 0px; /* Further reduce gap */
+    }
+
+    .train-layout .edit-button,
+    .train-layout .delete-button {
+      padding: 0px; /* Further reduce padding */
+      font-size: 0.5rem; /* Further reduce font size */
+    }
+
+    .management-content .table th,
+    .management-content .table td {
+      padding: 0.3rem; /* Keep padding */
+      font-size: 0.7rem; /* Further reduce font size */
+    }
+
+     .management-content .table .badge {
+      font-size: 0.5rem; /* Further reduce badge size */
+      padding: 0.05rem 0.1rem; /* Further reduce badge padding */
+    }
+
+    .management-content .table .seat-actions {
+      gap: 4px; /* Keep gap */
+    }
+  }
+  
+  .management-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative; /* Add position relative */
+  }
+  
+  .management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* margin-bottom: 2rem; */ /* Removed in favor of gap in management-content */
+    flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+  }
+  
+  .management-header h1 {
+    color: #333;
+    /* margin-bottom: 30px; */ /* Removed in favor of gap in management-content */
+    margin: 0; /* Reset margin */
+    flex-grow: 1; /* Allow title to take available space */
+    word-break: break-word; /* Prevent long titles from overflowing */
+  }
+  
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+    justify-content: flex-start; /* Changed from flex-end to flex-start to align left */
+    margin-top: 1rem; /* Add some space between title and buttons */
+  }
+  
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none; /* Ensure buttons as links don't have underline */
+  }
+  
+  .btn-primary {
+    background: #0d6efd;
+    color: white;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background: #0b5ed7;
+  }
+  
+  .btn-primary:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6; /* Indicate disabled state */
+  }
+  
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+  }
+  
+  .btn-secondary:hover {
+    background: #5c636a;
+  }
+  
+  .me-2 {
+    margin-right: 0.5rem;
+  }
+  
+  /* Train Layout Container adjustments */
+  .train-layout-container {
+    margin: 1rem auto; /* Keep centering and add top/bottom margin */
+    padding: 1rem; /* Increase padding */
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-x: auto; /* Allow horizontal scrolling *within* this container if content is too wide */
+    max-width: 100%; /* Ensures the container doesn't exceed the width of its parent (.management-content) */
+    box-sizing: border-box;
+    /* Ensure container takes available width and manages flex items */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Train Layout internal structure adjustments */
+  .train-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Increase gap between sections */
+    width: auto; /* Allow width to be determined by content, but constrained by its container's max-width */
+    min-width: 0; /* Override default flex item minimum width based on content */
+    background: #e9ecef;
+    padding: 1.5rem; /* Increase padding */
+    border-radius: 8px;
+    position: relative;
+    /* Ensure layout itself doesn't cause overflow beyond its container */
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .train-layout::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 20px; /* Increase height */
+    background: #495057;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  .train-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* Increase gap */
+    padding-bottom: 0.75rem; /* Increase padding */
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 1.5rem; /* Increase margin */
+  }
+  
+  .train-icon {
+    font-size: 1.8rem; /* Increase icon size */
+    color: #0d6efd;
+  }
+  
+  .train-header h3 {
+    margin: 0; /* Reset margin */
+    font-size: 1.2rem; /* Increase font size */
+    color: #333;
+  }
+  
+  .train-section {
+    background: white;
+    padding: 1.5rem; /* Increase padding */
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+  
+  .train-section h4 {
+    margin-bottom: 1.5rem; /* Increase margin */
+    color: #495057;
+    font-size: 1.1rem; /* Increase font size */
+    text-align: center;
+    padding: 0.5rem; /* Increase padding */
+    background: #e9ecef;
+    border-radius: 4px;
+    position: relative;
+  }
+  
+  .train-section h4::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; /* Adjust position */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px; /* Increase width */
+    height: 3px; /* Increase height */
+    background: #dee2e6;
+  }
+  
+  .train-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* Increase gap between rows */
+    width: 100%; /* Ensure rows take full width of the train-layout */
+  }
+  
+  .train-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* Increase gap */
+    padding: 0.75rem; /* Increase padding */
+    background: #f8f9fa;
+    border-radius: 4px;
+    position: relative;
+    width: 100%; /* Ensure row takes full width */
+    flex-wrap: wrap; /* Allow items inside the row to wrap */
+    box-sizing: border-box;
+  }
+  
+  .row-number {
+    width: 30px; /* Increase size */
+    height: 30px; /* Increase size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9ecef;
+    border-radius: 50%;
+    font-weight: bold;
+    color: #495057;
+    position: absolute;
+    left: -15px; /* Adjust position */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    font-size: 0.9rem; /* Increase font size */
+    border: 2px solid white; /* Add white border for better contrast */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .row-seats {
+    display: flex;
+    gap: 1.5rem; /* Increase gap between seat groups */
+    flex: 1; /* Allow to grow and shrink */
+    justify-content: space-between;
+    position: relative;
+    padding: 0 0.75rem; /* Increase padding */
+    width: 100%; /* Ensure it takes full width */
+    flex-wrap: wrap; /* Explicitly allow seat groups to wrap within this container */
+    box-sizing: border-box;
+  }
+  
+  .seat-group {
+    display: flex;
+    gap: 0.5rem; /* Increase gap between seats */
+    flex: 1; /* Allow seat groups to share space */
+    justify-content: center;
+    min-width: 0; /* Prevent flex item from taking minimum content width and causing overflow */
+  }
+  
+  .seat-group.left {
+    justify-content: flex-end;
+  }
+  
+  .seat-group.right {
+    justify-content: flex-start;
+  }
+  
+  .aisle {
+    width: 50px; /* Increase aisle width */
+    background: #dee2e6;
+    position: relative;
+    border-radius: 4px;
+    flex-shrink: 0; /* Prevent aisle from shrinking when space is limited */
+  }
+  
+  .aisle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px; /* Increase line thickness */
+    height: 100%;
+    background: #adb5bd;
+  }
+  
+  /* Base seat style - gray for unadded seats */
+  .seat-management .seat {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem; /* Increase padding */
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: #e9ecef;
+    opacity: 1;
+    width: min-content; /* Adjust width to fit content */
+    flex-grow: 0; /* Prevent seats from growing excessively and pushing other seats */
+    flex-shrink: 1; /* Allow seats to shrink when space is limited */
+    min-width: 0; /* Allow width to be smaller if content is very small */
+    box-sizing: border-box;
+  }
+  
+  /* Seat status styles */
+  .seat-management .train-layout .seat.available {
+    opacity: 1;
+    border: 2px solid #198754; /* Green border */
+  }
+  
+  .seat-management .train-layout .seat.reserved {
+    background-color: #f8d7da; /* Keep background for visual distinction */
+    border: 2px solid #dc3545; /* Add a red border */
+    color: #721c24; /* Keep text color */
+    cursor: not-allowed; /* Indicate it's not clickable */
+    /* Add or modify other styles as needed, e.g., opacity */
+  }
+  
+  .seat-management .train-layout .seat.occupied {
+    opacity: 1;
+    border: 2px solid #6c757d; /* Changed to dark gray border for occupied seats */
+  }
+  
+  /* Seat type colors - only apply when seat is added */
+  .seat.business.available,
+  .seat.business.occupied {
+    background: #cff4fc;
+  }
+  
+  .seat.premium.available,
+  .seat.premium.occupied {
+    background: #d1e7dd;
+  }
+  
+  .seat.window.available,
+  .seat.window.occupied {
+    background: #e2e3e5;
+  }
+  
+  .seat.aisle.available,
+  .seat.aisle.occupied {
+    background: #f8d7da;
+  }
+  
+  /* Hover effects */
+  .seat:hover {
+    transform: scale(1.05); /* Slight scale on hover */
+    z-index: 2;
+    opacity: 1;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* More prominent shadow on hover */
+  }
+  
+  .seat.available:hover {
+    box-shadow: 0 0 0 3px #198754; /* Hover border/outline */
+  }
+  
+  .seat.occupied:hover {
+    box-shadow: 0 0 0 3px #dc3545; /* Hover border/outline */
+  }
+  
+  /* Seat content styles */
+  .seat-management .seat svg {
+    font-size: 1.2rem; /* Increase icon size */
+    margin-bottom: 0.2rem; /* Adjust margin */
+    color: #495057;
+  }
+  
+  .seat-management .seat span {
+    font-size: 0.7rem; /* Increase text size */
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap; /* Keep seat number/type on one line */
+    overflow: hidden; /* Hide overflow text if any */
+    text-overflow: ellipsis; /* Add ellipsis if text overflows */
+    margin-bottom: 0.1rem; /* Add a small margin below the name */
+    display: block; /* Ensure span takes up its own line in the flex container */
+  }
+  
+  .seat-management .seat-price {
+    font-size: 0.6rem; /* Increase price text size */
+    color: #28a745;
+    margin-top: 0.1rem; /* Adjust margin */
+    font-weight: bold;
+    white-space: nowrap; /* Keep price on one line */
+    overflow: hidden; /* Hide overflow text if any */
+    text-overflow: ellipsis; /* Add ellipsis if text overflows */
+    margin-bottom: 0.2rem; /* Add a small margin below the price before buttons */
+    display: block; /* Ensure price takes up its own line in the flex container */
+  }
+  
+  /* Ensure visibility for added seats */
+  .seat-management .seat.available span,
+  .seat-management .seat.occupied span,
+  .seat-management .seat.available .seat-price,
+  .seat-management .seat.occupied .seat-price {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+  }
+  
+  /* Tooltip for unadded seats */
+  .seat:not(.available):not(.occupied)::before {
+    content: 'Click to add price';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.25rem 0.5rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.6rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 3;
+  }
+  
+  .seat:not(.available):not(.occupied):hover::before {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 5px);
+  }
+  
+  /* Section dividers */
+  .train-section:not(:last-child) {
+    margin-bottom: 2rem; /* Increase margin */
+    padding-bottom: 2rem; /* Increase padding */
+    border-bottom: 2px dashed #dee2e6;
+  }
+  
+  /* Responsive adjustments for overall layout */
+  @media (max-width: 992px) { /* Adjust breakpoint for larger tablets/desktops */
+    .management-page {
+        padding: 1.5rem; /* Adjust padding */
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .management-page {
+      padding: 1rem; /* Reduce padding on smaller screens */
+      /* margin-left: 0; */ /* Assuming the main layout handles sidebar collapse/visibility */
+    }
+
+    .management-content {
+      padding: 0; /* Remove padding here, managed by .management-page */
+    }
+
+    .management-header {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start; /* Changed from stretch to flex-start */
+    }
+
+    .header-actions {
+      flex-direction: row; /* Keep buttons in a row on mobile */
+      gap: 0.75rem;
+      justify-content: flex-start; /* Keep left alignment on mobile */
+      align-items: center; /* Center buttons vertically */
+      width: 100%; /* Take full width */
+    }
+
+    .btn {
+      width: auto; /* Remove full width on mobile */
+    }
+
+    /* Adjustments for train layout and table containers on smaller screens */
+    .train-layout-container,
+    .management-table-container {
+      padding: 0.75rem; /* Reduce padding */
+    }
+
+    /* Adjustments for train layout internal elements on smaller screens */
+    .train-layout {
+      padding: 1rem; /* Reduce padding */
+      gap: 1rem; /* Reduce gap between sections */
+    }
+
+    .train-section {
+      padding: 1rem; /* Reduce padding */
+      margin-bottom: 1.5rem; /* Reduce margin */
+      padding-bottom: 1.5rem; /* Reduce padding */
+    }
+
+    .train-section h4 {
+      font-size: 1rem; /* Reduce font size */
+      margin-bottom: 1rem; /* Reduce margin */
+      padding: 0.4rem; /* Reduce padding */
+    }
+
+    .train-section h4::after {
+      bottom: -7px; /* Adjust position */
+      width: 40px; /* Reduce width */
+      height: 2px; /* Reduce height */
+    }
+
+    .train-rows {
+      gap: 0.75rem; /* Reduce gap between rows */
+    }
+
+    .train-row {
+      gap: 0.75rem; /* Reduce gap */
+      padding: 0.5rem; /* Reduce padding */
+    }
+
+    .row-number {
+      width: 25px; /* Reduce size */
+      height: 25px; /* Reduce size */
+      left: -12.5px; /* Adjust position */
+      font-size: 0.8rem; /* Reduce font size */
+    }
+
+    .row-seats {
+      gap: 1rem; /* Reduce gap between seat groups */
+      padding: 0 0.5rem; /* Reduce padding */
+    }
+
+    .seat-group {
+      gap: 0.4rem; /* Reduce gap between seats */
+    }
+
+    .aisle {
+      width: 40px; /* Reduce aisle width */
+    }
+
+    .seat {
+      min-width: 35px; /* Reduce minimum width */
+      padding: 0.5rem; /* Reduce padding */
+    }
+
+     .seat svg {
+      font-size: 1rem; /* Reduce icon size */
+    }
+
+    .seat span,
+    .seat-price {
+      font-size: 0.5rem; /* Reduce text size */
+    }
+
+    .train-layout .seat-actions {
+      gap: 1px; /* Smaller gap between buttons */
+      margin-top: 1px; /* Reduced margin */
+    }
+
+    .train-layout .edit-button,
+    .train-layout .delete-button {
+      padding: 1px; /* Smaller button padding */
+      font-size: 0.6rem; /* Smaller button icon size */
+    }
+
+    /* Adjustments for table on smaller screens */
+    .management-content .table th,
+    .management-content .table td {
+      padding: 0.4rem; /* Further reduce table cell padding */
+      font-size: 0.75rem; /* Further reduce table text size */
+    }
+
+     .management-content .table .badge {
+      font-size: 0.55rem; /* Further reduce badge size */
+      padding: 0.1rem 0.2rem; /* Further reduce badge padding */
+    }
+
+    .management-content .table .seat-actions {
+      gap: 6px; /* Adjust gap between table action buttons */
+    }
+  }
+
+  @media (max-width: 576px) { /* Extra small devices (phones) */
+    .management-page {
+      padding: 0.5rem; /* Further reduce padding */
+    }
+
+    .management-content {
+      gap: 1rem; /* Reduce gap */
+    }
+
+    .train-layout-container,
+    .management-table-container {
+      padding: 0.5rem; /* Further reduce padding */
+    }
+
+     .train-section {
+      padding: 0.75rem; /* Further reduce padding */
+      margin-bottom: 1rem; /* Further reduce margin */
+      padding-bottom: 1rem; /* Further reduce padding */
+    }
+
+    .train-section h4 {
+      font-size: 0.9rem; /* Further reduce font size */
+      margin-bottom: 0.75rem; /* Further reduce margin */
+      padding: 0.3rem; /* Further reduce padding */
+    }
+
+    .train-section h4::after {
+      bottom: -6px; /* Adjust position */
+      width: 30px; /* Reduce width */
+    }
+
+
+    .train-rows {
+      gap: 0.5rem; /* Further reduce gap */
+    }
+
+    .train-row {
+      gap: 0.5rem; /* Further reduce gap */
+      padding: 0.3rem; /* Further reduce padding */
+    }
+
+    .row-number {
+      width: 20px; /* Further reduce size */
+      height: 20px; /* Further reduce size */
+      left: -10px; /* Adjust position */
+      font-size: 0.7rem; /* Further reduce font size */
+    }
+
+    .row-seats {
+      gap: 0.75rem; /* Further reduce gap between seat groups */
+      padding: 0 0.3rem; /* Further reduce padding */
+    }
+
+    .seat-group {
+      gap: 0.3rem; /* Further reduce gap between seats */
+    }
+
+    .aisle {
+      width: 30px; /* Further reduce aisle width */
+    }
+
+    .seat {
+      min-width: 30px; /* Further reduce minimum width */
+      padding: 0.4rem; /* Further reduce padding */
+    }
+
+     .seat svg {
+      font-size: 0.9rem; /* Further reduce icon size */
+    }
+
+    .seat span,
+    .seat-price {
+      font-size: 0.4rem; /* Further reduce text size */
+    }
+
+    .train-layout .seat-actions {
+      gap: 0px; /* Further reduce gap */
+    }
+
+    .train-layout .edit-button,
+    .train-layout .delete-button {
+      padding: 0px; /* Further reduce padding */
+      font-size: 0.5rem; /* Further reduce font size */
+    }
+
+    .management-content .table th,
+    .management-content .table td {
+      padding: 0.3rem; /* Keep padding */
+      font-size: 0.7rem; /* Further reduce font size */
+    }
+
+     .management-content .table .badge {
+      font-size: 0.5rem; /* Further reduce badge size */
+      padding: 0.05rem 0.1rem; /* Further reduce badge padding */
+    }
+
+    .management-content .table .seat-actions {
+      gap: 4px; /* Keep gap */
+    }
+  }
+  
+  
+  

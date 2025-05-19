@@ -17,6 +17,11 @@ export const Auth0ProviderWithNavigate = ({ children }) => {
     return null;
   }
 
+  // Check if the environment variables are set
+  if (!domain || !clientId || !redirectUri) {
+    console.error("Missing environment variables. Please check your .env file.");
+    return null;
+  }
   return (
     <Auth0Provider
       domain={domain}

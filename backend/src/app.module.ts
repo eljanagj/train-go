@@ -9,6 +9,8 @@ import { AuthzModule } from './modules/authz/authz.module';
 import { UserModule } from './modules/user/user.module';
 import { ScheduleModule } from './modules/schedule/schedule.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { SeatsModule } from './modules/seats/seats.module';
+import { ReservationModule } from './modules/reservation/reservation.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { RedisModule } from './modules/redis/redis.module';
     TrainModule,
     ScheduleModule,
     RedisModule,
+    SeatsModule,
+    ReservationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -6,17 +6,28 @@ export const scheduleService = {
     return response.data;
   },
 
+  getSchedulesByRoute: async (routeId) => {
+    const response = await api.get(`/schedules/route/${routeId}`);
+    return response.data;
+  },
+
+  getSchedule: async (id) => {
+    const response = await api.get(`/schedules/${id}`);
+    return response.data;
+  },
+
   createSchedule: async (scheduleData) => {
     const response = await api.post('/schedules', scheduleData);
     return response.data;
   },
 
-  updateSchedule: async (scheduleId, scheduleData) => {
-    const response = await api.put(`/schedules/${scheduleId}`, scheduleData);
+  updateSchedule: async (id, scheduleData) => {
+    const response = await api.put(`/schedules/${id}`, scheduleData);
     return response.data;
   },
 
-  deleteSchedule: async (scheduleId) => {
-    await api.delete(`/schedules/${scheduleId}`);
+  deleteSchedule: async (id) => {
+    const response = await api.delete(`/schedules/${id}`);
+    return response.data;
   }
 }; 

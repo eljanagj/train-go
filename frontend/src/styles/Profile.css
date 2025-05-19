@@ -671,3 +671,116 @@
   color: #23232b;
   text-shadow: none;
 }
+
+/* Reservations Section */
+.reservations-section {
+  margin-top: 2rem;
+}
+
+.reservations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.reservation-card {
+  background: var(--card-bg, #fff);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(255, 75, 43, 0.1);
+}
+
+.reservation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%);
+  color: white;
+  animation: name-gradient-move 4s linear infinite alternate;
+}
+
+@keyframes name-gradient-move {
+  0% { filter: brightness(1.1) hue-rotate(0deg); }
+  100% { filter: brightness(1.2) hue-rotate(20deg); }
+}
+
+.reservation-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: white;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-confirmed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-cancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.reservation-details {
+  font-size: 0.95rem;
+}
+
+.reservation-details p {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.reservation-details strong {
+  margin-left: 0.5rem;
+  color: var(--text-color, #333);
+}
+
+.reservation-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, #eee);
+}
+
+.reservation-actions button {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .reservations-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .reservations-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .reservation-card {
+    margin-bottom: 1rem;
+  }
+}

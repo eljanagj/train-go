@@ -10,6 +10,7 @@ import {
 //  import { TrainStatusHistory } from './entities/train-status-history.entity';
   import { CreateTrainDto } from './dto/create-train.dto';
   import { UpdateTrainDto } from './dto/update-train.dto';
+  import { Seat, SeatStatus } from '../seats/entities/seat.entity';
   
   @Injectable()
   export class TrainService {
@@ -26,18 +27,23 @@ import {
     constructor(
       @InjectRepository(Train)
       private readonly trainRepo: Repository<Train>,
+      @InjectRepository(Seat)
+      private readonly seatRepo: Repository<Seat>,
   
-      //@InjectRepository(TrainStatusHistory)
-      //private readonly historyRepo: Repository<TrainStatusHistory>,
+
     ) {}
   
     async create(dto: CreateTrainDto): Promise<Train> {
-      const train = this.trainRepo.create(dto);
+      const train = this.trainRepo.create({
+        ...dto,
+        status: TrainStatus.ACTIVE
+      });
       return this.trainRepo.save(train);
     }
   
     async findAll(): Promise<Train[]> {
-      return this.trainRepo.find();
+      const trains = await this.trainRepo.find();
+      return Promise.all(trains.map(train => this.updateTrainCapacity(train)));
     }
   
     async findOne(id: number): Promise<Train> {
@@ -48,7 +54,7 @@ import {
       if (!train) {
         throw new NotFoundException(`Train with ID ${id} not found`);
       }
-      return train;
+      return this.updateTrainCapacity(train);
     }
   
     async update(id: number, dto: UpdateTrainDto): Promise<Train> {
@@ -71,10 +77,7 @@ import {
       }
     }
   
-    /**
-     * Change a train's status, enforcing valid transitions
-     * and recording an audit entry.
-     */
+  
     async updateStatus(
       id: number,
       newStatus: TrainStatus,
@@ -87,20 +90,20 @@ import {
           `Cannot transition from ${train.status} to ${newStatus}`,
         );
       }
-  /*
-      
-     // Record history
-      const history = this.historyRepo.create({
-        train,
-        fromStatus: train.status,
-        toStatus: newStatus,
-      });
-      await this.historyRepo.save(history); 
-      */
-      // Update and return
+
       train.status = newStatus;
       return this.trainRepo.save(train);
     } 
   
+    private async updateTrainCapacity(train: Train): Promise<Train> {
+      const seats = await this.seatRepo.find({
+        where: { trainId: train.trainID }
+      });
+  
+      train.totalCapacity = seats.length;
+      train.availableSeats = seats.filter(seat => seat.status === SeatStatus.AVAILABLE).length;
+  
+      return this.trainRepo.save(train);
+    }
   }
   

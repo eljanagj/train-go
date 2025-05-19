@@ -1,0 +1,214 @@
+/* Container Overlay */
+.seat-selection-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+/* Popup Box */
+.seat-selection-popup {
+  width: 90%;
+  max-width: 900px;
+  margin: 3rem auto;
+  background-color: white;
+  border-radius: 10px;
+  padding: 2rem;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Close Button */
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* Seat Styling */
+.seat {
+  width: 60px;
+  height: 90px;
+  margin: 5px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  /* Set text and icon color to black for all statuses */
+  color: black;
+}
+
+/* Status Colors */
+.seat.available {
+  background-color: #4caf50; /* Green */
+}
+
+.seat.selected {
+  background-color: #fff; /* White background for selected */
+  border: 2px solid #2196f3; /* Blue border matching legend */
+  color: #495057; /* Dark text color for white background */
+  transform: scale(1.05);
+  /* Adjusted box-shadow for a clearer border and blue glow */
+  box-shadow: 0 0 8px 2px rgba(33, 150, 243, 0.6); /* Using #2196f3 with some spread */
+}
+
+/* Ensure selected seat hover doesn't change the border/glow */
+.seat.selected:hover {
+    transform: scale(1.05); /* Keep the selected scale */
+    box-shadow: 0 0 10px 3px rgba(33, 150, 243, 0.8); /* Slightly more intense glow on hover */
+}
+
+.seat-selection-popup .seat.reserved {
+  border: 2px solid #f44336 !important; /* Set border color to Red and use !important */
+  cursor: not-allowed;
+  color: black; /* Ensure text is black */
+}
+
+.seat.pending {
+  background-color: gray; /* Explicitly set Gray background */
+  color: white;
+  border: none;
+  cursor: not-allowed;
+}
+
+/* Icon & Number */
+.seat-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+  color: inherit;
+}
+
+.seat-number {
+  color: inherit;
+}
+
+.seat-price {
+  font-size: 0.7rem; /* Smaller font size for price */
+  font-weight: normal; /* Lighter font weight */
+  color: inherit; /* Inherit color from parent .seat */
+  margin-top: 2px; /* Add a small margin above the price */
+}
+
+/* Layout */
+.train-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.train-icon {
+  font-size: 24px;
+}
+
+/* Seat legend */
+.seat-legend {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  justify-content: center; /* Center the legend */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-item .seat {
+  width: 30px; /* Smaller size for legend */
+  height: 30px; /* Smaller size for legend */
+  border-radius: 5px; /* Smaller radius for legend */
+  background-color: white; /* White inside for legend */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Remove box-shadow and transition for legend items */
+  box-shadow: none;
+  transition: none;
+  cursor: default; /* Not clickable in legend */
+}
+
+.legend-item .seat-icon,
+.legend-item .seat-number {
+    display: none; /* Hide icon and number in legend */
+}
+
+/* Legend border colors based on status */
+.legend-item .seat.available {
+  border: 2px solid #4caf50; /* Green border */
+}
+
+.legend-item .seat.selected {
+  border: 2px solid #2196f3; /* Blue border */
+}
+
+.legend-item .seat.reserved {
+  border: 2px solid #f44336; /* Red border */
+}
+
+.legend-item .seat.pending {
+  border: 2px solid #ffeb3b; /* Yellow border */
+}
+
+.legend-item span {
+  color: #333; /* Dark text for legend labels */
+}
+
+.train-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.train-section h4 {
+  margin-bottom: 10px;
+}
+
+.train-row {
+  display: flex;
+  align-items: center;
+}
+
+.row-number {
+  width: 40px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.row-seats {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+}
+
+.seat-group {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+.aisle {
+  width: 20px;
+  height: 90px;
+}
+
+/* Hover effect for available seats */
+.seat.available:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
