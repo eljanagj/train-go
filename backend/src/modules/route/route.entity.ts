@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Schedule } from '../schedule/schedule.entity';
+import { Train } from '../train/entities/train.entity';
 
 @Entity()
 export class Route {
@@ -18,8 +19,14 @@ export class Route {
     @Column({ type: 'int', default: 0 })
     capacity: number;
 
+    @Column({ type: 'int', nullable: true })
+    trainID: number;
+
+    @ManyToOne(() => Train)
+    @JoinColumn({ name: 'trainID' })
+    train: Train;
+
     @OneToMany(() => Schedule, (s) => s.route)
     schedules: Schedule[];
-    
+
 }
-  

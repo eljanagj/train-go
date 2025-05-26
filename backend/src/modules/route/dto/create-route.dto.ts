@@ -16,6 +16,5 @@ export class CreateRouteDto {
 
   @IsNotEmpty()
   @IsNumber()
-  @Min(0)
-  readonly capacity: number;
+  readonly trainID: number;
 }

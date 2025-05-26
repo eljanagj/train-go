@@ -5,16 +5,17 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(17, 17, 17, 0.8);
+    background: rgba(248, 250, 252, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2000; 
+    z-index: 2000;
+    backdrop-filter: blur(4px);
   }
 
   .page-loader .spinner-border {
     width: 3rem;
     height: 3rem;
-    color: #ff416c; 
+    color: #3b82f6;
+    border-width: 0.25em;
   }
-  

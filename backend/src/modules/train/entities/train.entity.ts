@@ -1,15 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Schedule } from '../../schedule/schedule.entity';
 import { Seat } from '../../seats/entities/seat.entity';
-
-export enum TrainStatus {
-  ACTIVE = 'ACTIVE',
-  IN_TRANSIT = 'IN_TRANSIT',
-  ARRIVED = 'ARRIVED',
-  DELAYED = 'DELAYED',
-  MAINTENANCE = 'MAINTENANCE',
-  DECOMMISSIONED = 'DECOMMISSIONED'
-}
+import { TrainStatus } from './train-status.enum';
 
 @Entity('trains')
 export class Train {

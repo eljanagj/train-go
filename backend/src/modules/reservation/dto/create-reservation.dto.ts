@@ -23,6 +23,16 @@ export class CreateReservationDto {
   @IsString()
   seatNumber: string;
 
+  @ApiProperty({ description: 'Passenger first name' })
+  @IsOptional()
+  @IsString()
+  passengerName?: string;
+
+  @ApiProperty({ description: 'Passenger last name' })
+  @IsOptional()
+  @IsString()
+  passengerSurname?: string;
+
   @ApiProperty({ description: 'The reservation date' })
   @IsNotEmpty()
   @Type(() => Date)
@@ -33,4 +43,4 @@ export class CreateReservationDto {
   @IsOptional()
   @IsString()
   discountCode?: string;
-} 
+}

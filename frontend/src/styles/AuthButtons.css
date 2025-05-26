@@ -1,46 +1,92 @@
+/* Professional Light Mode Auth Buttons */
 .nav-bar__buttons {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .button__login,
-  .button__sign-up {
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.3rem 0.9rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: background 0.3s ease, transform 0.1s ease;
-  }
-  
-  /* Log In: filled gradient */
-  .button__login {
-    background: linear-gradient(to right, #ff416c, #ff4b2b);
-    color: #fff;
-    border: none;
-  }
-  
-  .button__login:hover {
-    background: linear-gradient(to right, #ff4b2b, #ff416c);
-  }
-  
-  .button__login:active {
-    transform: scale(0.97);
-  }
-  
-  /* Sign Up: outline style */
-  .button__sign-up {
-    background: transparent;
-    color: #ff416c;
-    border: 2px solid #ff416c;
-  }
-  
-  .button__sign-up:hover {
-    background: #ff416c;
-    color: #fff;
-  }
-  
-  .button__sign-up:active {
-    transform: scale(0.97);
-  }
-  
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.button__login,
+.button__sign-up {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* Log In: filled button */
+.button__login {
+  background: #3b82f6;
+  color: white;
+  border: 1px solid #3b82f6;
+}
+
+.button__login:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.button__login:active {
+  transform: scale(0.98);
+}
+
+/* Sign Up: outline style */
+.button__sign-up {
+  background: transparent;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+}
+
+.button__sign-up:hover {
+  background: #3b82f6;
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.button__sign-up:active {
+  transform: scale(0.98);
+}
+
+/* Dropdown Styles */
+.dropdown-toggle {
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 50% !important;
+  transition: all 0.15s ease !important;
+}
+
+.dropdown-toggle:hover {
+  border-color: #3b82f6 !important;
+  transform: scale(1.05);
+}
+
+.dropdown-menu {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  padding: 0.5rem 0 !important;
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  background: white !important;
+  min-width: 160px !important;
+}
+
+.dropdown-item {
+  color: #334155;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background: #f8fafc;
+  color: #3b82f6;
+}

@@ -35,5 +35,11 @@ export const reservationService = {
   confirmReservation: async (reservationId) => {
     const response = await api.post(`/reservations/${reservationId}/confirm`);
     return response.data;
+  },
+
+  // Admin: Get all reservations
+  getAllReservationsForAdmin: async () => {
+    const response = await api.get('/reservations/admin/all');
+    return response.data;
   }
-}; 
+};

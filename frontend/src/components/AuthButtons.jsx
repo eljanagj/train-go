@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link } from "react-router-dom";
 import { LoginButton } from "./buttons/LogInButton";
@@ -7,6 +7,32 @@ import "../styles/AuthButtons.css";
 
 export const AuthButtons = () => {
   const { user, isAuthenticated, logout } = useAuth0();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const closeDropdown = () => {
+    setIsDropdownOpen(false);
+  };
 
   return (
     <div className="nav-bar__buttons">
@@ -18,13 +44,12 @@ export const AuthButtons = () => {
       )}
 
       {isAuthenticated && (
-        <div className="dropdown">
+        <div className="dropdown" ref={dropdownRef}>
           <button
             className="btn btn-link nav-link dropdown-toggle p-0"
             type="button"
-            id="profileDropdown"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
+            onClick={toggleDropdown}
+            aria-expanded={isDropdownOpen}
           >
             <img
               src={user.picture}
@@ -33,29 +58,29 @@ export const AuthButtons = () => {
               width="30"
             />
           </button>
-          <ul
-            className="dropdown-menu dropdown-menu-end"
-            aria-labelledby="profileDropdown"
-          >
-            <li>
-              <Link className="dropdown-item" to="/profile">
-                Profile
-              </Link>
-            </li>
-            <li>
-              <hr className="dropdown-divider" />
-            </li>
-            <li>
-              <button
-                className="dropdown-item"
-                onClick={() =>
-                  logout({ logoutParams: { returnTo: window.location.origin } })
-                }
-              >
-                Log out
-              </button>
-            </li>
-          </ul>
+          {isDropdownOpen && (
+            <ul className="dropdown-menu dropdown-menu-end show">
+              <li>
+                <Link className="dropdown-item" to="/profile" onClick={closeDropdown}>
+                  Profile
+                </Link>
+              </li>
+              <li>
+                <hr className="dropdown-divider" />
+              </li>
+              <li>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    closeDropdown();
+                    logout({ logoutParams: { returnTo: window.location.origin } });
+                  }}
+                >
+                  Log out
+                </button>
+              </li>
+            </ul>
+          )}
         </div>
       )}
     </div>

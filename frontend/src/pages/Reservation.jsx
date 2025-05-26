@@ -9,6 +9,7 @@ import { FaTrain, FaClock, FaMapMarkerAlt, FaEuroSign, FaChair } from "react-ico
 import TrainAnimation from "../components/TrainAnimation";
 import SeatSelectionPopup from "../components/SeatSelectionPopup";
 import { seatService } from "../services/seatService";
+import { reservationService } from "../services/reservationService";
 
 export default function ReservationPage() {
   const { user, getAccessTokenSilently } = useAuth0();
@@ -17,18 +18,42 @@ export default function ReservationPage() {
   const schedule = location.state?.schedule;
 
   const [formData, setFormData] = useState({
-    name: user?.given_name || user?.name?.split(' ')[0] || "",
-    surname: user?.family_name || user?.name?.split(' ')[1] || "",
+    name: "",
+    surname: "",
     discountCode: ""
   });
 
+  useEffect(() => {
+    if (user) {
+      let firstName = user.given_name;
+      let lastName = user.family_name;
+
+      if (!firstName && user.name) {
+        if (user.name.includes('@')) {
+          firstName = user.name.split('@')[0];
+          lastName = "";
+        } else {
+          const nameParts = user.name.split(' ');
+          firstName = nameParts[0];
+          lastName = nameParts.slice(1).join(' ');
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        name: firstName || "",
+        surname: lastName || ""
+      }));
+    }
+  }, [user]);
+
   const [allSeats, setAllSeats] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showTrain, setShowTrain] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [showSeatPopup, setShowSeatPopup] = useState(false);
   const [selectedSeat, setSelectedSeat] = useState(null);
+  const [isReserving, setIsReserving] = useState(false);
 
   useEffect(() => {
     if (schedule) {
@@ -51,52 +76,37 @@ export default function ReservationPage() {
   };
 
   const handleSeatSelect = (seat) => {
-    console.log("Seat object received in handleSeatSelect:", seat);
     setSelectedSeat(seat);
     setShowSeatPopup(false);
   };
 
   const handleReserve = async () => {
     if (!selectedSeat) {
-      setError("Please select a seat");
+      setError("Please select a seat first");
       return;
     }
 
-    setLoading(true);
-    setError("");
-
-    console.log("Selected Seat before reservation:", selectedSeat);
-
     try {
-      const token = await getAccessTokenSilently();
-      const response = await fetch("http://localhost:3000/reservations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          scheduleId: schedule.id,
-          seatNumber: selectedSeat.seatNumber,
-          reservationDate: new Date(),
-          discountCode: formData.discountCode || undefined,
-        }),
-      });
+      setIsReserving(true);
+      const reservationData = {
+        scheduleId: schedule.id,
+        seatNumber: selectedSeat.seatNumber,
+        passengerName: formData.name,
+        passengerSurname: formData.surname,
+        reservationDate: schedule.travelDate ? new Date(schedule.travelDate) : new Date(),
+        discountCode: formData.discountCode || undefined,
+      };
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create reservation");
-      }
-
-      setShowTrain(true);
+      const reservation = await reservationService.createReservation(reservationData);
       setTimeout(() => {
-        setShowTrain(false);
         setSuccess(true);
-      }, 1700);
-    } catch (err) {
-      setError(err.message || "Failed to create reservation");
+        navigate(`/payment/${reservation.id}`);
+      }, 2000);
+    } catch (error) {
+      console.error('Reservation error:', error);
+      setError(error.response?.data?.message || "Failed to create reservation");
     } finally {
-      setLoading(false);
+      setIsReserving(false);
     }
   };
 
@@ -117,33 +127,28 @@ export default function ReservationPage() {
   return (
     <div className="reservation-page">
       <NavBar />
-      {showTrain && <TrainAnimation />}
-      <header className="reservation-header" style={{ filter: loading || showTrain ? 'blur(2px)' : 'none' }}>
-        <h1>Route Details & Reservation</h1>
-        <p className="lead text-light">Confirm your journey and book your seat</p>
+      <header className="reservation-header" style={{ filter: loading }}>
+        <div className="header-content">
+          <h1>Complete Your Booking</h1>
+          <p className="lead">Review journey details and passenger information</p>
+        </div>
       </header>
-      <main className="reservation-container container" style={{ filter: loading || showTrain ? 'blur(2px)' : 'none' }}>
-        {success ? (
-          <div className="alert alert-success text-center mt-5">
-            <h2>🎉 Reservation Successful! 🎉</h2>
-            <p>All aboard, {formData.name || "traveler"}! Your seat is reserved.</p>
-            <button className="btn btn-primary mt-3" onClick={() => navigate("/")}>Back to Home</button>
-          </div>
-        ) : (
-          <div className="row g-5">
-            {/* Left: Schedule Info */}
-            <div className="col-md-6">
-              <div className="info-card">
-                <h4 className="mb-4">Your Journey</h4>
+      <main className="reservation-container container" style={{ filter: loading  }}>
+        <div className="row g-5">
+          {/* Left: Schedule Info */}
+          <div className="col-md-6">
+            <div className="info-card">
+              <h4>Journey Details</h4>
+              <div className="info-card-content">
                 <p><FaMapMarkerAlt className="me-2" />From: <strong>{schedule.route.departureStation}</strong></p>
                 <p><FaMapMarkerAlt className="me-2" />To: <strong>{schedule.route.arrivalStation}</strong></p>
                 <p><FaClock className="me-2" />Departure: <strong>{new Date(schedule.departureTime).toLocaleString()}</strong></p>
                 <p><FaClock className="me-2" />Arrival: <strong>{new Date(schedule.arrivalTime).toLocaleString()}</strong></p>
                 <p><FaTrain className="me-2" />Train: <strong>{schedule.train.trainName} (#{schedule.train.trainNumber})</strong></p>
-                
+
                 {/* Display total and available seats for the train */}
                 <p><FaChair className="me-2" />Total Seats: <strong>{schedule.train.totalCapacity}</strong></p>
-                <p><FaChair className="me-2" />Available Seats: <strong style={{ color: '#198754' }}>{schedule.train.availableSeats}</strong></p>
+                <p><FaChair className="me-2" />Available Seats: <strong style={{ color: '#10b981' }}>{schedule.train.availableSeats}</strong></p>
 
                 <p><FaEuroSign className="me-2" />Base Route Price: <strong>€{parseFloat(schedule.route.price).toFixed(2)}</strong></p>
                 {selectedSeat && selectedSeat.price !== undefined && selectedSeat.price !== null && !isNaN(selectedSeat.price) && (
@@ -155,13 +160,15 @@ export default function ReservationPage() {
                   </div>
                 )}
                 {selectedSeat && (
-                   <p><strong>Selected Seat:</strong> {selectedSeat.seatNumber}</p>
+                    <p><strong>Selected Seat:</strong> {selectedSeat.seatNumber}</p>
                 )}
               </div>
             </div>
-            <div className="col-md-6">
-              <div className="info-card">
-                <h4 className="mb-4">Passenger Info</h4>
+          </div>
+          <div className="col-md-6">
+            <div className="info-card">
+              <h4>Passenger Information</h4>
+              <div className="info-card-content">
                 {error && <div className="alert alert-danger">{error}</div>}
                 <div className="mb-3">
                   <label className="form-label">First Name</label>
@@ -220,14 +227,14 @@ export default function ReservationPage() {
                 <button
                   className="btn btn-reserve text-white w-100"
                   onClick={handleReserve}
-                  disabled={!formData.name || !formData.surname || !selectedSeat || loading || showTrain}
+                  disabled={!formData.name || !formData.surname || !selectedSeat || loading ||isReserving}
                 >
                   {loading ? "Processing..." : "Reserve Now"}
                 </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </main>
       <Footer />
 

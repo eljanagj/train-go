@@ -3,16 +3,22 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReservationService } from './reservation.service';
 import { ReservationController } from './reservation.controller';
 import { Reservation } from './entities/reservation.entity';
-import { SeatsModule } from '../seats/seats.module';
 import { Schedule } from '../schedule/schedule.entity';
+import { SeatsModule } from '../seats/seats.module';
+import { PaymentModule } from '../payment/payment.module';
+import { PdfModule } from '../pdf/pdf.module';
+import { TicketModule } from '../ticket/ticket.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Reservation, Schedule]),
-    SeatsModule
+    SeatsModule,
+    PaymentModule,
+    PdfModule,
+    TicketModule,
   ],
   controllers: [ReservationController],
   providers: [ReservationService],
   exports: [ReservationService],
 })
-export class ReservationModule {} 
+export class ReservationModule {}

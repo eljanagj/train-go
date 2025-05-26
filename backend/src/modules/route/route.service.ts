@@ -5,12 +5,15 @@ import { RedisService } from '../redis/redis.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { Route } from './route.entity';
+import { Train } from '../train/entities/train.entity';
 
 @Injectable()
 export class RouteService implements OnModuleInit {
   constructor(
     @InjectRepository(Route)
     private readonly routeRepository: Repository<Route>,
+    @InjectRepository(Train)
+    private readonly trainRepository: Repository<Train>,
     private readonly redisService: RedisService,
   ) {}
 
@@ -49,14 +52,28 @@ export class RouteService implements OnModuleInit {
   }
 
   async create(createRouteDto: CreateRouteDto): Promise<Route> {
-    const newRoute = this.routeRepository.create(createRouteDto);
+    // Get the selected train
+    const train = await this.trainRepository.findOneBy({ trainID: createRouteDto.trainID });
+    if (!train) {
+      throw new BadRequestException('Selected train not found');
+    }
+
+    // Create route with train's capacity and trainID
+    const newRoute = this.routeRepository.create({
+      ...createRouteDto,
+      capacity: train.totalCapacity,
+      trainID: createRouteDto.trainID
+    });
+
     const savedRoute = await this.routeRepository.save(newRoute);
     await this.indexRouteInRedis(savedRoute);
     return savedRoute;
   }
 
   async findAll(): Promise<Route[]> {
-    return this.routeRepository.find();
+    return this.routeRepository.find({
+      relations: ['train']
+    });
   }
 
   async findOne(id: number): Promise<Route> {
@@ -72,7 +89,25 @@ export class RouteService implements OnModuleInit {
     if (!existingRoute) {
       throw new NotFoundException(`Route with ID ${id} not found`);
     }
-    await this.routeRepository.update(id, updateRouteDto);
+
+    // If train is being updated, get its capacity
+    if (updateRouteDto.trainID !== undefined) {
+      const train = await this.trainRepository.findOneBy({ trainID: updateRouteDto.trainID });
+      if (!train) {
+        throw new BadRequestException('Selected train not found');
+      }
+      // Create a new object with the updated capacity and trainID
+      const updatedData = {
+        ...updateRouteDto,
+        capacity: train.totalCapacity,
+        trainID: updateRouteDto.trainID
+      };
+      await this.routeRepository.update(id, updatedData);
+    } else {
+      // If train is not being updated, just update the other fields
+      await this.routeRepository.update(id, updateRouteDto);
+    }
+
     const updatedRoute = await this.findOne(id);
     await this.indexRouteInRedis(updatedRoute);
     return updatedRoute;

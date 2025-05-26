@@ -4,49 +4,114 @@ import "../styles/RouteSearch.css";
 import { NavBar } from "../components/NavBar";
 import { Footer } from "../components/Footer";
 import { Link } from "react-router-dom";
-import { FaTrain, FaClock, FaMapMarkerAlt, FaEuroSign, FaChevronDown, FaChevronUp, FaCalendarAlt } from "react-icons/fa";
+import { FaTrain, FaClock } from "react-icons/fa";
 import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
 import { PageLoader } from "../components/PageLoader";
 
 function TrainSearchPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [travelDate, setTravelDate] = useState(() => {
+    const today = new Date();
+    today.setDate(today.getDate());
+    return today.toISOString().split('T')[0];
+  });
   const [fromOptions, setFromOptions] = useState([]);
   const [toOptions, setToOptions] = useState([]);
+  const [allRoutes, setAllRoutes] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [expandedRoute, setExpandedRoute] = useState(null);
-  const [schedules, setSchedules] = useState({});
-  const [selectedDate, setSelectedDate] = useState("");
+  const [showFromDropdown, setShowFromDropdown] = useState(false);
+  const [showToDropdown, setShowToDropdown] = useState(false);
 
-  // Fetch station names for autocomplete
-  const fetchStations = async (prefix, setOptions) => {
-    if (!prefix) return setOptions([]);
+  React.useEffect(() => {
+    fetchAllRoutes();
+  }, []);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setShowFromDropdown(false);
+        setShowToDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const fetchAllRoutes = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/routes/autocomplete?prefix=${encodeURIComponent(prefix)}`);
+      const res = await fetch('http://localhost:3000/routes');
       const data = await res.json();
-      setOptions(data);
-    } catch {
-      setOptions([]);
+      setAllRoutes(data);
+
+      const uniqueFromStations = [...new Set(data.map(route => route.departureStation))];
+      setFromOptions(uniqueFromStations.sort());
+    } catch (error) {
+      console.error('Error fetching routes:', error);
     }
   };
 
-  // Search for routes using backend
+  const handleFromSelect = (station) => {
+    setFrom(station);
+    setTo("");
+    setShowFromDropdown(false);
+
+    // Filter routes that depart from selected station and get unique destinations
+    const availableDestinations = allRoutes
+      .filter(route => route.departureStation === station)
+      .map(route => route.arrivalStation);
+
+    const uniqueDestinations = [...new Set(availableDestinations)];
+    setToOptions(uniqueDestinations.sort());
+  };
+
+  const handleToSelect = (station) => {
+    setTo(station);
+    setShowToDropdown(false);
+  };
+
   const handleSearch = async () => {
     setLoading(true);
     setError("");
     setResults([]);
-    setExpandedRoute(null);
-    setSchedules({});
-    setSelectedDate("");
     try {
-      const res = await fetch(
+      const routesRes = await fetch(
         `http://localhost:3000/routes/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
       );
-      if (!res.ok) throw new Error("No routes found");
-      const data = await res.json();
-      setResults(data);
+      if (!routesRes.ok) throw new Error("No routes found");
+      const routes = await routesRes.json();
+
+      const schedulesPromises = routes.map(async (route) => {
+        try {
+          const schedulesRes = await fetch(`http://localhost:3000/schedules/route/${route.id}`);
+          if (!schedulesRes.ok) return [];
+          const schedules = await schedulesRes.json();
+
+          // Store the travel date with each schedule for reservation purposes
+          // but don't filter schedules by date - show all available schedules
+          return schedules.map(schedule => ({
+            ...schedule,
+            route: route,
+            travelDate: travelDate // Include the selected travel date
+          }));
+        } catch (err) {
+          console.error(`Error fetching schedules for route ${route.id}:`, err);
+          return [];
+        }
+      });
+
+      const allSchedules = await Promise.all(schedulesPromises);
+      const flatSchedules = allSchedules.flat();
+      setResults(flatSchedules);
+
+      if (flatSchedules.length === 0) {
+        setError("No schedules found for the selected route");
+      }
     } catch (err) {
       setError(err.message || "Error searching routes");
     } finally {
@@ -54,57 +119,12 @@ function TrainSearchPage() {
     }
   };
 
-  const handleRouteExpand = async (route) => {
-    if (expandedRoute === route.id) {
-      setExpandedRoute(null);
-      setSelectedDate("");
-      return;
-    }
-
-    setExpandedRoute(route.id);
-    
-    // If we haven't fetched schedules for this route yet
-    if (!schedules[route.id]) {
-      try {
-        const res = await fetch(`http://localhost:3000/schedules/route/${route.id}`);
-        if (!res.ok) throw new Error("Failed to fetch schedules");
-        const data = await res.json();
-        setSchedules(prev => ({
-          ...prev,
-          [route.id]: data
-        }));
-      } catch (err) {
-        setError("Failed to load schedules");
-        console.error(err);
-      }
-    }
-  };
-
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: true 
-    });
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const filterSchedulesByDate = (schedules) => {
-    if (!selectedDate) return schedules;
-    return schedules.filter(schedule => {
-      const scheduleDate = new Date(schedule.departureTime).toDateString();
-      const selectedDateObj = new Date(selectedDate).toDateString();
-      return scheduleDate === selectedDateObj;
+      hour12: true
     });
   };
 
@@ -119,47 +139,81 @@ function TrainSearchPage() {
 
           <div className="container mt-5">
             <div className="row g-3 justify-content-center">
-              <div className="col-md-4">
-                <input
-                  className="form-control"
-                  list="from-stations"
-                  placeholder="From"
-                  value={from}
-                  onChange={e => {
-                    setFrom(e.target.value);
-                    fetchStations(e.target.value, setFromOptions);
-                  }}
-                />
-                <datalist id="from-stations">
-                  {fromOptions.map((city, idx) => (
-                    <option key={idx} value={city} />
-                  ))}
-                </datalist>
+              <div className="col-md-3">
+                <div className="dropdown-container">
+                  <input
+                    className="form-control dropdown-input"
+                    placeholder="From"
+                    value={from}
+                    onClick={() => {
+                      setShowFromDropdown(!showFromDropdown);
+                      setShowToDropdown(false);
+                    }}
+                    onChange={e => setFrom(e.target.value)}
+                    readOnly
+                  />
+                  {showFromDropdown && (
+                    <div className="dropdown-menu show">
+                      {fromOptions.map((station, idx) => (
+                        <div
+                          key={idx}
+                          className="dropdown-item"
+                          onClick={() => handleFromSelect(station)}
+                        >
+                          {station}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="col-md-4">
-                <input
-                  className="form-control"
-                  list="to-stations"
-                  placeholder="To"
-                  value={to}
-                  onChange={e => {
-                    setTo(e.target.value);
-                    fetchStations(e.target.value, setToOptions);
-                  }}
-                />
-                <datalist id="to-stations">
-                  {toOptions.map((city, idx) => (
-                    <option key={idx} value={city} />
-                  ))}
-                </datalist>
+              <div className="col-md-3">
+                <div className="dropdown-container">
+                  <input
+                    className="form-control dropdown-input"
+                    placeholder="To"
+                    value={to}
+                    onClick={() => {
+                      if (from) {
+                        setShowToDropdown(!showToDropdown);
+                        setShowFromDropdown(false);
+                      }
+                    }}
+                    onChange={e => setTo(e.target.value)}
+                    readOnly
+                    disabled={!from}
+                  />
+                  {showToDropdown && toOptions.length > 0 && (
+                    <div className="dropdown-menu show">
+                      {toOptions.map((station, idx) => (
+                        <div
+                          key={idx}
+                          className="dropdown-item"
+                          onClick={() => handleToSelect(station)}
+                        >
+                          {station}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="col-md-2 d-grid">
+              <div className="col-md-3">
+                <input
+                  type="date"
+                  className="form-control"
+                  value={travelDate}
+                  onChange={(e) => setTravelDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="col-md-3 d-grid">
                 <button
                   className="btn search-btn"
                   onClick={handleSearch}
-                  disabled={!from || !to || loading}
+                  disabled={!from || !to || !travelDate || loading}
                 >
-                  {loading ? "Searching..." : "Search Routes"}
+                  {loading ? "Searching..." : "Search"}
                 </button>
               </div>
             </div>
@@ -174,109 +228,75 @@ function TrainSearchPage() {
           )}
           {results.length > 0 && (
             <div className="results-container">
-              <h4 className="search-title mb-4">Available Routes</h4>
+              <h4 className="search-title mb-4">Available Trains</h4>
               <div className="table-responsive">
-                <table className="table route-table">
-                  <thead className="table-dark">
+                <table className="table table-hover">
+                  <thead className="table-light">
                     <tr>
-                      <th><FaMapMarkerAlt className="me-2" />From</th>
-                      <th><FaMapMarkerAlt className="me-2" />To</th>
-                      <th><FaEuroSign className="me-2" />Price</th>
-                      <th>Capacity</th>
-                      <th>Action</th>
+                      <th scope="col">Route</th>
+                      <th scope="col">Departure</th>
+                      <th scope="col">Arrival</th>
+                      <th scope="col">Train</th>
+                      <th scope="col">Seats Available</th>
+                      <th scope="col">Price</th>
+                      <th scope="col">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {results.map((route) => (
-                      <React.Fragment key={route.id}>
-                        <tr className="route-row">
-                          <td>{route.departureStation}</td>
-                          <td>{route.arrivalStation}</td>
-                          <td>€{route.price}</td>
-                          <td>{route.capacity}</td>
-                          <td>
-                            <button
-                              className="btn search-btn btn-sm me-2"
-                              onClick={() => handleRouteExpand(route)}
+                    {results.map((schedule) => (
+                      <tr key={schedule.id}>
+                        <td>
+                          <div className="route-info">
+                            <strong>{schedule.route.departureStation}</strong>
+                            <span className="text-muted mx-2">→</span>
+                            <strong>{schedule.route.arrivalStation}</strong>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="time-info">
+                            {formatTime(schedule.departureTime)}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="time-info">
+                            {formatTime(schedule.arrivalTime)}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="train-info">
+                            <div>
+                              <div className="fw-bold">{schedule.train.trainName}</div>
+                              <small className="text-muted">{schedule.train.trainNumber}</small>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`badge ${(schedule.train.availableSeats || 0) > 0 ? 'bg-success' : 'bg-danger'}`}>
+                            {schedule.train.availableSeats || 0}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="fw-bold text-primary">€{schedule.route.price}</span>
+                        </td>
+                        <td>
+                          {(schedule.train.availableSeats || 0) > 0 ? (
+                            <Link
+                              to="/reservation"
+                              state={{ schedule }}
+                              className="btn btn-primary btn-sm"
                             >
-                              {expandedRoute === route.id ? (
-                                <FaChevronUp className="me-1" />
-                              ) : (
-                                <FaChevronDown className="me-1" />
-                              )}
-                              Schedules
+                              Select
+                            </Link>
+                          ) : (
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              disabled
+                            >
+                              Sold Out
                             </button>
-                          </td>
-                        </tr>
-                        {expandedRoute === route.id && (
-                          <tr>
-                            <td colSpan="5" className="p-0">
-                              <div className="schedules-container p-3">
-                                {schedules[route.id] ? (
-                                  <>
-                                    <div className="date-selector mb-3">
-                                      <label className="form-label d-flex align-items-center">
-                                        <FaCalendarAlt className="me-2" />
-                                        Select Date:
-                                      </label>
-                                      <input
-                                        type="date"
-                                        className="form-control"
-                                        value={selectedDate}
-                                        onChange={(e) => setSelectedDate(e.target.value)}
-                                        min={new Date().toISOString().split('T')[0]}
-                                      />
-                                    </div>
-                                  <div className="schedules-list">
-                                      {filterSchedulesByDate(schedules[route.id]).map((schedule) => (
-                                      <div key={schedule.id} className="schedule-card">
-                                        <div className="schedule-info">
-                                          <div className="time-info">
-                                            <div className="departure">
-                                              <FaClock className="icon" />
-                                                <span>Departure: {formatTime(schedule.departureTime)}</span>
-                                            </div>
-                                            <div className="duration">
-                                              <span>{schedule.duration} minutes</span>
-                                            </div>
-                                            <div className="arrival">
-                                              <FaClock className="icon" />
-                                                <span>Arrival: {formatTime(schedule.arrivalTime)}</span>
-                                            </div>
-                                          </div>
-                                          <div className="train-info">
-                                            <FaTrain className="icon" />
-                                              <span>{schedule.train.trainName} (Train #{schedule.train.trainNumber})</span>
-                                          </div>
-                                        </div>
-                                        <Link
-                                          to="/reservation"
-                                          state={{ schedule }}
-                                          className="btn btn-primary"
-                                        >
-                                          Select
-                                        </Link>
-                                      </div>
-                                    ))}
-                                      {filterSchedulesByDate(schedules[route.id]).length === 0 && (
-                                        <div className="text-center text-muted">
-                                          <p>No schedules available for the selected date.</p>
-                                        </div>
-                                      )}
-                                  </div>
-                                  </>
-                                ) : (
-                                  <div className="text-center">
-                                    <div className="spinner-border spinner-border-sm" role="status">
-                                      <span className="visually-hidden">Loading...</span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
+                          )}
+                        </td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
@@ -284,9 +304,9 @@ function TrainSearchPage() {
             </div>
           )}
 
-          {results.length === 0 && from && to && !loading && !error && (
+          {results.length === 0 && from && to && travelDate && !loading && !error && (
             <div className="text-center text-muted mt-4">
-              <p>No matching routes found.</p>
+              <p>No trains found for the selected route and date.</p>
             </div>
           )}
         </div>

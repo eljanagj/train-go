@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { withAuthenticationRequired } from '@auth0/auth0-react';
-import { PageLoader } from '../components/PageLoader';
-import Sidebar from '../components/Sidebar';
-import { trainService } from '../services/trainService';
-import { seatService } from '../services/seatService';
-import '../styles/seats.css';
+import { PageLoader } from '../../components/PageLoader';
+import Sidebar from '../../components/Sidebar';
+import { trainService } from '../../services/trainService';
+import { seatService } from '../../services/seatService';
+import '../../styles/seats.css';
 import { FaChair, FaPlus, FaTrash, FaTrain, FaTimes, FaSave, FaMoneyBillWave, FaEdit } from 'react-icons/fa';
 
 const SEAT_TYPES = {
@@ -564,7 +564,7 @@ const SeatManagement = () => {
           </button>
           <button
             className="btn btn-secondary"
-            onClick={() => navigate('/trains')}
+            onClick={() => navigate('/admin/trains')}
           >
             Back to Trains
           </button>

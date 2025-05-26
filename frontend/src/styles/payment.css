@@ -1,0 +1,86 @@
+.payment-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+.payment-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  flex: 1;
+}
+
+.payment-form {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.form-row {
+  margin-bottom: 1.5rem;
+}
+
+.form-row label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #424770;
+  font-weight: 500;
+}
+
+.payment-button {
+  background: #5469d4;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 1rem;
+}
+
+.payment-button:hover {
+  background: #4a5fc1;
+}
+
+.payment-button:disabled {
+  background: #879fff;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #df1b41;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #fff0f3;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.reservation-details {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.reservation-details h6 {
+  color: #424770;
+  margin-bottom: 1rem;
+}
+
+.reservation-details p {
+  margin-bottom: 0.5rem;
+  color: #6b7c93;
+}
+
+.reservation-details strong {
+  color: #424770;
+} 

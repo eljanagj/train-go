@@ -11,6 +11,8 @@ import { ScheduleModule } from './modules/schedule/schedule.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { SeatsModule } from './modules/seats/seats.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { TicketModule } from './modules/ticket/ticket.module';
 
 @Module({
   imports: [
@@ -27,7 +29,7 @@ import { ReservationModule } from './modules/reservation/reservation.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, 
+        synchronize: true,
       }),
       inject: [ConfigService],
     }),
@@ -39,6 +41,8 @@ import { ReservationModule } from './modules/reservation/reservation.module';
     RedisModule,
     SeatsModule,
     ReservationModule,
+    PaymentModule,
+    TicketModule,
   ],
   controllers: [AppController],
   providers: [AppService],
