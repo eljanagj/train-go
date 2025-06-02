@@ -4,9 +4,13 @@ import { Train } from '../../train/entities/train.entity';
 export enum SeatType {
   WINDOW = 'window',
   AISLE = 'aisle',
+  MIDDLE = 'middle'
+}
+
+export enum SeatClass {
   PREMIUM = 'premium',
-  ECONOMY = 'economy',
-  BUSINESS = 'business'
+  BUSINESS = 'business',
+  ECONOMY = 'economy'
 }
 
 export enum SeatStatus {
@@ -29,9 +33,16 @@ export class Seat {
   @Column({
     type: 'enum',
     enum: SeatType,
-    default: SeatType.ECONOMY
+    default: SeatType.MIDDLE
   })
   type: SeatType;
+
+  @Column({
+    type: 'enum',
+    enum: SeatClass,
+    default: SeatClass.ECONOMY
+  })
+  class: SeatClass;
 
   @Column({
     type: 'enum',
@@ -45,6 +56,12 @@ export class Seat {
 
   @Column({ type: 'varchar', length: 100 })
   location: string; // e.g., "Front", "Middle", "Back"
+
+  @Column({ type: 'int' })
+  row: number;
+
+  @Column({ type: 'varchar', length: 1 })
+  position: string;
 
   @ManyToOne(() => Train, train => train.seats)
   @JoinColumn({ name: 'trainId' })

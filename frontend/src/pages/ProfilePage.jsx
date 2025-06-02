@@ -367,7 +367,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                   <label>Seat Number:</label>
                   <span className="detail-value">
                     <FaChair className="detail-icon" />
-                    {selectedReservation.seatNumber}
+                    {selectedReservation.seats.map(seat => seat.seatNumber).join(', ')}
                   </span>
                 </div>
                 <div className="detail-group">

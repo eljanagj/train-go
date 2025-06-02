@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
-import { Seat, SeatStatus, SeatType } from './entities/seat.entity';
+import { Seat, SeatStatus, SeatType, SeatClass } from './entities/seat.entity';
 import { Train } from '../train/entities/train.entity';
 
 @Injectable()
@@ -18,8 +18,9 @@ export class SeatsService {
     type: SeatType;
     price: number;
     location: string;
-    row?: number;
-    position?: string;
+    row: number;
+    position: string;
+    class: SeatClass;
   }[]): Promise<Seat[]> {
     const train = await this.trainRepository.findOne({ where: { trainID: trainId } });
     if (!train) {

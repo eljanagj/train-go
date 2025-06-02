@@ -6,6 +6,7 @@
     overflow-x: hidden;
     position: relative; /* Add position relative */
     min-height: 100vh; /* Ensure full height */
+    background: #f8f9fa;
   }
   
   .management-page h1 {
@@ -293,15 +294,14 @@
   .train-layout {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem; /* Increase gap between sections */
-    width: auto; /* Allow width to be determined by content, but constrained by its container's max-width */
-    min-width: 0; /* Override default flex item minimum width based on content */
-    background: #e9ecef;
-    padding: 1.5rem; /* Increase padding */
+    gap: 1rem;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background: #f8f9fa;
+    padding: 1.5rem;
     border-radius: 8px;
-    position: relative;
-    max-width: 100%; /* Ensure layout itself doesn't cause overflow beyond its container */
-    box-sizing: border-box;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
   .train-layout::before {
@@ -371,8 +371,8 @@
   .train-rows {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    width: 100%; /* Ensure rows take full width of the train-layout */
+    gap: 0.5rem;
+    width: 100%;
   }
   
   .train-row {
@@ -380,48 +380,44 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem;
-    background: #f8f9fa;
+    background: white;
     border-radius: 4px;
     position: relative;
-    width: 100%; /* Ensure row takes full width */
-    flex-wrap: wrap; /* Allow items inside the row to wrap */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
   
   .row-number {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #e9ecef;
-    border-radius: 50%;
-    font-weight: bold;
-    color: #495057;
     position: absolute;
     left: -12px;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 2;
+    width: 24px;
+    height: 24px;
+    background: #e9ecef;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #495057;
     font-size: 0.8rem;
+    z-index: 2;
   }
   
   .row-seats {
     display: flex;
-    gap: 1rem;
-    flex: 1; /* Allow to grow and shrink */
+    flex: 1;
     justify-content: space-between;
-    position: relative;
+    align-items: center;
+    gap: 1rem;
     padding: 0 0.5rem;
-    width: 100%; /* Ensure it takes full width */
-    flex-wrap: wrap; /* Explicitly allow seat groups to wrap within this container */
   }
   
   .seat-group {
     display: flex;
     gap: 0.25rem;
-    flex: 1; /* Allow seat groups to share space */
+    flex: 1;
     justify-content: center;
-    min-width: 0; /* Prevent flex item from taking minimum content width and causing overflow */
   }
   
   .seat-group.left {
@@ -434,10 +430,11 @@
   
   .aisle {
     width: 40px;
+    height: 100%;
     background: #dee2e6;
-    position: relative;
     border-radius: 4px;
-    flex-shrink: 0; /* Prevent aisle from shrinking when space is limited */
+    position: relative;
+    flex-shrink: 0;
   }
   
   .aisle::before {
@@ -451,179 +448,151 @@
     background: #adb5bd;
   }
   
-  /* Base seat style - gray for unadded seats */
-  .seat-management .seat {
+  .seat {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem; /* Increase padding */
+    padding: 0.5rem;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
-    z-index: 1;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     background: #e9ecef;
-    opacity: 1;
-    width: min-content; /* Adjust width to fit content */
-    flex-grow: 0; /* Prevent seats from growing excessively and pushing other seats */
-    flex-shrink: 1; /* Allow seats to shrink when space is limited */
-    min-width: 0; /* Allow width to be smaller if content is very small */
-    box-sizing: border-box;
+    min-width: 40px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .seat svg {
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+    color: #495057;
+  }
+  
+  .seat span {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap;
+  }
+  
+  .seat-price {
+    font-size: 0.6rem;
+    color: #28a745;
+    margin-top: 0.1rem;
+    font-weight: bold;
   }
   
   /* Seat status styles */
-  .seat-management .train-layout .seat.available {
-    opacity: 1;
-    border: 2px solid #198754; /* Green border */
-  }
-  
-  .seat-management .train-layout .seat.reserved {
-    background-color: #f8d7da; /* Keep background for visual distinction */
-    border: 2px solid #dc3545; /* Add a red border */
-    color: #721c24; /* Keep text color */
-    cursor: not-allowed; /* Indicate it's not clickable */
-    /* Add or modify other styles as needed, e.g., opacity */
-  }
-  
-  .seat-management .train-layout .seat.occupied {
-    opacity: 1;
-    border: 2px solid #6c757d; /* Changed to dark gray border for occupied seats */
-  }
-  
-  /* Seat type colors - only apply when seat is added */
-  .seat.business.available,
-  .seat.business.occupied {
-    background: #cff4fc;
-  }
-  
-  .seat.premium.available,
-  .seat.premium.occupied {
+  .seat.available {
     background: #d1e7dd;
+    border: 2px solid #198754;
   }
   
-  .seat.window.available,
-  .seat.window.occupied {
-    background: #e2e3e5;
-  }
-  
-  .seat.aisle.available,
-  .seat.aisle.occupied {
+  .seat.occupied {
     background: #f8d7da;
+    border: 2px solid #dc3545;
+    cursor: not-allowed;
+  }
+  
+  .seat.reserved {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    cursor: not-allowed;
   }
   
   /* Hover effects */
-  .seat:hover {
-    transform: scale(1.1);
+  .seat:hover:not(.occupied):not(.reserved) {
+    transform: scale(1.05);
     z-index: 2;
-    opacity: 1;
   }
   
   .seat.available:hover {
     box-shadow: 0 0 0 2px #198754;
   }
   
-  .seat.occupied:hover {
-    box-shadow: 0 0 0 2px #dc3545;
-  }
-  
-  /* Seat content styles */
-  .seat-management .seat svg {
-    font-size: 1.2rem; /* Increase icon size */
-    margin-bottom: 0.2rem; /* Adjust margin */
-    color: #495057;
-  }
-  
-  .seat-management .seat span {
-    font-size: 0.7rem; /* Increase text size */
-    font-weight: 500;
-    color: #495057;
-    white-space: nowrap; /* Keep seat number/type on one line */
-    overflow: hidden; /* Hide overflow text if any */
-    text-overflow: ellipsis; /* Add ellipsis if text overflows */
-    margin-bottom: 0.1rem; /* Add a small margin below the name */
-    display: block; /* Ensure span takes up its own line in the flex container */
-  }
-  
-  .seat-management .seat-price {
-    font-size: 0.6rem; /* Increase price text size */
-    color: #28a745;
-    margin-top: 0.1rem; /* Adjust margin */
-    font-weight: bold;
-    white-space: nowrap; /* Keep price on one line */
-    overflow: hidden; /* Hide overflow text if any */
-    text-overflow: ellipsis; /* Add ellipsis if text overflows */
-    margin-bottom: 0.2rem; /* Add a small margin below the price before buttons */
-    display: block; /* Ensure price takes up its own line in the flex container */
-  }
-  
-  /* Ensure visibility for added seats */
-  .seat-management .seat.available span,
-  .seat-management .seat.occupied span,
-  .seat-management .seat.available .seat-price,
-  .seat-management .seat.occupied .seat-price {
-    visibility: visible !important;
-    opacity: 1 !important;
-    display: block !important;
-  }
-  
-  /* Tooltip for unadded seats */
-  .seat:not(.available):not(.occupied)::before {
-    content: 'Click to add price';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.25rem 0.5rem;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    font-size: 0.6rem;
-    border-radius: 4px;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-    z-index: 3;
-  }
-  
-  .seat:not(.available):not(.occupied):hover::before {
-    opacity: 1;
-    visibility: visible;
-    bottom: calc(100% + 5px);
-  }
-  
-  /* Section dividers */
-  .train-section:not(:last-child) {
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px dashed #dee2e6;
-  }
-  
   /* Responsive adjustments */
   @media (max-width: 768px) {
-    .seat-management .train-layout {
-      min-width: 500px;
-      padding: 0.75rem;
+    .train-layout {
+        padding: 1rem;
     }
-  
-    .seat-management .seat svg {
-      font-size: 1.2rem;
+
+    .train-row {
+        padding: 0.4rem;
     }
-  
-    .seat-management .seat span {
-      font-size: 0.7rem;
+
+    .row-number {
+        width: 20px;
+        height: 20px;
+        font-size: 0.7rem;
+        left: -10px;
     }
-  
-    .seat-management .aisle {
-      width: 30px;
+
+    .row-seats {
+        gap: 0.75rem;
     }
+
+    .aisle {
+        width: 30px;
+    }
+
+    .seat {
+        padding: 0.4rem;
+        min-width: 35px;
+    }
+
+    .seat svg {
+        font-size: 0.9rem;
+    }
+
+    .seat span {
+        font-size: 0.6rem;
+    }
+
+    .seat-price {
+        font-size: 0.5rem;
+    }
+  }
   
-    /* Responsive adjustments for seat actions in train layout */
-    .seat-management .train-layout .edit-button,
-    .seat-management .train-layout .delete-button {
-      font-size: 0.8rem;
-      padding: 3px;
+  @media (max-width: 480px) {
+    .train-layout {
+        padding: 0.75rem;
+    }
+
+    .train-row {
+        padding: 0.3rem;
+    }
+
+    .row-number {
+        width: 18px;
+        height: 18px;
+        font-size: 0.6rem;
+        left: -9px;
+    }
+
+    .row-seats {
+        gap: 0.5rem;
+    }
+
+    .aisle {
+        width: 25px;
+    }
+
+    .seat {
+        padding: 0.3rem;
+        min-width: 30px;
+    }
+
+    .seat svg {
+        font-size: 0.8rem;
+    }
+
+    .seat span {
+        font-size: 0.5rem;
+    }
+
+    .seat-price {
+        font-size: 0.4rem;
     }
   }
   
@@ -690,176 +659,6 @@
     display: block;
     margin-bottom: 0.5rem;
     color: #495057;
-  }
-  
-  .price-input input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 1rem;
-  }
-  
-  .seat-price {
-    font-size: 0.7rem;
-    color: #28a745;
-    margin-top: 0.25rem;
-  }
-  
-  /* Update seat styles */
-  .seat {
-    position: relative;
-    min-height: 100px;
-    padding-bottom: 30px;
-  }
-  
-  .seat.window {
-    background: #e2e3e5;
-    border: 1px solid #c4c8cb;
-  }
-  
-  .seat.aisle {
-    background: #f8d7da;
-    border: 1px solid #f5c2c7;
-  }
-  
-  .seat.business {
-    background: #cff4fc;
-    border: 1px solid #9eeaf9;
-  }
-  
-  .seat.premium {
-    background: #d1e7dd;
-    border: 1px solid #a3cfbb;
-  }
-  
-  .seat.economy {
-    background: #fff3cd;
-    border: 1px solid #ffe69c;
-  }
-  
-  /* Add section dividers */
-  .train-section {
-    position: relative;
-    margin-bottom: 2rem;
-  }
-  
-  .train-section:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    bottom: -1rem;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #dee2e6;
-    border-radius: 2px;
-  }
-  
-  .management-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-  }
-  
-  .header-actions {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
-    justify-content: flex-start; /* Changed from flex-end to flex-start to align left */
-    margin-top: 1rem; /* Add some space between title and buttons */
-  }
-  
-  .bulk-price-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .form-group label {
-    font-weight: 500;
-    color: #495057;
-  }
-  
-  .form-group select,
-  .form-group input {
-    padding: 0.5rem;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 1rem;
-    width: 100%;
-  }
-  
-  .form-group select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.7rem center;
-    background-size: 1em;
-    padding-right: 2.5rem;
-  }
-  
-  .price-popup {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 400px;
-    position: relative;
-  }
-  
-  .price-popup h3 {
-    margin-bottom: 1.5rem;
-    color: #333;
-    text-align: center;
-  }
-  
-  .price-popup .close-button {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #666;
-    padding: 0.25rem;
-    line-height: 1;
-  }
-  
-  .price-popup .close-button:hover {
-    color: #333;
-  }
-  
-  .seat-info {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: #f8f9fa;
-    border-radius: 4px;
-  }
-  
-  .seat-info p {
-    margin: 0.5rem 0;
-    color: #495057;
-  }
-  
-  .price-input {
-    margin-bottom: 1.5rem;
-  }
-  
-  .price-input label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #495057;
-    font-weight: 500;
   }
   
   .price-input input {
@@ -1327,31 +1126,43 @@
     gap: 1.5rem;
     max-width: 100%;
     overflow-x: hidden;
-    position: relative; /* Add position relative */
+    position: relative;
   }
   
   .management-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* margin-bottom: 2rem; */ /* Removed in favor of gap in management-content */
-    flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
   .management-header h1 {
     color: #333;
-    /* margin-bottom: 30px; */ /* Removed in favor of gap in management-content */
-    margin: 0; /* Reset margin */
-    flex-grow: 1; /* Allow title to take available space */
-    word-break: break-word; /* Prevent long titles from overflowing */
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .coach-counts {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .coach-counts p {
+    margin: 0;
+    color: #495057;
   }
   
   .header-actions {
     display: flex;
     gap: 1rem;
-    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
-    justify-content: flex-start; /* Changed from flex-end to flex-start to align left */
-    margin-top: 1rem; /* Add some space between title and buttons */
+    flex-wrap: wrap;
+    margin-top: 1rem;
   }
   
   .btn {
@@ -1364,154 +1175,118 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    text-decoration: none; /* Ensure buttons as links don't have underline */
+    border: none;
   }
   
   .btn-primary {
     background: #0d6efd;
     color: white;
-    border: none;
   }
   
   .btn-primary:hover {
     background: #0b5ed7;
   }
   
-  .btn-primary:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-    opacity: 0.6; /* Indicate disabled state */
+  .btn-info {
+    background: #0dcaf0;
+    color: white;
+  }
+  
+  .btn-info:hover {
+    background: #31d2f2;
   }
   
   .btn-secondary {
     background: #6c757d;
     color: white;
-    border: none;
   }
   
   .btn-secondary:hover {
     background: #5c636a;
   }
   
-  .me-2 {
-    margin-right: 0.5rem;
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
   }
   
-  /* Train Layout Container adjustments */
-  .train-layout-container {
-    margin: 1rem auto; /* Keep centering and add top/bottom margin */
-    padding: 1rem; /* Increase padding */
-    background: #f8f9fa;
+  .coaches-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .coach-section {
+    background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow-x: auto; /* Allow horizontal scrolling *within* this container if content is too wide */
-    max-width: 100%; /* Ensures the container doesn't exceed the width of its parent (.management-content) */
-    box-sizing: border-box;
-    /* Ensure container takes available width and manages flex items */
-    display: flex;
-    flex-direction: column;
+    overflow: hidden;
   }
   
-  /* Train Layout internal structure adjustments */
-  .train-layout {
+  .coach-header {
     display: flex;
-    flex-direction: column;
-    gap: 1.5rem; /* Increase gap between sections */
-    width: auto; /* Allow width to be determined by content, but constrained by its container's max-width */
-    min-width: 0; /* Override default flex item minimum width based on content */
-    background: #e9ecef;
-    padding: 1.5rem; /* Increase padding */
-    border-radius: 8px;
-    position: relative;
-    /* Ensure layout itself doesn't cause overflow beyond its container */
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-  
-  .train-layout::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 20px; /* Increase height */
-    background: #495057;
-    border-radius: 8px 8px 0 0;
-  }
-  
-  .train-header {
-    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.75rem; /* Increase gap */
-    padding-bottom: 0.75rem; /* Increase padding */
-    border-bottom: 2px solid #dee2e6;
-    margin-bottom: 1.5rem; /* Increase margin */
+    padding: 1rem;
+    background: #e9ecef;
+    border-bottom: 1px solid #dee2e6;
   }
   
-  .train-icon {
-    font-size: 1.8rem; /* Increase icon size */
-    color: #0d6efd;
-  }
-  
-  .train-header h3 {
-    margin: 0; /* Reset margin */
-    font-size: 1.2rem; /* Increase font size */
-    color: #333;
-  }
-  
-  .train-section {
-    background: white;
-    padding: 1.5rem; /* Increase padding */
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    position: relative;
-  }
-  
-  .train-section h4 {
-    margin-bottom: 1.5rem; /* Increase margin */
+  .coach-header h3 {
+    margin: 0;
     color: #495057;
-    font-size: 1.1rem; /* Increase font size */
-    text-align: center;
-    padding: 0.5rem; /* Increase padding */
-    background: #e9ecef;
-    border-radius: 4px;
+    font-size: 1.1rem;
+  }
+  
+  .coach-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .coach-layout {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem; /* Consistent padding */
+    margin-bottom: 1.5rem;
     position: relative;
-  }
-  
-  .train-section h4::after {
-    content: '';
-    position: absolute;
-    bottom: -10px; /* Adjust position */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 50px; /* Increase width */
-    height: 3px; /* Increase height */
-    background: #dee2e6;
-  }
-  
-  .train-rows {
     display: flex;
     flex-direction: column;
-    gap: 1rem; /* Increase gap between rows */
-    width: 100%; /* Ensure rows take full width of the train-layout */
+    align-items: center;
   }
   
-  .train-row {
+  .aisle-label {
+    text-align: center;
+    font-size: 0.9rem; /* Slightly larger aisle label */
+    color: #6c757d;
+    margin-bottom: 0.75rem; /* Increased margin */
+  }
+  
+  .seat-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* Gap between rows */
+    width: 100%;
+    max-width: 750px; /* Adjusted max width */
+    padding: 0 1rem; /* Add horizontal padding to the rows container */
+    box-sizing: border-box;
+  }
+  
+  .seat-row {
     display: flex;
     align-items: center;
-    gap: 1rem; /* Increase gap */
-    padding: 0.75rem; /* Increase padding */
-    background: #f8f9fa;
-    border-radius: 4px;
+    gap: 1rem; /* Gap between row number and the seat area */
     position: relative;
-    width: 100%; /* Ensure row takes full width */
-    flex-wrap: wrap; /* Allow items inside the row to wrap */
+    padding-left: 3rem; /* Add padding to make space for the absolute row number */
     box-sizing: border-box;
+    background: white; /* Add background to the row */
+    border-radius: 4px; /* Add border radius to the row */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* Add subtle shadow to the row */
+    padding: 0.75rem 1rem; /* Add padding inside the row */
   }
   
   .row-number {
-    width: 30px; /* Increase size */
-    height: 30px; /* Increase size */
+    width: 28px; /* Adjusted size */
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1519,449 +1294,247 @@
     border-radius: 50%;
     font-weight: bold;
     color: #495057;
+    font-size: 0.8rem; /* Adjusted font size */
+    flex-shrink: 0;
     position: absolute;
-    left: -15px; /* Adjust position */
+    left: 0.75rem; /* Adjusted position to align with padding */
     top: 50%;
     transform: translateY(-50%);
-    z-index: 2;
-    font-size: 0.9rem; /* Increase font size */
-    border: 2px solid white; /* Add white border for better contrast */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 1;
   }
   
   .row-seats {
     display: flex;
-    gap: 1.5rem; /* Increase gap between seat groups */
-    flex: 1; /* Allow to grow and shrink */
-    justify-content: space-between;
-    position: relative;
-    padding: 0 0.75rem; /* Increase padding */
-    width: 100%; /* Ensure it takes full width */
-    flex-wrap: wrap; /* Explicitly allow seat groups to wrap within this container */
-    box-sizing: border-box;
+    flex: 1;
+    justify-content: center; /* Center the seat groups and aisle */
+    align-items: center;
+    gap: 1rem; /* Gap between seat groups and aisle */
+    /* Removed background, border-radius, box-shadow, and padding from here */
   }
   
   .seat-group {
     display: flex;
-    gap: 0.5rem; /* Increase gap between seats */
-    flex: 1; /* Allow seat groups to share space */
-    justify-content: center;
-    min-width: 0; /* Prevent flex item from taking minimum content width and causing overflow */
+    flex-direction: row; /* Display seats horizontally within a group */
+    gap: 0.25rem; /* Adjusted gap between seats within a group */
+    align-items: center; /* Vertically align seats in the group */
   }
   
-  .seat-group.left {
-    justify-content: flex-end;
-  }
-  
-  .seat-group.right {
-    justify-content: flex-start;
-  }
-  
-  .aisle {
-    width: 50px; /* Increase aisle width */
-    background: #dee2e6;
-    position: relative;
+  .row-aisle {
+    width: 35px; /* Adjusted width of the aisle */
+    background: #dee2e6; /* Aisle color */
     border-radius: 4px;
-    flex-shrink: 0; /* Prevent aisle from shrinking when space is limited */
+    flex-shrink: 0;
+    align-self: stretch;
   }
   
-  .aisle::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 3px; /* Increase line thickness */
-    height: 100%;
-    background: #adb5bd;
-  }
-  
-  /* Base seat style - gray for unadded seats */
-  .seat-management .seat {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0.75rem; /* Increase padding */
-    border-radius: 4px;
+  .seat-name {
+    display: inline-block;
+    width: 25px; /* Adjusted for smaller size */
+    height: 25px; /* Adjusted for smaller size */
+    line-height: 25px; /* Adjusted for smaller size */
+    text-align: center;
+    border: 1px solid #ccc;
+    margin: 2px; /* Adjusted for smaller spacing */
     cursor: pointer;
-    transition: all 0.2s ease;
+    border-radius: 4px;
+    font-size: 0.7em; /* Adjusted for smaller text */
+    user-select: none;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Remove row number pseudo-element as it's now a separate element */
+  .seat-name::before {
+    content: none;
+  }
+  
+  .seat-name:hover {
+    background: #dcdfe4;
+    transform: scale(1.03);
     z-index: 1;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .seat-name.selected {
+    background: #0d6efd;
+    color: white;
+    border: 3px solid black;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  }
+  
+  .seat-name.available {
+    background: #198754; /* Green background for available */
+    color: white;
+    border-color: #146c43;
+  }
+  
+  .seat-name.blocked {
+    background: #dc3545; /* Red background for reserved */
+    color: white;
+    border-color: #dc3545; /* Match border to background for a solid red */
+    cursor: not-allowed;
+  }
+  
+  /* Adjust coach header and actions for better layout */
+  .coach-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
     background: #e9ecef;
-    opacity: 1;
-    width: min-content; /* Adjust width to fit content */
-    flex-grow: 0; /* Prevent seats from growing excessively and pushing other seats */
-    flex-shrink: 1; /* Allow seats to shrink when space is limited */
-    min-width: 0; /* Allow width to be smaller if content is very small */
+    border-radius: 4px;
+    width: 100%;
     box-sizing: border-box;
   }
   
-  /* Seat status styles */
-  .seat-management .train-layout .seat.available {
-    opacity: 1;
-    border: 2px solid #198754; /* Green border */
-  }
-  
-  .seat-management .train-layout .seat.reserved {
-    background-color: #f8d7da; /* Keep background for visual distinction */
-    border: 2px solid #dc3545; /* Add a red border */
-    color: #721c24; /* Keep text color */
-    cursor: not-allowed; /* Indicate it's not clickable */
-    /* Add or modify other styles as needed, e.g., opacity */
-  }
-  
-  .seat-management .train-layout .seat.occupied {
-    opacity: 1;
-    border: 2px solid #6c757d; /* Changed to dark gray border for occupied seats */
-  }
-  
-  /* Seat type colors - only apply when seat is added */
-  .seat.business.available,
-  .seat.business.occupied {
-    background: #cff4fc;
-  }
-  
-  .seat.premium.available,
-  .seat.premium.occupied {
-    background: #d1e7dd;
-  }
-  
-  .seat.window.available,
-  .seat.window.occupied {
-    background: #e2e3e5;
-  }
-  
-  .seat.aisle.available,
-  .seat.aisle.occupied {
-    background: #f8d7da;
-  }
-  
-  /* Hover effects */
-  .seat:hover {
-    transform: scale(1.05); /* Slight scale on hover */
-    z-index: 2;
-    opacity: 1;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* More prominent shadow on hover */
-  }
-  
-  .seat.available:hover {
-    box-shadow: 0 0 0 3px #198754; /* Hover border/outline */
-  }
-  
-  .seat.occupied:hover {
-    box-shadow: 0 0 0 3px #dc3545; /* Hover border/outline */
-  }
-  
-  /* Seat content styles */
-  .seat-management .seat svg {
-    font-size: 1.2rem; /* Increase icon size */
-    margin-bottom: 0.2rem; /* Adjust margin */
+  .coach-header h3 {
+    font-size: 1.2rem;
+    margin: 0;
     color: #495057;
   }
   
-  .seat-management .seat span {
-    font-size: 0.7rem; /* Increase text size */
-    font-weight: 500;
-    color: #495057;
-    white-space: nowrap; /* Keep seat number/type on one line */
-    overflow: hidden; /* Hide overflow text if any */
-    text-overflow: ellipsis; /* Add ellipsis if text overflows */
-    margin-bottom: 0.1rem; /* Add a small margin below the name */
-    display: block; /* Ensure span takes up its own line in the flex container */
+  .coach-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
   
-  .seat-management .seat-price {
-    font-size: 0.6rem; /* Increase price text size */
-    color: #28a745;
-    margin-top: 0.1rem; /* Adjust margin */
-    font-weight: bold;
-    white-space: nowrap; /* Keep price on one line */
-    overflow: hidden; /* Hide overflow text if any */
-    text-overflow: ellipsis; /* Add ellipsis if text overflows */
-    margin-bottom: 0.2rem; /* Add a small margin below the price before buttons */
-    display: block; /* Ensure price takes up its own line in the flex container */
+  .coach-actions .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
   
-  /* Ensure visibility for added seats */
-  .seat-management .seat.available span,
-  .seat-management .seat.occupied span,
-  .seat-management .seat.available .seat-price,
-  .seat-management .seat.occupied .seat-price {
-    visibility: visible !important;
-    opacity: 1 !important;
-    display: block !important;
-  }
-  
-  /* Tooltip for unadded seats */
-  .seat:not(.available):not(.occupied)::before {
-    content: 'Click to add price';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.25rem 0.5rem;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    font-size: 0.6rem;
-    border-radius: 4px;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-    z-index: 3;
-  }
-  
-  .seat:not(.available):not(.occupied):hover::before {
-    opacity: 1;
-    visibility: visible;
-    bottom: calc(100% + 5px);
-  }
-  
-  /* Section dividers */
-  .train-section:not(:last-child) {
-    margin-bottom: 2rem; /* Increase margin */
-    padding-bottom: 2rem; /* Increase padding */
-    border-bottom: 2px dashed #dee2e6;
-  }
-  
-  /* Responsive adjustments for overall layout */
-  @media (max-width: 992px) { /* Adjust breakpoint for larger tablets/desktops */
-    .management-page {
-        padding: 1.5rem; /* Adjust padding */
-    }
-  }
-  
+  /* Responsive adjustments */
   @media (max-width: 768px) {
-    .management-page {
-      padding: 1rem; /* Reduce padding on smaller screens */
-      /* margin-left: 0; */ /* Assuming the main layout handles sidebar collapse/visibility */
+    .coach-layout {
+      padding: 1rem;
     }
 
-    .management-content {
-      padding: 0; /* Remove padding here, managed by .management-page */
+    .seat-rows {
+      max-width: 100%;
+      padding: 0 0.5rem;
     }
 
-    .management-header {
-      flex-direction: column;
-      gap: 1rem;
-      align-items: flex-start; /* Changed from stretch to flex-start */
-    }
-
-    .header-actions {
-      flex-direction: row; /* Keep buttons in a row on mobile */
+    .seat-row {
       gap: 0.75rem;
-      justify-content: flex-start; /* Keep left alignment on mobile */
-      align-items: center; /* Center buttons vertically */
-      width: 100%; /* Take full width */
-    }
-
-    .btn {
-      width: auto; /* Remove full width on mobile */
-    }
-
-    /* Adjustments for train layout and table containers on smaller screens */
-    .train-layout-container,
-    .management-table-container {
-      padding: 0.75rem; /* Reduce padding */
-    }
-
-    /* Adjustments for train layout internal elements on smaller screens */
-    .train-layout {
-      padding: 1rem; /* Reduce padding */
-      gap: 1rem; /* Reduce gap between sections */
-    }
-
-    .train-section {
-      padding: 1rem; /* Reduce padding */
-      margin-bottom: 1.5rem; /* Reduce margin */
-      padding-bottom: 1.5rem; /* Reduce padding */
-    }
-
-    .train-section h4 {
-      font-size: 1rem; /* Reduce font size */
-      margin-bottom: 1rem; /* Reduce margin */
-      padding: 0.4rem; /* Reduce padding */
-    }
-
-    .train-section h4::after {
-      bottom: -7px; /* Adjust position */
-      width: 40px; /* Reduce width */
-      height: 2px; /* Reduce height */
-    }
-
-    .train-rows {
-      gap: 0.75rem; /* Reduce gap between rows */
-    }
-
-    .train-row {
-      gap: 0.75rem; /* Reduce gap */
-      padding: 0.5rem; /* Reduce padding */
+      padding-left: 2.5rem; /* Adjusted padding */
+      padding: 0.6rem 0.8rem; /* Adjusted padding inside the row */
     }
 
     .row-number {
-      width: 25px; /* Reduce size */
-      height: 25px; /* Reduce size */
-      left: -12.5px; /* Adjust position */
-      font-size: 0.8rem; /* Reduce font size */
+      width: 28px;
+      height: 28px;
+      font-size: 0.8rem;
+      left: 0.5rem; /* Adjusted position */
     }
 
     .row-seats {
-      gap: 1rem; /* Reduce gap between seat groups */
-      padding: 0 0.5rem; /* Reduce padding */
+      gap: 0.75rem;
+      /* Removed padding as it's on .seat-row */
     }
 
     .seat-group {
-      gap: 0.4rem; /* Reduce gap between seats */
+      gap: 0.2rem;
     }
 
-    .aisle {
-      width: 40px; /* Reduce aisle width */
+    .row-aisle {
+      width: 25px; /* Adjusted width */
     }
 
-    .seat {
-      min-width: 35px; /* Reduce minimum width */
-      padding: 0.5rem; /* Reduce padding */
+    .seat-name {
+      padding: 0.5rem 0.7rem;
+      font-size: 0.85rem;
+      min-width: 40px;
     }
 
-     .seat svg {
-      font-size: 1rem; /* Reduce icon size */
+    .coach-header {
+      padding: 0.75rem 1rem;
     }
 
-    .seat span,
-    .seat-price {
-      font-size: 0.5rem; /* Reduce text size */
+    .coach-header h3 {
+      font-size: 1.1rem;
     }
 
-    .train-layout .seat-actions {
-      gap: 1px; /* Smaller gap between buttons */
-      margin-top: 1px; /* Reduced margin */
+    .coach-actions {
+      gap: 0.6rem;
     }
 
-    .train-layout .edit-button,
-    .train-layout .delete-button {
-      padding: 1px; /* Smaller button padding */
-      font-size: 0.6rem; /* Smaller button icon size */
+    .coach-actions .btn {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
     }
 
-    /* Adjustments for table on smaller screens */
-    .management-content .table th,
-    .management-content .table td {
-      padding: 0.4rem; /* Further reduce table cell padding */
-      font-size: 0.75rem; /* Further reduce table text size */
-    }
-
-     .management-content .table .badge {
-      font-size: 0.55rem; /* Further reduce badge size */
-      padding: 0.1rem 0.2rem; /* Further reduce badge padding */
-    }
-
-    .management-content .table .seat-actions {
-      gap: 6px; /* Adjust gap between table action buttons */
+    .aisle-label {
+      font-size: 0.8rem;
     }
   }
-
-  @media (max-width: 576px) { /* Extra small devices (phones) */
-    .management-page {
-      padding: 0.5rem; /* Further reduce padding */
+  
+  @media (max-width: 480px) {
+    .coach-layout {
+      padding: 0.75rem;
     }
 
-    .management-content {
-      gap: 1rem; /* Reduce gap */
+    .seat-rows {
+      gap: 0.5rem;
+      padding: 0 0.35rem;
     }
 
-    .train-layout-container,
-    .management-table-container {
-      padding: 0.5rem; /* Further reduce padding */
-    }
-
-     .train-section {
-      padding: 0.75rem; /* Further reduce padding */
-      margin-bottom: 1rem; /* Further reduce margin */
-      padding-bottom: 1rem; /* Further reduce padding */
-    }
-
-    .train-section h4 {
-      font-size: 0.9rem; /* Further reduce font size */
-      margin-bottom: 0.75rem; /* Further reduce margin */
-      padding: 0.3rem; /* Further reduce padding */
-    }
-
-    .train-section h4::after {
-      bottom: -6px; /* Adjust position */
-      width: 30px; /* Reduce width */
-    }
-
-
-    .train-rows {
-      gap: 0.5rem; /* Further reduce gap */
-    }
-
-    .train-row {
-      gap: 0.5rem; /* Further reduce gap */
-      padding: 0.3rem; /* Further reduce padding */
+    .seat-row {
+      gap: 0.6rem;
+      padding-left: 2rem; /* Adjusted padding */
+      padding: 0.5rem 0.7rem; /* Adjusted padding inside the row */
     }
 
     .row-number {
-      width: 20px; /* Further reduce size */
-      height: 20px; /* Further reduce size */
-      left: -10px; /* Adjust position */
-      font-size: 0.7rem; /* Further reduce font size */
+      width: 24px;
+      height: 24px;
+      font-size: 0.7rem;
+      left: 0.3rem; /* Adjusted position */
     }
 
     .row-seats {
-      gap: 0.75rem; /* Further reduce gap between seat groups */
-      padding: 0 0.3rem; /* Further reduce padding */
+      gap: 0.5rem;
+      /* Removed padding as it's on .seat-row */
     }
 
     .seat-group {
-      gap: 0.3rem; /* Further reduce gap between seats */
+      gap: 0.15rem;
     }
 
-    .aisle {
-      width: 30px; /* Further reduce aisle width */
+    .row-aisle {
+      width: 20px;
     }
 
-    .seat {
-      min-width: 30px; /* Further reduce minimum width */
-      padding: 0.4rem; /* Further reduce padding */
+    .seat-name {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.75rem;
+      min-width: 35px;
     }
 
-     .seat svg {
-      font-size: 0.9rem; /* Further reduce icon size */
+    .coach-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.5rem;
     }
 
-    .seat span,
-    .seat-price {
-      font-size: 0.4rem; /* Further reduce text size */
+    .coach-header h3 {
+      font-size: 1rem;
     }
 
-    .train-layout .seat-actions {
-      gap: 0px; /* Further reduce gap */
+    .coach-actions {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 0.5rem;
     }
 
-    .train-layout .edit-button,
-    .train-layout .delete-button {
-      padding: 0px; /* Further reduce padding */
-      font-size: 0.5rem; /* Further reduce font size */
+    .coach-actions .btn {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
     }
 
-    .management-content .table th,
-    .management-content .table td {
-      padding: 0.3rem; /* Keep padding */
-      font-size: 0.7rem; /* Further reduce font size */
-    }
-
-     .management-content .table .badge {
-      font-size: 0.5rem; /* Further reduce badge size */
-      padding: 0.05rem 0.1rem; /* Further reduce badge padding */
-    }
-
-    .management-content .table .seat-actions {
-      gap: 4px; /* Keep gap */
+    .aisle-label {
+      font-size: 0.7rem;
     }
   }
-  
-  
   

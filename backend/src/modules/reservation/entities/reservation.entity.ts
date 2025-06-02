@@ -1,8 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Schedule } from '../../schedule/schedule.entity';
 import { Payment } from '../../payment/entities/payment.entity';
 import { Ticket } from '../../ticket/entities/ticket.entity';
+import { Seat } from '../../seats/entities/seat.entity';
 
 export enum ReservationStatus {
   PENDING = 'pending',
@@ -22,8 +23,13 @@ export class Reservation {
   @Column()
   scheduleId: number;
 
-  @Column({ type: 'varchar', length: 10 })
-  seatNumber: string;
+  @ManyToMany(() => Seat)
+  @JoinTable({
+    name: 'reservation_seats',
+    joinColumn: { name: 'reservationId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'seatId', referencedColumnName: 'id' },
+  })
+  seats: Seat[];
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   passengerName: string;

@@ -9,9 +9,10 @@ import { PaymentService } from '../payment/payment.service';
 import { Seat } from '../seats/entities/seat.entity';
 import { Schedule } from '../schedule/schedule.entity';
 import { Payment, PaymentStatus } from '../payment/entities/payment.entity';
+import { TicketService } from '../ticket/ticket.service';
 
+// Simplified interface - Reservation entity now directly includes seats relation
 export interface ReservationWithSeat extends Reservation {
-  seat?: Seat;
   clientSecret?: string;
 }
 
@@ -24,6 +25,7 @@ export class ReservationService {
     private scheduleRepository: Repository<Schedule>,
     private seatsService: SeatsService,
     private paymentService: PaymentService,
+    private ticketService: TicketService,
   ) {}
 
   async create(createReservationDto: CreateReservationDto): Promise<ReservationWithSeat> {
@@ -39,25 +41,40 @@ export class ReservationService {
       }
 
       const allSeats = await this.seatsService.getAllSeatsForTrain(schedule.train.trainID);
-      const requestedSeat = allSeats.find(seat => seat.seatNumber === createReservationDto.seatNumber);
 
-      if (!requestedSeat) {
-        throw new BadRequestException(`Seat ${createReservationDto.seatNumber} not found`);
-      }
-
-      if (requestedSeat.status !== 'available') {
-        throw new BadRequestException(`Seat ${createReservationDto.seatNumber} is not available`);
-      }
-
-      const totalPrice = Number(requestedSeat.price) + Number(schedule.route.price);
-
-      // Create the reservation first
-      const reservation = this.reservationRepository.create({
-        ...createReservationDto,
-        status: ReservationStatus.PAYMENT_PENDING,
-        price: totalPrice,
+      const requestedSeats = createReservationDto.seatNumbers.map(seatNumber => {
+        const seat = allSeats.find(s => s.seatNumber === seatNumber);
+        if (!seat) {
+          throw new BadRequestException(`Seat ${seatNumber} not found`);
+        }
+        if (seat.status !== 'available') {
+          throw new BadRequestException(`Seat ${seatNumber} is not available`);
+        }
+        return seat;
       });
 
+      if (requestedSeats.length === 0) {
+           throw new BadRequestException('No seats selected for reservation');
+      }
+
+      // Calculate total price: Base route price + sum of selected seat prices
+      const totalSeatsPrice = requestedSeats.reduce((sum, seat) => sum + Number(seat.price), 0);
+      const totalPrice = Number(schedule.route.price) + totalSeatsPrice;
+
+      // Create the reservation entity
+      const reservation = this.reservationRepository.create({
+        scheduleId: createReservationDto.scheduleId,
+        passengerName: createReservationDto.passengerName,
+        passengerSurname: createReservationDto.passengerSurname,
+        reservationDate: createReservationDto.reservationDate,
+        discountCode: createReservationDto.discountCode,
+        status: ReservationStatus.PAYMENT_PENDING,
+        price: totalPrice,
+        // Assign the requested seats to the reservation entity
+        seats: requestedSeats,
+      } as Partial<Reservation>);
+
+      // Save the reservation to the database. TypeORM should return the saved entity.
       const savedReservation = await this.reservationRepository.save(reservation);
 
       // Create payment for the reservation
@@ -66,22 +83,29 @@ export class ReservationService {
       console.log('Creating reservation with payment:', {
         reservationId: savedReservation.id,
         paymentId: payment.id,
-        totalPrice
+        totalPrice,
+        seatNumbers: createReservationDto.seatNumbers // Log selected seat numbers
       });
 
+      // Mark all selected seats as reserved
       try {
-        await this.seatsService.reserveSeat(requestedSeat.id);
+        await Promise.all(requestedSeats.map(seat => this.seatsService.reserveSeat(seat.id)));
       } catch (error) {
+        // Rollback reservation if seat reservation fails
         await this.reservationRepository.remove(savedReservation);
-        console.error('Error reserving seat:', error);
-        throw error;
+        console.error('Error reserving one or more seats:', error);
+        throw error; // Re-throw to indicate failure
       }
 
-      return {
+      // Return the created reservation with payment details and associated seats
+      // savedReservation entity should now have the seats array loaded
+      const result: ReservationWithSeat = {
         ...savedReservation,
-        seat: requestedSeat,
         clientSecret: payment.paymentIntentId ? `${payment.paymentIntentId}_secret_placeholder` : undefined
       };
+
+      return result;
+
     } catch (error) {
       console.error('Error in ReservationService.create:', error);
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
@@ -92,125 +116,113 @@ export class ReservationService {
   }
 
   async findAll(): Promise<ReservationWithSeat[]> {
+    // Load seats relation
     const reservations = await this.reservationRepository.find({
-      relations: ['schedule', 'schedule.train', 'schedule.route', 'user', 'payment', 'ticket'],
+      relations: ['schedule', 'schedule.train', 'schedule.route', 'user', 'payment', 'ticket', 'seats'],
     });
 
-    // Get seat details for each reservation through the chain
-    const reservationsWithSeats = await Promise.all(
-      reservations.map(async (reservation) => {
-        const availableSeats = await this.seatsService.getAvailableSeats(reservation.schedule.train.trainID);
-        const seatDetails = availableSeats.find(seat => seat.seatNumber === reservation.seatNumber);
-        return {
-          ...reservation,
-          seat: seatDetails
-        };
-      })
-    );
-
-    return reservationsWithSeats;
+    // Return reservations with loaded seats, cast to ReservationWithSeat array
+    return reservations as ReservationWithSeat[];
   }
 
   async findOne(id: string): Promise<ReservationWithSeat> {
+    // Load seats relation
     const reservation = await this.reservationRepository.findOne({
       where: { id },
-      relations: ['schedule', 'schedule.train', 'schedule.route', 'user', 'payment', 'ticket'],
+      relations: ['schedule', 'schedule.train', 'schedule.route', 'user', 'payment', 'ticket', 'seats'],
     });
 
     if (!reservation) {
       throw new NotFoundException(`Reservation with ID ${id} not found`);
     }
 
-    // Get seat details through the chain
-    const availableSeats = await this.seatsService.getAvailableSeats(reservation.schedule.train.trainID);
-    const seatDetails = availableSeats.find(seat => seat.seatNumber === reservation.seatNumber);
-
-    return {
-      ...reservation,
-      seat: seatDetails
-    };
+    // Return reservation with loaded seats, cast to ReservationWithSeat
+    return reservation as ReservationWithSeat;
   }
 
   async update(id: string, updateReservationDto: UpdateReservationDto): Promise<ReservationWithSeat> {
+    // Load seats relation
     const reservation = await this.findOne(id);
     Object.assign(reservation, updateReservationDto);
-    return await this.reservationRepository.save(reservation);
+    // Save and return - assert save result
+    return await this.reservationRepository.save(reservation) as ReservationWithSeat;
   }
 
   async remove(id: string): Promise<void> {
+    // Load seats relation to release them
     const reservation = await this.findOne(id);
 
-    // Get the seat through the chain and release it
-    const availableSeats = await this.seatsService.getAvailableSeats(reservation.schedule.train.trainID);
-    const seat = availableSeats.find(s => s.seatNumber === reservation.seatNumber);
-    if (seat) {
-      await this.seatsService.releaseSeat(seat.id);
+    // Release all associated seats
+    if (reservation.seats && reservation.seats.length > 0) {
+      await Promise.all(reservation.seats.map(seat => this.seatsService.releaseSeat(seat.id)));
     }
 
-    await this.reservationRepository.remove(reservation);
+    // Remove the reservation
+    await this.reservationRepository.remove(reservation as Reservation);
   }
 
   async cancelReservation(id: string): Promise<ReservationWithSeat> {
+    // Load seats relation to release them
     const reservation = await this.findOne(id);
 
-    // Get the seat through the chain and release it
-    const availableSeats = await this.seatsService.getAvailableSeats(reservation.schedule.train.trainID);
-    const seat = availableSeats.find(s => s.seatNumber === reservation.seatNumber);
-    if (seat) {
-      await this.seatsService.releaseSeat(seat.id);
+    // Release all associated seats
+    if (reservation.seats && reservation.seats.length > 0) {
+      await Promise.all(reservation.seats.map(seat => this.seatsService.releaseSeat(seat.id)));
     }
 
     reservation.status = ReservationStatus.CANCELLED;
-    return await this.reservationRepository.save(reservation);
+    // Save and return - assert save result
+    const cancelledReservation = await this.reservationRepository.save(reservation) as Reservation;
+
+    // Re-fetch to ensure relations are loaded for the return type
+    return this.findOne(cancelledReservation.id);
   }
 
   async confirmReservation(id: string): Promise<ReservationWithSeat> {
+    // Load seats relation
     const reservation = await this.findOne(id);
 
-    if (reservation.status !== ReservationStatus.PENDING) {
-      throw new BadRequestException('Only pending reservations can be confirmed');
+    if (reservation.status !== ReservationStatus.PENDING && reservation.status !== ReservationStatus.PAYMENT_PENDING) { // Allow confirming from PAYMENT_PENDING too
+      throw new BadRequestException('Only pending or payment_pending reservations can be confirmed');
     }
 
     reservation.status = ReservationStatus.CONFIRMED;
-    return await this.reservationRepository.save(reservation);
+    // Save and re-fetch - assert save result
+    const confirmedReservation = await this.reservationRepository.save(reservation) as Reservation;
+
+    // Automatically create ticket when payment is confirmed (if not already created)
+    if (confirmedReservation.payment?.status === PaymentStatus.COMPLETED) {
+        try {
+          // Check if ticket already exists to avoid duplicates
+          const existingTicket = await this.ticketService.findByReservationId(confirmedReservation.id);
+          if (!existingTicket) {
+            // Use confirmedReservation.id
+            const ticket = await this.ticketService.createTicket(confirmedReservation.id);
+             console.log('Ticket created automatically:', {
+               ticketId: ticket.id,
+               ticketNumber: ticket.ticketNumber,
+               reservationId: confirmedReservation.id
+             });
+          }
+        } catch (error) {
+          console.error('Error creating ticket after payment confirmation:', error);
+          // Don't fail the payment confirmation if ticket creation fails
+        }
+    }
+
+    // Re-fetch to ensure relations are loaded for the return type
+    return this.findOne(confirmedReservation.id);
   }
 
   async getReservationsBySchedule(scheduleId: number): Promise<ReservationWithSeat[]> {
+    // Load seats relation
     const reservations = await this.reservationRepository.find({
       where: { scheduleId },
-      relations: ['schedule', 'schedule.train', 'user'],
+      relations: ['schedule', 'schedule.train', 'user', 'seats'],
     });
 
-    // Get seat details for each reservation through the chain
-    const reservationsWithSeats = await Promise.all(
-      reservations.map(async (reservation) => {
-        const availableSeats = await this.seatsService.getAvailableSeats(reservation.schedule.train.trainID);
-        const seatDetails = availableSeats.find(seat => seat.seatNumber === reservation.seatNumber);
-        return {
-          ...reservation,
-          seat: seatDetails
-        };
-      })
-    );
-
-    return reservationsWithSeats;
-  }
-
-  async getAvailableSeatsForSchedule(scheduleId: number): Promise<Seat[]> {
-    // Get the schedule to find the train
-    const schedule = await this.reservationRepository
-      .createQueryBuilder('reservation')
-      .leftJoinAndSelect('reservation.schedule', 'schedule')
-      .leftJoinAndSelect('schedule.train', 'train')
-      .where('schedule.id = :scheduleId', { scheduleId })
-      .getOne();
-
-    if (!schedule) {
-      throw new NotFoundException(`Schedule with ID ${scheduleId} not found`);
-    }
-
-    // Get available seats for the train
-    return await this.seatsService.getAvailableSeats(schedule.schedule.train.trainID);
+    // Return reservations with loaded seats, cast to ReservationWithSeat array
+    return reservations as ReservationWithSeat[];
   }
 
   async findBySchedule(scheduleId: number): Promise<ReservationWithSeat[]> {
@@ -218,6 +230,7 @@ export class ReservationService {
   }
 
   async updatePaymentStatus(id: string, paymentIntentId: string): Promise<ReservationWithSeat> {
+    // Load seats relation
     const reservation = await this.findOne(id);
 
     if (!reservation.payment) {
@@ -239,19 +252,22 @@ export class ReservationService {
       reservation.status = ReservationStatus.CONFIRMED;
       console.log('Payment confirmed, updating reservation status to CONFIRMED');
 
-      // TODO: Create ticket automatically when payment is confirmed
-      // Temporarily disabled to fix payment confirmation issue
-      // try {
-      //   const ticket = await this.ticketService.createTicket(id);
-      //   console.log('Ticket created automatically:', {
-      //     ticketId: ticket.id,
-      //     ticketNumber: ticket.ticketNumber,
-      //     reservationId: id
-      //   });
-      // } catch (error) {
-      //   console.error('Error creating ticket after payment confirmation:', error);
-      //   // Don't fail the payment confirmation if ticket creation fails
-      // }
+      // Automatically create ticket when payment is confirmed (if not already created)
+      try {
+        // Check if ticket already exists to avoid duplicates
+        const existingTicket = await this.ticketService.findByReservationId(reservation.id);
+        if (!existingTicket) {
+          const ticket = await this.ticketService.createTicket(reservation.id);
+           console.log('Ticket created automatically:', {
+             ticketId: ticket.id,
+             ticketNumber: ticket.ticketNumber,
+             reservationId: reservation.id
+           });
+        }
+      } catch (error) {
+        console.error('Error creating ticket after payment confirmation:', error);
+        // Don't fail the payment confirmation if ticket creation fails
+      }
     } else if (updatedPayment.status === PaymentStatus.FAILED) {
       reservation.status = ReservationStatus.CANCELLED;
       console.log('Payment failed, updating reservation status to CANCELLED');
@@ -260,7 +276,8 @@ export class ReservationService {
     // Update the payment reference in the reservation object to reflect the new status
     reservation.payment = updatedPayment;
 
-    const updatedReservation = await this.reservationRepository.save(reservation);
+    // Save and re-fetch - assert save result
+    const updatedReservation = await this.reservationRepository.save(reservation) as Reservation;
 
     console.log('Reservation status updated:', {
       reservationId: updatedReservation.id,
@@ -268,40 +285,18 @@ export class ReservationService {
       paymentStatus: updatedReservation.payment.status
     });
 
-    // Return the reservation with seat information and updated payment data
-    return {
-      ...updatedReservation,
-      seat: await this.getSeatForReservation(updatedReservation)
-    };
+    // Re-fetch to ensure relations are loaded for the return type
+    return this.findOne(updatedReservation.id);
   }
 
   async findAllForAdmin(): Promise<ReservationWithSeat[]> {
+    // Load seats relation
     const reservations = await this.reservationRepository.find({
-      relations: ['schedule', 'schedule.train', 'schedule.route', 'user', 'payment', 'ticket'],
+      relations: ['schedule', 'schedule.train', 'schedule.route', 'user', 'payment', 'ticket', 'seats'],
       order: { createdAt: 'DESC' }
     });
 
-    // Get seat details for each reservation
-    const reservationsWithSeats = await Promise.all(
-      reservations.map(async (reservation) => {
-        const seat = await this.getSeatForReservation(reservation);
-        return {
-          ...reservation,
-          seat
-        };
-      })
-    );
-
-    return reservationsWithSeats;
-  }
-
-  private async getSeatForReservation(reservation: Reservation): Promise<any> {
-    try {
-      const availableSeats = await this.seatsService.getAvailableSeats(reservation.schedule.train.trainID);
-      return availableSeats.find(s => s.seatNumber === reservation.seatNumber) || null;
-    } catch (error) {
-      console.warn('Could not fetch seat information for reservation:', error);
-      return null;
-    }
+    // Return reservations with loaded seats, cast to ReservationWithSeat array
+    return reservations as ReservationWithSeat[];
   }
 }

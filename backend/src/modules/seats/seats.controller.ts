@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
 import { SeatsService } from './seats.service';
-import { SeatType } from './entities/seat.entity';
+import { SeatType, SeatClass } from './entities/seat.entity';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('seats')
@@ -18,6 +18,9 @@ export class SeatsController {
       type: SeatType;
       price: number;
       location: string;
+      row: number;
+      position: string;
+      class: SeatClass;
     }[]
   ) {
     return this.seatsService.createSeatsForTrain(trainId, seatConfig);

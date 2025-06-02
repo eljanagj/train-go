@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber, IsDate, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsDate, IsOptional, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -20,8 +20,9 @@ export class CreateReservationDto {
 
   @ApiProperty({ description: 'The seat number' })
   @IsNotEmpty()
-  @IsString()
-  seatNumber: string;
+  @IsArray()
+  @IsString({ each: true })
+  seatNumbers: string[];
 
   @ApiProperty({ description: 'Passenger first name' })
   @IsOptional()
