@@ -8,7 +8,6 @@ import { SeatsModule } from '../seats/seats.module';
 import { PaymentModule } from '../payment/payment.module';
 import { PdfModule } from '../pdf/pdf.module';
 import { TicketModule } from '../ticket/ticket.module';
-import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -17,7 +16,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
     PaymentModule,
     PdfModule,
     TicketModule,
-    NotificationsModule,
   ],
   controllers: [ReservationController],
   providers: [ReservationService],

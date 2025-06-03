@@ -16,10 +16,6 @@ export class TicketService {
   ) {}
 
   async createTicket(reservationId: string, type: TicketType = TicketType.STANDARD): Promise<Ticket> {
-    if (!reservationId) {
-      throw new BadRequestException('Reservation ID is required to create a ticket');
-    }
-
     const reservation = await this.reservationRepository.findOne({
       where: { id: reservationId },
       relations: ['schedule', 'schedule.train', 'schedule.route', 'user', 'payment']
@@ -41,28 +37,15 @@ export class TicketService {
     // Generate unique ticket number
     const ticketNumber = this.generateTicketNumber();
 
-    // Create ticket with all required fields
-    const ticketData = {
+    const ticket = this.ticketRepository.create({
       reservationId,
       ticketNumber,
       type,
       status: TicketStatus.PENDING,
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      price: reservation.price // Copy price from reservation
-    };
+    });
 
-    try {
-      const savedTicket = await this.ticketRepository.save(ticketData);
-      console.log('Ticket created successfully:', {
-        ticketId: savedTicket.id,
-        ticketNumber: savedTicket.ticketNumber,
-        reservationId: savedTicket.reservationId
-      });
-      return savedTicket;
-    } catch (error) {
-      console.error('Error saving ticket:', error);
-      throw new BadRequestException('Failed to create ticket: ' + error.message);
-    }
+    return await this.ticketRepository.save(ticket);
   }
 
   async generateTicketPdf(ticketId: string): Promise<Buffer> {

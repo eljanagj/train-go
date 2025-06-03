@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { reservationService } from '../services/reservationService';
+import axios from 'axios';
 import { ticketService } from '../services/ticketService';
 import { NavBar } from '../components/NavBar';
 import { Footer } from '../components/Footer';
@@ -40,18 +40,17 @@ const PaymentConfirmation = ({ theme, toggleTheme }) => {
           fullUrl: window.location.href,
           searchParams: location.search
         });
+        const response = await axios.post(`http://localhost:3000/reservations/${reservationId}/update-payment`, {
+          paymentIntentId: paymentIntentId
+        });
 
-        const response = await reservationService.updatePaymentStatus(reservationId, paymentIntentId);
-
-        if (response.payment?.status === 'completed') {
+        if (response.data.status === 'confirmed') {
           setError(null);
           setPaymentSuccess(true);
-        } else if (response.payment?.status === 'failed') {
+        } else if (response.data.status === 'cancelled') {
           setError('Payment failed. Please try again or contact support.');
-        } else if (response.payment?.status === 'pending') {
-          setError('Payment is still processing. Please wait a moment and refresh the page.');
         } else {
-          setError(`Payment status: ${response.payment?.status}. Please contact support if this seems incorrect.`);
+          setError(`Payment status: ${response.data.status}. Please contact support if this seems incorrect.`);
         }
       } catch (err) {
         console.error('Error updating payment status:', {
@@ -60,7 +59,8 @@ const PaymentConfirmation = ({ theme, toggleTheme }) => {
           status: err.response?.status,
           paymentIntent: paymentIntentId,
           redirectStatus: status,
-          reservationId: reservationId
+          reservationId: reservationId,
+          url: `http://localhost:3000/reservations/${reservationId}/update-payment`
         });
 
         let errorMessage = 'Failed to update payment status';
@@ -89,66 +89,79 @@ const PaymentConfirmation = ({ theme, toggleTheme }) => {
   const handleDownloadTicket = async () => {
     try {
       setDownloadingPdf(true);
+
       const pdfBlob = await ticketService.downloadTicketByReservation(reservationId);
-      const url = window.URL.createObjectURL(pdfBlob);
+
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([pdfBlob], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `ticket-${reservationId}.pdf`);
+      link.setAttribute('download', `train-ticket-${reservationId}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (err) {
-      console.error('Error downloading ticket:', err);
-      setError('Failed to download ticket. Please try again later.');
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading ticket:', error);
+      setError('Failed to download ticket. Please try again or contact support.');
     } finally {
       setDownloadingPdf(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="payment-confirmation-page">
-        <NavBar />
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-            <CircularProgress />
-          </Box>
-        </Container>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="payment-confirmation-page">
-      <NavBar />
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          {error ? (
-            <Alert severity="error" sx={{ mb: 3 }}>
+      <NavBar theme={theme} onToggleTheme={toggleTheme} />
+      <Container>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          minHeight="60vh"
+        >
+          {loading ? (
+            <CircularProgress />
+          ) : error ? (
+            <Alert severity="error">
               {error}
+              <Box mt={2}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => navigate('/profile')}
+                >
+                  Go to Profile
+                </Button>
+              </Box>
             </Alert>
           ) : paymentSuccess ? (
-            <>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Payment Successful!
-              </Typography>
-              <Typography variant="body1" paragraph>
+            <Alert severity="success">
+              <Typography variant="h6">Payment Successful!</Typography>
+              <Typography>
                 Your reservation has been confirmed. You can now download your ticket.
               </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleDownloadTicket}
-                disabled={downloadingPdf}
-                sx={{ mt: 2 }}
-              >
-                {downloadingPdf ? 'Downloading...' : 'Download Ticket'}
-              </Button>
-            </>
+              <Box mt={2} display="flex" gap={2}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleDownloadTicket}
+                  disabled={downloadingPdf}
+                >
+                  {downloadingPdf ? 'Downloading...' : 'Download Ticket PDF'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => navigate('/profile')}
+                >
+                  Go to Profile
+                </Button>
+              </Box>
+            </Alert>
           ) : (
-            <Alert severity="warning" sx={{ mb: 3 }}>
-              Processing payment status...
+            <Alert severity="info">
+              <Typography>Processing payment confirmation...</Typography>
             </Alert>
           )}
         </Box>
