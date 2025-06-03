@@ -111,14 +111,23 @@ export default function ReservationPage() {
 
     try {
       setIsReserving(true);
+      
+      // Use the complete seat numbers
+      const seatNumbers = selectedSeats.map(seat => seat.seatNumber);
+
+      console.log('Selected seats:', selectedSeats);
+      console.log('Seat numbers:', seatNumbers);
+
       const reservationData = {
         scheduleId: schedule.id,
-        seatNumbers: selectedSeats.map(seat => seat.seatNumber),
+        seatNumbers: seatNumbers,
         passengerName: formData.name,
         passengerSurname: formData.surname,
         reservationDate: schedule.travelDate ? new Date(schedule.travelDate) : new Date(),
         discountCode: formData.discountCode || undefined,
       };
+
+      console.log('Sending reservation data:', reservationData);
 
       const reservation = await reservationService.createReservation(reservationData);
       setTimeout(() => {
@@ -127,7 +136,21 @@ export default function ReservationPage() {
       }, 2000);
     } catch (error) {
       console.error('Reservation error:', error);
-      setError(error.response?.data?.message || "Failed to create reservation");
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      
+      // Show more specific error messages
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError("Failed to create reservation. Please try again.");
+      }
     } finally {
       setIsReserving(false);
     }

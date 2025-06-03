@@ -10,6 +10,8 @@ import { Seat } from '../seats/entities/seat.entity';
 import { Schedule } from '../schedule/schedule.entity';
 import { Payment, PaymentStatus } from '../payment/entities/payment.entity';
 import { TicketService } from '../ticket/ticket.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { Ticket } from '../ticket/entities/ticket.entity';
 
 // Simplified interface - Reservation entity now directly includes seats relation
 export interface ReservationWithSeat extends Reservation {
@@ -26,6 +28,7 @@ export class ReservationService {
     private seatsService: SeatsService,
     private paymentService: PaymentService,
     private ticketService: TicketService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   async create(createReservationDto: CreateReservationDto): Promise<ReservationWithSeat> {
@@ -249,44 +252,161 @@ export class ReservationService {
 
     // Update reservation status based on payment status
     if (updatedPayment.status === PaymentStatus.COMPLETED) {
-      reservation.status = ReservationStatus.CONFIRMED;
-      console.log('Payment confirmed, updating reservation status to CONFIRMED');
+      // Check if reservation is already confirmed to prevent duplicate processing
+      if (reservation.status !== ReservationStatus.CONFIRMED) {
+        try {
+          // Update reservation status first
+          reservation.status = ReservationStatus.CONFIRMED;
+          reservation.payment = updatedPayment;
 
-      // Automatically create ticket when payment is confirmed (if not already created)
-      try {
-        // Check if ticket already exists to avoid duplicates
-        const existingTicket = await this.ticketService.findByReservationId(reservation.id);
-        if (!existingTicket) {
-          const ticket = await this.ticketService.createTicket(reservation.id);
-           console.log('Ticket created automatically:', {
-             ticketId: ticket.id,
-             ticketNumber: ticket.ticketNumber,
-             reservationId: reservation.id
-           });
+          // Save the reservation
+          const updatedReservation = await this.reservationRepository.save(reservation) as Reservation;
+
+          // Wait for ticket creation and notifications to complete
+          await this.handlePostPaymentSuccess(updatedReservation);
+
+          // Return the final state of the reservation
+          return this.findOne(updatedReservation.id);
+        } catch (error) {
+          console.error('Error processing payment success:', error);
+          // If ticket creation fails, we still want to return the confirmed reservation
+          return this.findOne(id);
         }
-      } catch (error) {
-        console.error('Error creating ticket after payment confirmation:', error);
-        // Don't fail the payment confirmation if ticket creation fails
+      } else {
+        console.log('Reservation already confirmed, skipping duplicate processing');
+        return this.findOne(id);
       }
     } else if (updatedPayment.status === PaymentStatus.FAILED) {
-      reservation.status = ReservationStatus.CANCELLED;
-      console.log('Payment failed, updating reservation status to CANCELLED');
+      // Check if reservation is already cancelled to prevent duplicate processing
+      if (reservation.status !== ReservationStatus.CANCELLED) {
+        try {
+          reservation.status = ReservationStatus.CANCELLED;
+          reservation.payment = updatedPayment;
+
+          // Save the reservation
+          const updatedReservation = await this.reservationRepository.save(reservation) as Reservation;
+
+          // Wait for failed payment notifications to complete
+          await this.handlePaymentFailure(updatedReservation);
+
+          // Return the final state of the reservation
+          return this.findOne(updatedReservation.id);
+        } catch (error) {
+          console.error('Error processing payment failure:', error);
+          // If notification fails, we still want to return the cancelled reservation
+          return this.findOne(id);
+        }
+      } else {
+        console.log('Reservation already cancelled, skipping duplicate processing');
+        return this.findOne(id);
+      }
     }
 
-    // Update the payment reference in the reservation object to reflect the new status
+    // For any other status, just update and return
     reservation.payment = updatedPayment;
-
-    // Save and re-fetch - assert save result
     const updatedReservation = await this.reservationRepository.save(reservation) as Reservation;
-
-    console.log('Reservation status updated:', {
-      reservationId: updatedReservation.id,
-      status: updatedReservation.status,
-      paymentStatus: updatedReservation.payment.status
-    });
-
-    // Re-fetch to ensure relations are loaded for the return type
     return this.findOne(updatedReservation.id);
+  }
+
+  // Helper method to handle post-payment success processing
+  private async handlePostPaymentSuccess(reservation: Reservation) {
+    let ticket: Ticket | null = null;
+    let error: Error | null = null;
+
+    try {
+      // Check if ticket already exists to avoid duplicates
+      const existingTicket = await this.ticketService.findByReservationId(reservation.id);
+      if (existingTicket) {
+        console.log('Ticket already exists, skipping creation:', {
+          ticketId: existingTicket.id,
+          ticketNumber: existingTicket.ticketNumber,
+          reservationId: reservation.id
+        });
+        ticket = existingTicket;
+      } else {
+        // Create ticket with just the reservation ID
+        ticket = await this.ticketService.createTicket(reservation.id);
+        console.log('Ticket created successfully:', {
+          ticketId: ticket.id,
+          ticketNumber: ticket.ticketNumber,
+          reservationId: reservation.id
+        });
+      }
+    } catch (ticketError) {
+      console.error('Error creating ticket:', ticketError);
+      error = ticketError as Error;
+    }
+
+    // Only send notifications after all operations are complete
+    if (ticket) {
+      // Success case - ticket was created or already existed
+      await this.notificationsGateway.emitReservationNotification({
+        reservationId: reservation.id,
+        passengerName: reservation.passengerName,
+        passengerSurname: reservation.passengerSurname,
+        scheduleId: reservation.scheduleId,
+        status: reservation.status,
+        price: reservation.price,
+        userId: reservation.userId,
+        type: 'payment',
+        message: `Payment successful! Your ticket #${ticket.ticketNumber} has been created.`
+      });
+
+      await this.notificationsGateway.emitSystemNotification(
+        `Reservation made by ${reservation.passengerName} ${reservation.passengerSurname}. Ticket number: #${ticket.ticketNumber}`,
+        'info'
+      );
+    } else {
+      // Failure case - ticket creation failed
+      await this.notificationsGateway.emitReservationNotification({
+        reservationId: reservation.id,
+        passengerName: reservation.passengerName,
+        passengerSurname: reservation.passengerSurname,
+        scheduleId: reservation.scheduleId,
+        status: reservation.status,
+        price: reservation.price,
+        userId: reservation.userId,
+        type: 'payment',
+        message: 'Payment successful! However, there was an issue creating your ticket. Please contact support.'
+      });
+
+      await this.notificationsGateway.emitSystemNotification(
+        `Payment successful for reservation by ${reservation.passengerName} ${reservation.passengerSurname}, but ticket creation failed. Please check the system.`,
+        'warning'
+      );
+
+      // Re-throw the error to be handled by the caller
+      if (error) {
+        throw error;
+      }
+    }
+  }
+
+  // Helper method to handle payment failure processing
+  private async handlePaymentFailure(reservation: Reservation) {
+    try {
+      // Emit notification for failed payment
+      await this.notificationsGateway.emitReservationNotification({
+        reservationId: reservation.id,
+        passengerName: reservation.passengerName,
+        passengerSurname: reservation.passengerSurname,
+        scheduleId: reservation.scheduleId,
+        status: reservation.status,
+        price: reservation.price,
+        userId: reservation.userId,
+        type: 'payment',
+        message: 'Payment failed. Please try again or contact support.'
+      });
+
+      // Emit system notification for admins about failed payment
+      await this.notificationsGateway.emitSystemNotification(
+        `Payment failed for reservation by ${reservation.passengerName} ${reservation.passengerSurname}`,
+        'error'
+      );
+    } catch (error) {
+      console.error('Error in payment failure processing:', error);
+      throw error;
+    }
   }
 
   async findAllForAdmin(): Promise<ReservationWithSeat[]> {
