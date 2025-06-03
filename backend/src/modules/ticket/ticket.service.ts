@@ -51,7 +51,7 @@ export class TicketService {
   async generateTicketPdf(ticketId: string): Promise<Buffer> {
     const ticket = await this.ticketRepository.findOne({
       where: { id: ticketId },
-      relations: ['reservation', 'reservation.schedule', 'reservation.schedule.train', 'reservation.schedule.route', 'reservation.user']
+      relations: ['reservation', 'reservation.schedule', 'reservation.schedule.train', 'reservation.schedule.route', 'reservation.user', 'reservation.seats']
     });
 
     if (!ticket) {
