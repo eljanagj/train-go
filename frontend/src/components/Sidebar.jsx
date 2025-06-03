@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt } from 'react-icons/fa';
-import { NotificationBell } from './NotificationBell';
 import '../styles/Sidebar.css';
 
 const Sidebar = () => {
@@ -15,7 +14,6 @@ const Sidebar = () => {
     <div className="sidebar">
       <div className="sidebar-header">
         <h2>TrainGo Admin</h2>
-        <NotificationBell />
       </div>
       <nav className="sidebar-nav">
         <Link

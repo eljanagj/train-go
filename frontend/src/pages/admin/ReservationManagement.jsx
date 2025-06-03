@@ -20,7 +20,7 @@ const ReservationManagement = () => {
   const fetchReservations = async () => {
     try {
       setLoading(true);
-      const data = await reservationService.getAllReservations();
+      const data = await reservationService.getAllReservationsForAdmin();
       setReservations(data);
       setError(null);
     } catch (err) {

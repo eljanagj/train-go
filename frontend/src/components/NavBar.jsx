@@ -2,12 +2,9 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { AuthButtons } from "./AuthButtons";
 import { Link } from "react-router-dom";
-import { NotificationBell } from "./NotificationBell";
-import { useAuth0 } from "@auth0/auth0-react";
+
 
 export function NavBar() {
-    const { isAuthenticated } = useAuth0();
-
     return (
         <nav className="navbar navbar-expand-lg navbar-light" style={{
             position: 'relative',
@@ -85,11 +82,6 @@ export function NavBar() {
                                 Booking
                             </Link>
                         </li>
-                        {isAuthenticated && (
-                            <li className="nav-item" style={{ display: 'flex', alignItems: 'center', marginRight: '1rem' }}>
-                                <NotificationBell />
-                            </li>
-                        )}
                         <li className="nav-item">
                             <AuthButtons />
                         </li>

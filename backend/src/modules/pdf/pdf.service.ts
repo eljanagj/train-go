@@ -285,7 +285,7 @@ export class PdfService {
                         <div class="detail-item">
                             <div class="detail-label">Seat Number</div>
                             <div class="detail-value">${reservation.seats.map(seat => seat.seatNumber).join(', ')}</div>
-                            }</div>
+                            </div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Fare</div>
