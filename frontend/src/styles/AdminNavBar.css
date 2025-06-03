@@ -1,0 +1,87 @@
+.admin-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #1a237e;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-navbar-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.admin-navbar-brand a {
+  color: white;
+  text-decoration: none;
+}
+
+.admin-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.admin-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-user-icon {
+  font-size: 1.2rem;
+}
+
+.admin-user-name {
+  font-size: 0.9rem;
+}
+
+.admin-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid white;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Notification bell specific styles for admin */
+.admin-navbar .notification-bell {
+  margin-right: 1rem;
+}
+
+.admin-navbar .notification-dropdown {
+  right: 0;
+  z-index: 1100; /* Higher than other admin elements */
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .admin-navbar {
+    padding: 1rem;
+  }
+
+  .admin-user-name {
+    display: none;
+  }
+
+  .admin-navbar-right {
+    gap: 1rem;
+  }
+} 

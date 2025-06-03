@@ -160,34 +160,61 @@ export class PaymentService {
       currency: paymentIntent.currency
     });
 
-    if (paymentIntent.status === 'succeeded') {
-      payment.status = PaymentStatus.COMPLETED;
-      payment.paymentDate = new Date();
+    switch (paymentIntent.status) {
+      case 'succeeded':
+        payment.status = PaymentStatus.COMPLETED;
+        payment.paymentDate = new Date();
 
-      // Extract payment method details
-      if (paymentIntent.payment_method) {
-        const paymentMethod = await this.retrievePaymentMethod(paymentIntent.payment_method as string);
-        payment.paymentMethod = PaymentMethod.CARD;
-        payment.paymentCardLast4 = paymentMethod.card?.last4 || null;
-        payment.paymentCardBrand = paymentMethod.card?.brand || null;
-      }
+        // Extract payment method details
+        if (paymentIntent.payment_method) {
+          const paymentMethod = await this.retrievePaymentMethod(paymentIntent.payment_method as string);
+          payment.paymentMethod = PaymentMethod.CARD;
+          payment.paymentCardLast4 = paymentMethod.card?.last4 || null;
+          payment.paymentCardBrand = paymentMethod.card?.brand || null;
+        }
 
-      payment.transactionId = paymentIntent.id;
+        payment.transactionId = paymentIntent.id;
 
-      console.log('Setting payment status to COMPLETED:', {
-        paymentId: payment.id,
-        newStatus: payment.status,
-        paymentDate: payment.paymentDate
-      });
-    } else if (paymentIntent.status === 'canceled' || paymentIntent.status === 'requires_payment_method') {
-      payment.status = PaymentStatus.FAILED;
-      payment.failureReason = paymentIntent.last_payment_error?.message || 'Payment failed';
+        console.log('Setting payment status to COMPLETED:', {
+          paymentId: payment.id,
+          newStatus: payment.status,
+          paymentDate: payment.paymentDate
+        });
+        break;
 
-      console.log('Setting payment status to FAILED:', {
-        paymentId: payment.id,
-        newStatus: payment.status,
-        failureReason: payment.failureReason
-      });
+      case 'canceled':
+      case 'requires_payment_method':
+      case 'requires_action':
+      case 'requires_capture':
+      case 'requires_confirmation':
+      case 'requires_payment_method':
+        payment.status = PaymentStatus.FAILED;
+        payment.failureReason = paymentIntent.last_payment_error?.message || 'Payment failed';
+
+        console.log('Setting payment status to FAILED:', {
+          paymentId: payment.id,
+          newStatus: payment.status,
+          failureReason: payment.failureReason
+        });
+        break;
+
+      case 'processing':
+        // Keep the payment as pending while it's processing
+        payment.status = PaymentStatus.PENDING;
+        console.log('Payment is processing, keeping status as PENDING:', {
+          paymentId: payment.id,
+          status: payment.status
+        });
+        break;
+
+      default:
+        payment.status = PaymentStatus.FAILED;
+        payment.failureReason = `Unexpected payment status: ${paymentIntent.status}`;
+        console.log('Setting payment status to FAILED due to unexpected status:', {
+          paymentId: payment.id,
+          newStatus: payment.status,
+          failureReason: payment.failureReason
+        });
     }
 
     const savedPayment = await this.paymentRepository.save(payment);
