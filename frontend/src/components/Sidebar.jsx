@@ -92,9 +92,10 @@ const Sidebar = () => {
         <Link
           to="/admin/maintenance"
           className={`sidebar-link ${isActive('/admin/maintenance') ? 'active' : ''}`}
+          title="Maintenance Management"
         >
           <FaTools />
-          Maintenance Management
+          {!isCollapsed && <span>Maintenance Management</span>}
         </Link>
       </nav>
       

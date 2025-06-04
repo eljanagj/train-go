@@ -1,3 +1,14 @@
+body:has(.navbar) {
+    padding-top: 64px;
+}
+
 .dropdown-menu {
     z-index: 1100 !important;
+}
+
+
+
+
+.page-container {
+    padding-top: 0; 
 }

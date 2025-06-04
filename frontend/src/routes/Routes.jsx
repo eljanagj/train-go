@@ -16,6 +16,8 @@ import PaymentPage from '../pages/PaymentPage';
 import PaymentConfirmation from '../pages/PaymentConfirmation';
 import Unauthorized from '../pages/Unauthorized';
 import { ProtectedRoute, AdminRoute } from '../components/ProtectedRoute';
+import Unauthorized from '../pages/Unauthorized';
+import { ProtectedRoute, AdminRoute } from '../components/ProtectedRoute';
 import MaintenanceManagement from '../pages/admin/MaintenanceManagement';
 
 export default function AppRoutes({ theme, toggleTheme }) {
@@ -25,7 +27,6 @@ export default function AppRoutes({ theme, toggleTheme }) {
       <Route path="/" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
       {/* <Route path="/search" element={<RouteSearch theme={theme} toggleTheme={toggleTheme} />} /> */}
       <Route path="/unauthorized" element={<Unauthorized theme={theme} toggleTheme={toggleTheme} />} />
-      <Route path="/admin/maintenance" element={<MaintenanceManagement theme={theme} toggleTheme={toggleTheme} />} />
       
       {/* Protected Routes - Authentication Required */}
       <Route path="/profile" element={
@@ -89,6 +90,11 @@ export default function AppRoutes({ theme, toggleTheme }) {
       <Route path="/admin/tickets" element={
         <AdminRoute>
           <TicketManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/maintenance" element={
+        <AdminRoute>
+          <MaintenanceManagement theme={theme} toggleTheme={toggleTheme} />
         </AdminRoute>
       } />
     </Routes>
