@@ -8,6 +8,7 @@ import { SeatsModule } from '../seats/seats.module';
 import { PaymentModule } from '../payment/payment.module';
 import { PdfModule } from '../pdf/pdf.module';
 import { TicketModule } from '../ticket/ticket.module';
+import { AuthzModule } from '../authz/authz.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TicketModule } from '../ticket/ticket.module';
     PaymentModule,
     PdfModule,
     TicketModule,
+    AuthzModule,
   ],
   controllers: [ReservationController],
   providers: [ReservationService],

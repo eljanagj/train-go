@@ -12,13 +12,18 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const allowed = (await super.canActivate(ctx)) as boolean;
     if (!allowed) return false;
 
+
     const req = ctx.switchToHttp().getRequest();
-    const claims = req.user as { sub: string; email: string; name?: string };
-    let user = await this.users.findByAuth0Id(claims.sub);
+    const payload = req.user as any;    
+    let user = await this.users.findByAuth0Id(payload.sub);
     if (!user) {
-      user = await this.users.createFromAuth0(claims);
+      user = await this.users.createFromAuth0(payload);
     }
-    req.user = user;
+
+    const roles: string[] = payload['roles'] || [];
+    const authUser = Object.assign(user, { roles });
+
+    req.user = authUser;
     return true;
   }
 }

@@ -4,9 +4,10 @@ import { Train } from './entities/train.entity';
 import { TrainService } from './train.service';
 import { TrainController } from './train.controller';
 import { Seat } from '../seats/entities/seat.entity';
+import { AuthzModule } from '../authz/authz.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Train, Seat])],
+  imports: [TypeOrmModule.forFeature([Train, Seat]), AuthzModule],
   controllers: [TrainController],
   providers: [TrainService],
 })

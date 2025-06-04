@@ -1,10 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, Query, UseGuards } from '@nestjs/common';
 import { ReservationService, ReservationWithSeat } from './reservation.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TicketService } from '../ticket/ticket.service';
 import { Response } from 'express';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('reservations')
 @Controller('reservations')
@@ -14,6 +17,7 @@ export class ReservationController {
     private readonly ticketService: TicketService
   ) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: 'Create a new reservation' })
   @ApiResponse({ status: 201, description: 'Reservation created successfully' })
@@ -21,6 +25,7 @@ export class ReservationController {
     return this.reservationService.create(createReservationDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/update-payment')
   @ApiOperation({ summary: 'Update payment status for a reservation' })
   @ApiResponse({ status: 200, description: 'Payment status updated successfully' })
@@ -51,6 +56,7 @@ export class ReservationController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({ summary: 'Get all reservations' })
   @ApiResponse({ status: 200, description: 'Returns list of reservations' })
@@ -58,6 +64,7 @@ export class ReservationController {
     return this.reservationService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('admin/all')
   @ApiOperation({ summary: 'Get all reservations for admin with full details' })
   @ApiResponse({ status: 200, description: 'Returns list of all reservations with full details' })
@@ -65,13 +72,15 @@ export class ReservationController {
     return this.reservationService.findAllForAdmin();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('schedule/:id')
   @ApiOperation({ summary: 'Get reservations by schedule ID' })
   @ApiResponse({ status: 200, description: 'Returns list of reservations for the schedule' })
   findBySchedule(@Param('id') id: string): Promise<ReservationWithSeat[]> {
     return this.reservationService.findBySchedule(+id);
   }
-
+ 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiOperation({ summary: 'Get a reservation by ID' })
   @ApiResponse({ status: 200, description: 'Returns the reservation' })
@@ -79,6 +88,7 @@ export class ReservationController {
     return this.reservationService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({ summary: 'Update a reservation' })
   @ApiResponse({ status: 200, description: 'Reservation updated successfully' })
@@ -86,6 +96,8 @@ export class ReservationController {
     return this.reservationService.update(id, updateReservationDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a reservation' })
   @ApiResponse({ status: 200, description: 'Reservation deleted successfully' })
@@ -93,13 +105,15 @@ export class ReservationController {
     return this.reservationService.remove(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel a reservation' })
   @ApiResponse({ status: 200, description: 'Reservation cancelled successfully' })
   cancelReservation(@Param('id') id: string): Promise<ReservationWithSeat> {
     return this.reservationService.cancelReservation(id);
   }
-
+ 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/confirm')
   @ApiOperation({ summary: 'Confirm a reservation' })
   @ApiResponse({ status: 200, description: 'Reservation confirmed successfully' })
@@ -107,6 +121,7 @@ export class ReservationController {
     return this.reservationService.confirmReservation(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id/download-ticket')
   @ApiOperation({ summary: 'Download ticket PDF for a reservation' })
   @ApiResponse({ status: 200, description: 'PDF ticket downloaded successfully' })

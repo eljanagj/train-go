@@ -5,8 +5,10 @@ import { NavBar } from "../components/NavBar";
 import { Footer } from "../components/Footer";
 import { Link } from "react-router-dom";
 import { FaTrain, FaClock } from "react-icons/fa";
-import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { PageLoader } from "../components/PageLoader";
+import { routeService } from '../services/routeService';
+import { scheduleService } from '../services/scheduleService';
 
 function TrainSearchPage() {
   const [from, setFrom] = useState("");
@@ -45,8 +47,7 @@ function TrainSearchPage() {
 
   const fetchAllRoutes = async () => {
     try {
-      const res = await fetch('http://localhost:3000/routes');
-      const data = await res.json();
+      const data = await routeService.getAllRoutes();
       setAllRoutes(data);
 
       const uniqueFromStations = [...new Set(data.map(route => route.departureStation))];
@@ -80,17 +81,19 @@ function TrainSearchPage() {
     setError("");
     setResults([]);
     try {
-      const routesRes = await fetch(
-        `http://localhost:3000/routes/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+      // Filter routes locally instead of making a search API call
+      const routes = allRoutes.filter(route => 
+        route.departureStation === from && route.arrivalStation === to
       );
-      if (!routesRes.ok) throw new Error("No routes found");
-      const routes = await routesRes.json();
+
+      if (routes.length === 0) {
+        setError("No routes found for the selected stations");
+        return;
+      }
 
       const schedulesPromises = routes.map(async (route) => {
         try {
-          const schedulesRes = await fetch(`http://localhost:3000/schedules/route/${route.id}`);
-          if (!schedulesRes.ok) return [];
-          const schedules = await schedulesRes.json();
+          const schedules = await scheduleService.getSchedulesByRoute(route.id);
 
           // Store the travel date with each schedule for reservation purposes
           // but don't filter schedules by date - show all available schedules
@@ -317,6 +320,4 @@ function TrainSearchPage() {
   );
 }
 
-export default withAuthenticationRequired(TrainSearchPage, {
-  onRedirecting: () => <PageLoader />,
-});
+export default TrainSearchPage;

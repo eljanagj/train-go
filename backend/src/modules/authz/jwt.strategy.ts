@@ -22,6 +22,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
 
   async validate(payload: any) {
-    return payload;
+    const roles: string[] = payload['https://lab1.com/roles'] ?? [];
+    return {
+      sub: payload.sub,
+      email: payload['https://lab1.com/email'],
+      name: payload.name,
+      roles,
+    };
   }
 }

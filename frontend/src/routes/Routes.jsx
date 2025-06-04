@@ -14,25 +14,83 @@ import RouteSearch from '../pages/RouteSearch';
 import SeatManagement from '../pages/admin/SeatManagement';
 import PaymentPage from '../pages/PaymentPage';
 import PaymentConfirmation from '../pages/PaymentConfirmation';
+import Unauthorized from '../pages/Unauthorized';
+import { ProtectedRoute, AdminRoute } from '../components/ProtectedRoute';
 import MaintenanceManagement from '../pages/admin/MaintenanceManagement';
 
 export default function AppRoutes({ theme, toggleTheme }) {
   return (
     <Routes>
-        <Route path="/" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/search" element={<RouteSearch theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/reservation" element={<ReservationPage theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/profile" element={<ProfilePage theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/admin/trains" element={<TrainManagement theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/admin/trains/:trainId/seats" element={<SeatManagement theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/admin/routes" element={<RouteManagement theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/admin/schedules" element={<ScheduleManagement theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/admin/reservations" element={<ReservationManagement theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/admin/payments" element={<PaymentManagement theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/admin/tickets" element={<TicketManagement theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/admin/maintenance" element={<MaintenanceManagement theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/payment/:reservationId" element={<PaymentPage theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/reservations/:reservationId/confirmation" element={<PaymentConfirmation theme={theme} toggleTheme={toggleTheme} />} />
+      {/* Public Routes - No Authentication Required */}
+      <Route path="/" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
+      {/* <Route path="/search" element={<RouteSearch theme={theme} toggleTheme={toggleTheme} />} /> */}
+      <Route path="/unauthorized" element={<Unauthorized theme={theme} toggleTheme={toggleTheme} />} />
+      <Route path="/admin/maintenance" element={<MaintenanceManagement theme={theme} toggleTheme={toggleTheme} />} />
+      
+      {/* Protected Routes - Authentication Required */}
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage theme={theme} toggleTheme={toggleTheme} />
+        </ProtectedRoute>
+      } />
+      <Route path="/reservation" element={
+        <ProtectedRoute>
+          <ReservationPage theme={theme} toggleTheme={toggleTheme} />
+        </ProtectedRoute>
+      } />
+      <Route path="/payment/:reservationId" element={
+        <ProtectedRoute>
+          <PaymentPage theme={theme} toggleTheme={toggleTheme} />
+        </ProtectedRoute>
+      } />
+      <Route path="/reservations/:reservationId/confirmation" element={
+        <ProtectedRoute>
+          <PaymentConfirmation theme={theme} toggleTheme={toggleTheme} />
+        </ProtectedRoute>
+      } />
+      <Route path="/search" element={
+        <ProtectedRoute>
+          <RouteSearch theme={theme} toggleTheme={toggleTheme} />
+        </ProtectedRoute>
+      } />
+
+
+      {/* Admin Routes - Authentication + Admin Role Required */}
+      <Route path="/admin/trains" element={
+        <AdminRoute>
+          <TrainManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/trains/:trainId/seats" element={
+        <AdminRoute>
+          <SeatManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/routes" element={
+        <AdminRoute>
+          <RouteManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/schedules" element={
+        <AdminRoute>
+          <ScheduleManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/reservations" element={
+        <AdminRoute>
+          <ReservationManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/payments" element={
+        <AdminRoute>
+          <PaymentManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/tickets" element={
+        <AdminRoute>
+          <TicketManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
     </Routes>
   );
 }

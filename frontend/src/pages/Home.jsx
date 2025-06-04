@@ -1,11 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "../styles/Home.css"; 
 import { Footer } from "../components/Footer";
 import { NavBar } from "../components/NavBar";
 
 export default function Home() {
-  return (
+  useEffect(() => {
+    document.body.classList.add('homepage-body');
+    return () => {
+      document.body.classList.remove('homepage-body');
+    };
+  }, []);
 
+  return (
     <div className="homepage">
       <NavBar/>
       <header className="hero">

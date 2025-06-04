@@ -24,10 +24,21 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('My API')
-    .setDescription('API documentation for my NestJS app')
+    .setTitle('Train Go API')
+    .setDescription('API documentation for Train Go application')
     .setVersion('1.0')
-    .addTag('API') // Optional tags
+    .addTag('API')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

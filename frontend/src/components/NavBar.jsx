@@ -2,16 +2,24 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { AuthButtons } from "./AuthButtons";
 import { Link } from "react-router-dom";
-
+import { useUserRoles } from '../hooks/useUserRoles';
 
 export function NavBar() {
+    const { isAdmin } = useUserRoles();
+
     return (
         <nav className="navbar navbar-expand-lg navbar-light" style={{
-            position: 'relative',
-            zIndex: 1000,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            width: '100%',
+            zIndex: 1001,
             background: 'white',
             borderBottom: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+            height: '64px',
+            minHeight: '64px'
         }}>
             <div className="container-fluid" style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 <Link className="navbar-brand fw-bold" to="/" style={{
@@ -82,6 +90,32 @@ export function NavBar() {
                                 Booking
                             </Link>
                         </li>
+                        {isAdmin() && (
+                            <li className="nav-item">
+                                <Link
+                                    className="nav-link"
+                                    to="/admin/trains"
+                                    style={{
+                                        color: '#dc2626',
+                                        fontWeight: '600',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '6px',
+                                        transition: 'all 0.15s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.color = '#ffffff';
+                                        e.target.style.backgroundColor = '#dc2626';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.color = '#dc2626';
+                                        e.target.style.backgroundColor = 'transparent';
+                                    }}
+                                >
+                                    Admin
+                                </Link>
+                            </li>
+                        )}
+
                         <li className="nav-item">
                             <AuthButtons />
                         </li>

@@ -1,62 +1,93 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt, FaTools } from 'react-icons/fa';
+import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt, FaTools, FaBars, FaTimes, FaHome } from 'react-icons/fa';
 import '../styles/Sidebar.css';
+import { useUserRoles } from '../hooks/useUserRoles';
 
 const Sidebar = () => {
   const location = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isAdmin, isLoading } = useUserRoles();
 
   const isActive = (path) => {
     return location.pathname === path;
   };
 
+  if (isLoading) return <div className="sidebar-loading">Loading...</div>;
+  
+  if (!isAdmin()) {
+    return <div className="sidebar-error">Access Denied</div>;
+  }
+
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <h2>TrainGo Admin</h2>
+        <div className="sidebar-title">
+          {!isCollapsed && (
+            <>
+              <h2>TrainGo Admin</h2>
+              <Link to="/" className="back-to-main">
+                <FaHome /> Back to Main App
+              </Link>
+            </>
+          )}
+        </div>
+        <button 
+          className="sidebar-toggle"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed ? <FaBars /> : <FaTimes />}
+        </button>
       </div>
       <nav className="sidebar-nav">
         <Link
           to="/admin/trains"
-          className={`sidebar-link ${isActive('/trains') ? 'active' : ''}`}
+          className={`sidebar-link ${isActive('/admin/trains') ? 'active' : ''}`}
+          title="Train Management"
         >
           <FaTrain />
-          Train Management
+          {!isCollapsed && <span>Train Management</span>}
         </Link>
         <Link
           to="/admin/routes"
           className={`sidebar-link ${isActive('/admin/routes') ? 'active' : ''}`}
+          title="Route Management"
         >
           <FaRoute />
-          Route Management
+          {!isCollapsed && <span>Route Management</span>}
         </Link>
         <Link
           to="/admin/schedules"
           className={`sidebar-link ${isActive('/admin/schedules') ? 'active' : ''}`}
+          title="Schedule Management"
         >
           <FaClock />
-          Schedule Management
+          {!isCollapsed && <span>Schedule Management</span>}
         </Link>
         <Link
           to="/admin/reservations"
           className={`sidebar-link ${isActive('/admin/reservations') ? 'active' : ''}`}
+          title="Reservation Management"
         >
           <FaCalendar />
-          Reservation Management
+          {!isCollapsed && <span>Reservation Management</span>}
         </Link>
         <Link
           to="/admin/payments"
           className={`sidebar-link ${isActive('/admin/payments') ? 'active' : ''}`}
+          title="Payment Management"
         >
           <FaCreditCard />
-          Payment Management
+          {!isCollapsed && <span>Payment Management</span>}
         </Link>
         <Link
           to="/admin/tickets"
           className={`sidebar-link ${isActive('/admin/tickets') ? 'active' : ''}`}
+          title="Ticket Management"
         >
           <FaTicketAlt />
-          Ticket Management
+          {!isCollapsed && <span>Ticket Management</span>}
         </Link>
         <Link
           to="/admin/maintenance"
@@ -66,6 +97,14 @@ const Sidebar = () => {
           Maintenance Management
         </Link>
       </nav>
+      
+      {isCollapsed && (
+        <div className="sidebar-bottom">
+          <Link to="/" className="back-to-main-collapsed" title="Back to Main App">
+            <FaHome />
+          </Link>
+        </div>
+      )}
     </div>
   );
 };

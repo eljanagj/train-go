@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import { NavBar } from "../components/NavBar";
 import { Footer } from "../components/Footer";
@@ -10,9 +10,10 @@ import { reservationService } from "../services/reservationService";
 import { ticketService } from "../services/ticketService";
 
 const ProfileComponent = ({ theme, toggleTheme }) => {
-  const { user } = useAuth0();
+  const { user, isAuthenticated, isLoading } = useAuth0();
   const navigate = useNavigate();
-  const [nickname, setNickname] = useState(user.nickname || user.name || "");
+  
+  const [nickname, setNickname] = useState("");
   const [editing, setEditing] = useState(false);
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,9 +22,19 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const [showModal, setShowModal] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(null);
 
+  // Update nickname when user becomes available
   useEffect(() => {
-    fetchReservations();
-  }, []);
+    if (user) {
+      setNickname(user.nickname || user.name || "");
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchReservations();
+    }
+  }, [user]);
+
   useEffect(() => {
     const handleFocus = () => {
       fetchReservations();
@@ -142,6 +153,33 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="profile-page-light">
+        <NavBar theme={theme} onToggleTheme={toggleTheme} />
+        <div className="profile-container">
+          <PageLoader />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="profile-page-light">
+        <NavBar theme={theme} onToggleTheme={toggleTheme} />
+        <div className="profile-container">
+          <div className="alert alert-info">
+            Loading user information...
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  
   return (
     <div className="profile-page-light">
       <NavBar theme={theme} onToggleTheme={toggleTheme} />
@@ -155,9 +193,9 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
             />
           </div>
           <div className="profile-info">
-              <h1 className="profile-name">
-                {nickname} 
-              </h1>
+            <h1 className="profile-name">
+              {nickname} 
+            </h1>
             <p className="profile-email">{user.email}</p>
           </div>
         </div>
@@ -436,6 +474,4 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   );
 };
 
-export default withAuthenticationRequired(ProfileComponent, {
-  onRedirecting: () => <PageLoader />,
-});
+export default ProfileComponent;
