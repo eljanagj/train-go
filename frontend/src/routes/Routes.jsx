@@ -16,8 +16,6 @@ import PaymentPage from '../pages/PaymentPage';
 import PaymentConfirmation from '../pages/PaymentConfirmation';
 import Unauthorized from '../pages/Unauthorized';
 import { ProtectedRoute, AdminRoute } from '../components/ProtectedRoute';
-import Unauthorized from '../pages/Unauthorized';
-import { ProtectedRoute, AdminRoute } from '../components/ProtectedRoute';
 import MaintenanceManagement from '../pages/admin/MaintenanceManagement';
 
 export default function AppRoutes({ theme, toggleTheme }) {
