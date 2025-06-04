@@ -1,0 +1,37 @@
+/* Styles specific to the FilterDropdown component */
+
+/* Target the dropdown menu specifically within our component for z-index */
+.maintenance-filter-dropdown .dropdown-menu {
+  /* Override the high z-index from RouteSearch.css */
+  /* Using a value typically below modal z-indices */
+  z-index: 1050; /* React-Bootstrap modals often start around 1050 or 1055 */
+  
+  /* Ensure default positioning is used or reset if needed */
+  /* React-Bootstrap default is usually position: absolute, top: 100%, left: 0 */
+  /* If RouteSearch.css overrode these, you might need to add: */
+  /* position: absolute; */
+  /* top: 100%; */
+  /* left: 0; */
+  /* float: left; */ /* Sometimes needed for correct positioning */
+
+  /* The display property is key. We need higher specificity than .dropdown-menu { display: block !important; } */
+  /* Targeting when the parent NavDropdown has the .show class */
+}
+
+/* Ensure the dropdown menu is hidden when the parent NavDropdown is NOT shown */
+/* This targets the menu when the parent does NOT have the .show class */
+.maintenance-filter-dropdown:not(.show) > .dropdown-menu {
+    display: none !important; /* Use !important here to guarantee override of global !important */
+}
+
+/* Ensure the dropdown menu is shown when the parent NavDropdown IS shown */
+/* This targets the menu when the parent HAS the .show class */
+.maintenance-filter-dropdown.show > .dropdown-menu {
+     display: block !important; /* Use !important to match RB's show behavior and override global */
+}
+
+/* Reset or adjust dropdown item styles if RouteSearch.css affects them */
+.maintenance-filter-dropdown .dropdown-item {
+  /* Add specific styles or overrides for dropdown items if needed */
+  /* Example: color: initial; padding: initial; etc. */
+} 

@@ -14,6 +14,7 @@ import RouteSearch from '../pages/RouteSearch';
 import SeatManagement from '../pages/admin/SeatManagement';
 import PaymentPage from '../pages/PaymentPage';
 import PaymentConfirmation from '../pages/PaymentConfirmation';
+import MaintenanceManagement from '../pages/admin/MaintenanceManagement';
 
 export default function AppRoutes({ theme, toggleTheme }) {
   return (
@@ -29,6 +30,7 @@ export default function AppRoutes({ theme, toggleTheme }) {
         <Route path="/admin/reservations" element={<ReservationManagement theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="/admin/payments" element={<PaymentManagement theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="/admin/tickets" element={<TicketManagement theme={theme} toggleTheme={toggleTheme} />} />
+        <Route path="/admin/maintenance" element={<MaintenanceManagement theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="/payment/:reservationId" element={<PaymentPage theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="/reservations/:reservationId/confirmation" element={<PaymentConfirmation theme={theme} toggleTheme={toggleTheme} />} />
     </Routes>

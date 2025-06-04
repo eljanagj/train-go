@@ -129,7 +129,7 @@ const PaymentPage = ({ theme, toggleTheme }) => {
 
         {clientSecret && (
           <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-            <StripePaymentForm reservationId={reservationId} />
+            <StripePaymentForm reservationId={reservationId} clientSecret={clientSecret} />
           </Elements>
         )}
       </>

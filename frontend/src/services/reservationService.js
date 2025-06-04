@@ -37,6 +37,19 @@ export const reservationService = {
     return response.data;
   },
 
+  // Update payment status
+  updatePaymentStatus: async (reservationId, paymentIntentId) => {
+    try {
+      const response = await api.post(`/reservations/${reservationId}/update-payment`, {
+        paymentIntentId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      throw error;
+    }
+  },
+
   // Admin: Get all reservations
   getAllReservationsForAdmin: async () => {
     const response = await api.get('/reservations/admin/all');

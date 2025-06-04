@@ -511,3 +511,25 @@
   font-size: 0.75rem;
 }
 
+.maintenance-button {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.maintenance-button:hover {
+  background-color: #f57c00;
+}
+
+.maintenance-button svg {
+  font-size: 16px;
+}
+

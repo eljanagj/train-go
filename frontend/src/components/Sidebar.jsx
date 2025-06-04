@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt } from 'react-icons/fa';
+import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt, FaTools } from 'react-icons/fa';
 import '../styles/Sidebar.css';
 
 const Sidebar = () => {
@@ -57,6 +57,13 @@ const Sidebar = () => {
         >
           <FaTicketAlt />
           Ticket Management
+        </Link>
+        <Link
+          to="/admin/maintenance"
+          className={`sidebar-link ${isActive('/admin/maintenance') ? 'active' : ''}`}
+        >
+          <FaTools />
+          Maintenance Management
         </Link>
       </nav>
     </div>

@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Schedule } from '../../schedule/schedule.entity';
 import { Seat } from '../../seats/entities/seat.entity';
 import { TrainStatus } from './train-status.enum';
+import { Maintenance } from '../../maintenance/entities/maintenance.entity';
 
 @Entity('trains')
 export class Train {
@@ -38,6 +39,9 @@ export class Train {
 
   @OneToMany(() => Seat, seat => seat.train)
   seats: Seat[];
+
+  @OneToMany(() => Maintenance, maintenance => maintenance.train)
+  maintenance: Maintenance[];
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
