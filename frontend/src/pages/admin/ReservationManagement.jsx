@@ -85,7 +85,7 @@ const ReservationManagement = () => {
                 <th>Passenger</th>
                 <th>Route</th>
                 <th>Train</th>
-                <th>Seat</th>
+                <th>Seat/s</th>
                 <th>Price</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -130,7 +130,16 @@ const ReservationManagement = () => {
                       </div>
                     </td>
                     <td>
-                      <span className="seat-number">{reservation.seatNumber}</span>
+                      {/* Display all seat numbers */}
+                      {reservation.seats && reservation.seats.length > 0 ? (
+                        reservation.seats.map((seat, index) => (
+                          <span key={seat.id || index} className="seat-number">
+                            {seat.seatNumber}{index < reservation.seats.length - 1 ? ', ' : ''}
+                          </span>
+                        ))
+                      ) : (
+                        'N/A'
+                      )}
                     </td>
                     <td>
                       <span className="price">
@@ -213,7 +222,12 @@ const ReservationManagement = () => {
                     <h6>Journey Information</h6>
                     <p><strong>Route:</strong> {selectedReservation.schedule?.route?.departureStation} → {selectedReservation.schedule?.route?.arrivalStation}</p>
                     <p><strong>Train:</strong> {selectedReservation.schedule?.train?.trainName}</p>
-                    <p><strong>Seat:</strong> {selectedReservation.seatNumber}</p>
+                    {/* Display all seat numbers in modal */}
+                    <p><strong>Seat/s:</strong> {selectedReservation.seats && selectedReservation.seats.length > 0 ? (
+                      selectedReservation.seats.map(seat => seat.seatNumber).join(', ')
+                    ) : (
+                      'N/A'
+                    )}</p>
                     <p><strong>Price:</strong> €{Number(selectedReservation.price).toFixed(2)}</p>
                   </div>
                   <div className="col-md-6">

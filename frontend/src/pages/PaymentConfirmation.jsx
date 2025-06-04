@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { reservationService } from '../services/reservationService';
+import { paymentService } from '../services/paymentService';
 import { ticketService } from '../services/ticketService';
 import { NavBar } from '../components/NavBar';
 import { Footer } from '../components/Footer';
@@ -24,43 +25,42 @@ const PaymentConfirmation = ({ theme, toggleTheme }) => {
 
   useEffect(() => {
     const updatePaymentStatus = async () => {
-      const searchParams = new URLSearchParams(location.search);
-      const paymentIntentId = searchParams.get('payment_intent');
-      const status = searchParams.get('redirect_status');
-
       try {
-        if (!paymentIntentId) {
-          throw new Error('Payment intent ID is missing from URL parameters');
+        // First, get the payment for this reservation
+        const payment = await paymentService.getPaymentByReservation(reservationId);
+        
+        if (!payment || !payment.paymentIntentId) {
+          throw new Error('No payment found for this reservation');
         }
 
-        console.log('Payment confirmation details:', {
-          paymentIntentId,
-          status,
-          reservationId,
-          fullUrl: window.location.href,
-          searchParams: location.search
-        });
-        const response = await axios.post(`http://localhost:3000/reservations/${reservationId}/update-payment`, {
-          paymentIntentId: paymentIntentId
-        });
-
-        if (response.data.status === 'confirmed') {
-          setError(null);
-          setPaymentSuccess(true);
-        } else if (response.data.status === 'cancelled') {
-          setError('Payment failed. Please try again or contact support.');
+        // Get the payment intent status
+        const paymentIntent = await paymentService.getPaymentIntent(payment.paymentIntentId);
+        
+        if (paymentIntent.status === 'succeeded') {
+          // If payment is already succeeded, update the status in our backend
+          const response = await reservationService.updatePaymentStatus(reservationId, payment.paymentIntentId);
+          
+          if (response.status === 'confirmed' || response.payment?.status === 'completed') {
+            setError(null);
+            setPaymentSuccess(true);
+          } else if (response.status === 'cancelled' || response.payment?.status === 'failed') {
+            setError('Payment failed. Please try again or contact support.');
+          } else {
+            setError(`Payment status: ${response.status}. Please contact support if this seems incorrect.`);
+          }
+        } else if (paymentIntent.status === 'requires_payment_method') {
+          setError('Payment failed. Please try again.');
+        } else if (paymentIntent.status === 'requires_confirmation') {
+          setError('Payment requires confirmation. Please try again.');
         } else {
-          setError(`Payment status: ${response.data.status}. Please contact support if this seems incorrect.`);
+          setError(`Unexpected payment status: ${paymentIntent.status}. Please contact support.`);
         }
       } catch (err) {
         console.error('Error updating payment status:', {
           error: err,
           response: err.response?.data,
           status: err.response?.status,
-          paymentIntent: paymentIntentId,
-          redirectStatus: status,
-          reservationId: reservationId,
-          url: `http://localhost:3000/reservations/${reservationId}/update-payment`
+          reservationId
         });
 
         let errorMessage = 'Failed to update payment status';
@@ -84,26 +84,22 @@ const PaymentConfirmation = ({ theme, toggleTheme }) => {
     if (reservationId) {
       updatePaymentStatus();
     }
-  }, [reservationId, location.search, navigate]);
+  }, [reservationId]);
 
   const handleDownloadTicket = async () => {
     try {
       setDownloadingPdf(true);
-
       const pdfBlob = await ticketService.downloadTicketByReservation(reservationId);
-
-      // Create blob link to download
       const url = window.URL.createObjectURL(new Blob([pdfBlob], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `train-ticket-${reservationId}.pdf`);
+      link.setAttribute('download', `ticket-${reservationId}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading ticket:', error);
-      setError('Failed to download ticket. Please try again or contact support.');
+    } catch (err) {
+      console.error('Error downloading ticket:', err);
+      setError('Failed to download ticket. Please try again later.');
     } finally {
       setDownloadingPdf(false);
     }
@@ -113,55 +109,33 @@ const PaymentConfirmation = ({ theme, toggleTheme }) => {
     <div className="payment-confirmation-page">
       <NavBar theme={theme} onToggleTheme={toggleTheme} />
       <Container>
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          minHeight="60vh"
-        >
+        <Box mt={4} mb={4}>
           {loading ? (
-            <CircularProgress />
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+              <CircularProgress />
+            </Box>
           ) : error ? (
-            <Alert severity="error">
-              {error}
-              <Box mt={2}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => navigate('/profile')}
-                >
-                  Go to Profile
-                </Button>
-              </Box>
-            </Alert>
+            <Alert severity="error">{error}</Alert>
           ) : paymentSuccess ? (
-            <Alert severity="success">
-              <Typography variant="h6">Payment Successful!</Typography>
-              <Typography>
+            <Box>
+              <Typography variant="h4" gutterBottom>
+                Payment Successful!
+              </Typography>
+              <Typography variant="body1" paragraph>
                 Your reservation has been confirmed. You can now download your ticket.
               </Typography>
-              <Box mt={2} display="flex" gap={2}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleDownloadTicket}
-                  disabled={downloadingPdf}
-                >
-                  {downloadingPdf ? 'Downloading...' : 'Download Ticket PDF'}
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => navigate('/profile')}
-                >
-                  Go to Profile
-                </Button>
-              </Box>
-            </Alert>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleDownloadTicket}
+                disabled={downloadingPdf}
+              >
+                {downloadingPdf ? 'Downloading...' : 'Download Ticket'}
+              </Button>
+            </Box>
           ) : (
-            <Alert severity="info">
-              <Typography>Processing payment confirmation...</Typography>
+            <Alert severity="warning">
+              Processing payment status...
             </Alert>
           )}
         </Box>

@@ -136,17 +136,46 @@ export class RouteService implements OnModuleInit {
       const routes = routesRaw
         .filter((r): r is string => r !== null)
         .map(r => JSON.parse(r));
-      if (routes.length > 0) return routes;
+      if (routes.length > 0) {
+        // Filter out routes with decommissioned trains
+        const filteredRoutes = await Promise.all(
+          routes.map(async (route) => {
+            const train = await this.trainRepository.findOneBy({ trainID: route.trainID });
+            return train && train.status !== 'DECOMMISSIONED' ? route : null;
+          })
+        );
+        const activeRoutes = filteredRoutes.filter((r): r is Route => r !== null);
+        console.log('Redis found routes:', routes.length, 'Active after filter:', activeRoutes.length);
+        if (activeRoutes.length > 0) {
+          console.log('Returning active routes from Redis:', activeRoutes.length);
+          return activeRoutes;
+        }
+      }
     }
-    // Fallback to Postgres
-    const routes = await this.routeRepository.find({ where: { departureStation: from, arrivalStation: to } });
+
+    console.log('No active routes in Redis or Redis lookup failed, falling back to Postgres.');
+
+    // Fallback to Postgres with train status filter
+    const routes = await this.routeRepository
+      .createQueryBuilder('route')
+      .leftJoinAndSelect('route.train', 'train')
+      .where('route.departureStation = :from', { from })
+      .andWhere('route.arrivalStation = :to', { to })
+      .andWhere('train.status != :status', { status: 'DECOMMISSIONED' })
+      .getMany();
+
     if (routes.length === 0) {
-      throw new NotFoundException(`No routes found from ${from} to ${to}`);
+      console.log('Postgres found no routes.');
+      return []; // Return empty array instead of throwing 404
     }
+
+    console.log('Postgres found routes:', routes.length);
+
     // Sync Redis
     for (const route of routes) {
       await this.indexRouteInRedis(route);
     }
+    console.log('Returning routes from Postgres:', routes.length);
     return routes;
   }
 

@@ -252,7 +252,7 @@ export class ReservationService {
       reservation.status = ReservationStatus.CONFIRMED;
       console.log('Payment confirmed, updating reservation status to CONFIRMED');
 
-      // Automatically create ticket when payment is confirmed (if not already created)
+      /*// Automatically create ticket when payment is confirmed (if not already created)
       try {
         // Check if ticket already exists to avoid duplicates
         const existingTicket = await this.ticketService.findByReservationId(reservation.id);
@@ -267,7 +267,7 @@ export class ReservationService {
       } catch (error) {
         console.error('Error creating ticket after payment confirmation:', error);
         // Don't fail the payment confirmation if ticket creation fails
-      }
+      } */
     } else if (updatedPayment.status === PaymentStatus.FAILED) {
       reservation.status = ReservationStatus.CANCELLED;
       console.log('Payment failed, updating reservation status to CANCELLED');

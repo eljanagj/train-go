@@ -13,6 +13,7 @@ import { SeatsModule } from './modules/seats/seats.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { TicketModule } from './modules/ticket/ticket.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { TicketModule } from './modules/ticket/ticket.module';
     ReservationModule,
     PaymentModule,
     TicketModule,
+    MaintenanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

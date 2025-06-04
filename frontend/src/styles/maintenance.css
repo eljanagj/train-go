@@ -1,0 +1,128 @@
+/* Status Cards */
+.status-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.status-icon.operational {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.status-icon.maintenance {
+  background-color: rgba(23, 162, 184, 0.1);
+  color: #17a2b8;
+}
+
+.status-icon.critical {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.status-icon.overdue {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+/* Cards */
+.card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+/* Upcoming Maintenance */
+.upcoming-item {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.upcoming-item:hover {
+  background-color: #f8f9fa;
+}
+
+.upcoming-item:last-child {
+  border-bottom: none !important;
+}
+
+.upcoming-date {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.upcoming-details h6 {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+/* Activity Feed */
+.activity-item {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.activity-item:hover {
+  background-color: #f8f9fa;
+}
+
+.activity-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Badges */
+.badge {
+  padding: 0.5em 0.75em;
+  font-weight: 500;
+}
+
+/* Charts */
+.chart-container {
+  position: relative;
+  height: 300px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .status-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+}
+
+.upcoming-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.activity-list {
+  max-height: 300px;
+  overflow-y: auto;
+} 
