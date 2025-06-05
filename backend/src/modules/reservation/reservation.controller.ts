@@ -8,6 +8,7 @@ import { Response } from 'express';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { User } from 'src/common/decorators/user.decorator';
 
 @ApiTags('reservations')
 @Controller('reservations')
@@ -21,8 +22,8 @@ export class ReservationController {
   @Post()
   @ApiOperation({ summary: 'Create a new reservation' })
   @ApiResponse({ status: 201, description: 'Reservation created successfully' })
-  create(@Body() createReservationDto: CreateReservationDto): Promise<ReservationWithSeat> {
-    return this.reservationService.create(createReservationDto);
+  create(@Body() createReservationDto: CreateReservationDto, @User() user: any): Promise<ReservationWithSeat> {
+    return this.reservationService.create(createReservationDto, user.id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -60,8 +61,8 @@ export class ReservationController {
   @Get()
   @ApiOperation({ summary: 'Get all reservations' })
   @ApiResponse({ status: 200, description: 'Returns list of reservations' })
-  findAll(): Promise<ReservationWithSeat[]> {
-    return this.reservationService.findAll();
+  findAll(@User() user: any): Promise<ReservationWithSeat[]> {
+    return this.reservationService.findAll(user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

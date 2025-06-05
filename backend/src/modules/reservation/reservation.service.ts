@@ -28,7 +28,7 @@ export class ReservationService {
     private ticketService: TicketService,
   ) {}
 
-  async create(createReservationDto: CreateReservationDto): Promise<ReservationWithSeat> {
+  async create(createReservationDto: CreateReservationDto, userId: string): Promise<ReservationWithSeat> {
     console.log('CreateReservationDto:', createReservationDto);
     try {
       const schedule = await this.scheduleRepository.findOne({
@@ -63,6 +63,7 @@ export class ReservationService {
 
       // Create the reservation entity
       const reservation = this.reservationRepository.create({
+        userId,
         scheduleId: createReservationDto.scheduleId,
         passengerName: createReservationDto.passengerName,
         passengerSurname: createReservationDto.passengerSurname,
@@ -115,9 +116,10 @@ export class ReservationService {
     }
   }
 
-  async findAll(): Promise<ReservationWithSeat[]> {
-    // Load seats relation
+  async findAll(userId: string): Promise<ReservationWithSeat[]> {
+    // Load seats relation and filter by userId
     const reservations = await this.reservationRepository.find({
+      where: { userId },
       relations: ['schedule', 'schedule.train', 'schedule.route', 'user', 'payment', 'ticket', 'seats'],
     });
 
