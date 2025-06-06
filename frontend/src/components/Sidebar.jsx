@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt, FaTools, FaBars, FaTimes, FaHome } from 'react-icons/fa';
+import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt, FaTools, FaBars, FaTimes, FaHome, FaStar } from 'react-icons/fa';
 import '../styles/Sidebar.css';
 import { useUserRoles } from '../hooks/useUserRoles';
 
@@ -88,6 +88,14 @@ const Sidebar = () => {
         >
           <FaTicketAlt />
           {!isCollapsed && <span>Ticket Management</span>}
+        </Link>
+        <Link
+          to="/admin/reviews"
+          className={`sidebar-link ${isActive('/admin/reviews') ? 'active' : ''}`}
+          title="Review Management"
+        >
+          <FaStar />
+          {!isCollapsed && <span>Review Management</span>}
         </Link>
         <Link
           to="/admin/maintenance"
