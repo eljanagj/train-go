@@ -47,6 +47,37 @@ export class ReviewController {
     return this.reviewService.getOverallStats();
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
+  @Get('admin/all')
+  @ApiOperation({ summary: 'Get all reviews for admin (including unapproved)' })
+  @ApiResponse({ status: 200, description: 'Returns all reviews for admin' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 10)' })
+  findAllForAdmin(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10'
+  ) {
+    return this.reviewService.findAllForAdmin(parseInt(page), parseInt(limit));
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
+  @Delete('admin/:id')
+  @ApiOperation({ summary: 'Admin delete a review' })
+  @ApiResponse({ status: 200, description: 'Review deleted successfully by admin' })
+  adminDeleteReview(@Param('id') id: string): Promise<void> {
+    return this.reviewService.adminDeleteReview(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('debug/user')
+  @ApiOperation({ summary: 'Debug user object' })
+  debugUser(@Req() req: any) {
+    console.log('Debug - Full user object:', JSON.stringify(req.user, null, 2));
+    return req.user;
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a review by ID' })
   @ApiResponse({ status: 200, description: 'Returns the review' })
@@ -68,21 +99,6 @@ export class ReviewController {
   @ApiResponse({ status: 200, description: 'Review deleted successfully' })
   remove(@Param('id') id: string, @Req() req: any): Promise<void> {
     return this.reviewService.remove(id, req.user.id);
-  }
-
-  // Admin endpoints
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('Admin')
-  @Get('admin/all')
-  @ApiOperation({ summary: 'Get all reviews for admin (including unapproved)' })
-  @ApiResponse({ status: 200, description: 'Returns all reviews for admin' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 10)' })
-  findAllForAdmin(
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
-  ) {
-    return this.reviewService.findAllForAdmin(parseInt(page), parseInt(limit));
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

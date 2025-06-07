@@ -54,5 +54,18 @@ export const reviewService = {
   rejectReview: async (reviewId) => {
     const response = await api.patch(`/reviews/${reviewId}/reject`);
     return response.data;
+  },
+
+  adminDeleteReview: async (reviewId) => {
+    console.log('Admin attempting to delete review with ID:', reviewId);
+    try {
+      const response = await api.delete(`/reviews/admin/${reviewId}`);
+      console.log('Admin delete review response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('Admin error deleting review:', error);
+      console.error('Admin error response:', error.response);
+      throw error;
+    }
   }
 };

@@ -166,4 +166,13 @@ export class ReviewService {
     await this.reviewRepository.update(id, { isApproved: false });
     return this.findOne(id);
   }
+
+  async adminDeleteReview(id: string): Promise<void> {
+    console.log('Admin deleting review with ID:', id);
+    const review = await this.findOne(id);
+    console.log('Admin found review:', review);
+    
+    await this.reviewRepository.delete(id);
+    console.log('Admin deleted review successfully');
+  }
 } 

@@ -33,6 +33,8 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const [discountEligibility, setDiscountEligibility] = useState(null);
   const [discountLoading, setDiscountLoading] = useState(false);
 
+
+
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewsError, setReviewsError] = useState("");
@@ -92,6 +94,9 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
       setLoading(false);
     }
   };
+
+
+
 
   const fetchReviews = async () => {
     try {
@@ -604,8 +609,8 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
         />
 
         <DeleteConfirmationModal
-          show={!!deleteReviewId}
-          onHide={() => setDeleteReviewId(null)}
+          isOpen={!!deleteReviewId}
+          onClose={() => setDeleteReviewId(null)}
           onConfirm={handleDeleteReview}
           title="Delete Review"
           message="Are you sure you want to delete this review? This action cannot be undone."
