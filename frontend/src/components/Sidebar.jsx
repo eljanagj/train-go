@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt, FaTools, FaBars, FaTimes, FaHome, FaStar } from 'react-icons/fa';
+import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt, FaTools, FaBars, FaTimes, FaHome, FaStar, FaPercent } from 'react-icons/fa';
 import '../styles/Sidebar.css';
 import { useUserRoles } from '../hooks/useUserRoles';
 
@@ -104,6 +104,14 @@ const Sidebar = () => {
         >
           <FaTools />
           {!isCollapsed && <span>Maintenance Management</span>}
+        </Link>
+        <Link
+          to="/admin/discount-codes"
+          className={`sidebar-link ${isActive('/admin/discount-codes') ? 'active' : ''}`}
+          title="Discount Code Management"
+        >
+          <FaPercent />
+          {!isCollapsed && <span>Discount Code Management</span>}
         </Link>
       </nav>
       
