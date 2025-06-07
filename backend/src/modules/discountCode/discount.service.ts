@@ -51,10 +51,21 @@ export class DiscountCodeService {
     }
 
     async findByUserId(userId: string): Promise<DiscountCode | null> {
-        const user = await this.userRepository.findOne({
-            where: { id: userId },
-            relations: ['discountCode']
-        });
+        // Check if userId is an Auth0 ID (contains pipe character)
+        let user: User | null;
+        if (userId.includes('|')) {
+            // This is an Auth0 ID
+            user = await this.userRepository.findOne({
+                where: { auth0Id: userId },
+                relations: ['discountCode']
+            });
+        } else {
+            // This is an internal UUID
+            user = await this.userRepository.findOne({
+                where: { id: userId },
+                relations: ['discountCode']
+            });
+        }
 
         if (!user) {
             throw new NotFoundException('User not found');
@@ -151,10 +162,6 @@ export class DiscountCodeService {
         try {
             const discountCode = await this.findByCode(code);
             
-            if (discountCode.isUsed) {
-                return { isValid: false, message: 'Discount code has already been used' };
-            }
-
             if (new Date() > discountCode.expireDate) {
                 return { isValid: false, message: 'Discount code has expired' };
             }
@@ -165,33 +172,38 @@ export class DiscountCodeService {
         }
     }
 
-    async useDiscountCode(code: string): Promise<DiscountCode> {
-        const validation = await this.validateDiscountCode(code);
-        
-        if (!validation.isValid) {
-            throw new BadRequestException(validation.message);
-        }
-
-        const discountCode = validation.discountCode!;
-        discountCode.isUsed = true;
-        return await this.discountCodeRepository.save(discountCode);
-    }
-
     // Auto-generate or update discount codes based on reservation count
     async checkAndUpdateDiscountForUser(userId: string): Promise<DiscountCode | null> {
-        const user = await this.userRepository.findOne({
-            where: { id: userId },
-            relations: ['discountCode', 'reservations']
-        });
-
-        if (!user) {
-            throw new NotFoundException('User not found');
+        // Check if userId is an Auth0 ID (contains pipe character)
+        let user: User | null;
+        let internalUserId: string;
+        
+        if (userId.includes('|')) {
+            // This is an Auth0 ID
+            user = await this.userRepository.findOne({
+                where: { auth0Id: userId },
+                relations: ['discountCode', 'reservations']
+            });
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+            internalUserId = user.id;
+        } else {
+            // This is an internal UUID
+            user = await this.userRepository.findOne({
+                where: { id: userId },
+                relations: ['discountCode', 'reservations']
+            });
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+            internalUserId = userId;
         }
 
-        // Count confirmed reservations
+        // Count confirmed reservations using internal user ID
         const confirmedReservations = await this.reservationRepository.count({
             where: { 
-                userId: userId,
+                userId: internalUserId,
                 status: ReservationStatus.CONFIRMED
             }
         });
@@ -210,7 +222,6 @@ export class DiscountCodeService {
             if (discountPercentage > user.discountCode.discountPercentage) {
                 user.discountCode.discountPercentage = discountPercentage;
                 user.discountCode.expireDate = expireDate;
-                user.discountCode.isUsed = false; // Reset usage if upgraded
                 return await this.discountCodeRepository.save(user.discountCode);
             }
             return user.discountCode;
@@ -245,7 +256,7 @@ export class DiscountCodeService {
         return result;
     }
 
-    async applyDiscount(applyDiscountDto: ApplyDiscountDto): Promise<DiscountApplicationResult> {
+    async applyDiscount(applyDiscountDto: ApplyDiscountDto, userId?: string): Promise<DiscountApplicationResult> {
         const validation = await this.validateDiscountCode(applyDiscountDto.discountCode);
         
         if (!validation.isValid) {
@@ -256,6 +267,35 @@ export class DiscountCodeService {
         }
 
         const discountCode = validation.discountCode!;
+        
+        // If userId is provided, validate that the discount code belongs to this user
+        if (userId) {
+            let internalUserId: string;
+            if (userId.includes('|')) {
+                // This is an Auth0 ID, get the internal ID
+                const user = await this.userRepository.findOne({
+                    where: { auth0Id: userId }
+                });
+                if (!user) {
+                    return {
+                        isValid: false,
+                        message: 'User not found'
+                    };
+                }
+                internalUserId = user.id;
+            } else {
+                internalUserId = userId;
+            }
+
+            // Check if the discount code belongs to this user
+            if (discountCode.user.id !== internalUserId) {
+                return {
+                    isValid: false,
+                    message: 'This discount code does not belong to you'
+                };
+            }
+        }
+
         const discountAmount = (applyDiscountDto.originalPrice * discountCode.discountPercentage) / 100;
         const discountedPrice = applyDiscountDto.originalPrice - discountAmount;
 
@@ -275,9 +315,24 @@ export class DiscountCodeService {
         currentDiscountPercentage: number;
         nextDiscountPercentage: number;
     }> {
+        // Check if userId is an Auth0 ID (contains pipe character)
+        let internalUserId: string;
+        if (userId.includes('|')) {
+            // This is an Auth0 ID, get the internal ID
+            const user = await this.userRepository.findOne({
+                where: { auth0Id: userId }
+            });
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+            internalUserId = user.id;
+        } else {
+            internalUserId = userId;
+        }
+
         const confirmedReservations = await this.reservationRepository.count({
             where: { 
-                userId: userId,
+                userId: internalUserId,
                 status: ReservationStatus.CONFIRMED
             }
         });

@@ -1,4 +1,3 @@
-// src/routes/AppRoutes.js
 import React from 'react';
 import { Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
@@ -19,6 +18,7 @@ import { ProtectedRoute, AdminRoute } from '../components/ProtectedRoute';
 import MaintenanceManagement from '../pages/admin/MaintenanceManagement';
 import Reviews from '../pages/Reviews';
 import ReviewManagement from '../pages/admin/ReviewManagement';
+import DiscountCodeManagement from '../pages/admin/DiscountCodeManagement';
 
 export default function AppRoutes({ theme, toggleTheme }) {
   return (
@@ -100,6 +100,11 @@ export default function AppRoutes({ theme, toggleTheme }) {
       <Route path="/admin/reviews" element={
         <AdminRoute>
           <ReviewManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/discount-codes" element={
+        <AdminRoute>
+          <DiscountCodeManagement theme={theme} toggleTheme={toggleTheme} />
         </AdminRoute>
       } />
     </Routes>

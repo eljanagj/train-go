@@ -40,17 +40,30 @@ export class DiscountCodeController {
 
     @Post('apply')
     applyDiscount(@Body() applyDiscountDto: ApplyDiscountDto) {
-        return this.discountCodeService.applyDiscount(applyDiscountDto);
-    }
-
-    @Post('use/:code')
-    useDiscountCode(@Param('code') code: string) {
-        return this.discountCodeService.useDiscountCode(code);
+        return this.discountCodeService.applyDiscount(applyDiscountDto, applyDiscountDto.userId);
     }
 
     @Post('check-user/:userId')
     checkAndUpdateDiscountForUser(@Param('userId') userId: string) {
         return this.discountCodeService.checkAndUpdateDiscountForUser(userId);
+    }
+
+    @Post('refresh-user/:userId')
+    async refreshUserDiscount(@Param('userId') userId: string) {
+        try {
+            const result = await this.discountCodeService.checkAndUpdateDiscountForUser(userId);
+            return {
+                success: true,
+                message: result ? 'Discount code updated successfully' : 'No discount code changes needed',
+                discountCode: result
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message,
+                discountCode: null
+            };
+        }
     }
 
     @Patch(':id/percentage')

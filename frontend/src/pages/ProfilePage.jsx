@@ -9,9 +9,11 @@ import { FaCalendarAlt, FaTrain, FaMapMarkerAlt, FaClock, FaEuroSign, FaChair, F
 import { reservationService } from "../services/reservationService";
 import { ticketService } from "../services/ticketService";
 import { reviewService } from "../services/reviewService";
+import discountService from "../services/discountService";
 import ReviewForm from "../components/ReviewForm";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import StarRating from "../components/StarRating";
+import DiscountCodeCard from "../components/DiscountCodeCard";
 
 const ProfileComponent = ({ theme, toggleTheme }) => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -26,6 +28,10 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const [showModal, setShowModal] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(null);
 
+  // Discount code state
+  const [discountCode, setDiscountCode] = useState(null);
+  const [discountEligibility, setDiscountEligibility] = useState(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
 
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -45,6 +51,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     if (user) {
       fetchReservations();
       fetchReviews();
+      fetchDiscountCode();
     }
   }, [user]);
 
@@ -52,12 +59,14 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     const handleFocus = () => {
       fetchReservations();
       fetchReviews();
+      fetchDiscountCode();
     };
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchReservations();
         fetchReviews();
+        fetchDiscountCode();
       }
     };
 
@@ -95,6 +104,37 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
       console.error('Error fetching reviews:', err);
     } finally {
       setReviewsLoading(false);
+    }
+  };
+
+  const fetchDiscountCode = async () => {
+    if (!user?.sub) return;
+    
+    try {
+      setDiscountLoading(true);
+      const [userCode, eligibility] = await Promise.all([
+        discountService.getUserDiscountCode(user.sub),
+        discountService.getUserEligibility(user.sub)
+      ]);
+      
+      // If user is eligible but doesn't have a code, automatically generate one
+      if (!userCode && eligibility.isEligible) {
+        try {
+          const newCode = await discountService.checkAndUpdateUserDiscount(user.sub);
+          setDiscountCode(newCode);
+        } catch (err) {
+          console.error('Error generating discount code:', err);
+          setDiscountCode(null);
+        }
+      } else {
+        setDiscountCode(userCode);
+      }
+      
+      setDiscountEligibility(eligibility);
+    } catch (err) {
+      console.error('Error fetching discount code:', err);
+    } finally {
+      setDiscountLoading(false);
     }
   };
 
@@ -252,6 +292,16 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
             <p className="profile-email">{user.email}</p>
           </div>
         </div>
+
+        {/* Discount Code Section */}
+        {!discountLoading && (
+          <DiscountCodeCard 
+            discountCode={discountCode} 
+            eligibility={discountEligibility}
+            userId={user?.sub}
+            onRefresh={fetchDiscountCode}
+          />
+        )}
 
         {/* Reservations Section */}
         <section className="reservations-section mt-4">

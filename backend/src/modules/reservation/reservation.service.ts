@@ -10,6 +10,10 @@ import { Seat } from '../seats/entities/seat.entity';
 import { Schedule } from '../schedule/schedule.entity';
 import { Payment, PaymentStatus } from '../payment/entities/payment.entity';
 import { TicketService } from '../ticket/ticket.service';
+import { DiscountCodeService } from '../discountCode/discount.service';
+import { DiscountAutomationService } from '../discountCode/discount-automation.service';
+import { User } from '../user/entities/user.entity';
+import { DiscountCode } from '../discountCode/entities/discount.entity';
 
 // Simplified interface - Reservation entity now directly includes seats relation
 export interface ReservationWithSeat extends Reservation {
@@ -23,9 +27,15 @@ export class ReservationService {
     private reservationRepository: Repository<Reservation>,
     @InjectRepository(Schedule)
     private scheduleRepository: Repository<Schedule>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @InjectRepository(DiscountCode)
+    private discountCodeRepository: Repository<DiscountCode>,
     private seatsService: SeatsService,
     private paymentService: PaymentService,
     private ticketService: TicketService,
+    private discountCodeService: DiscountCodeService,
+    private discountAutomationService: DiscountAutomationService,
   ) {}
 
   async create(createReservationDto: CreateReservationDto, userId: string): Promise<ReservationWithSeat> {
@@ -61,6 +71,33 @@ export class ReservationService {
       const totalSeatsPrice = requestedSeats.reduce((sum, seat) => sum + Number(seat.price), 0);
       const totalPrice = Number(schedule.route.price) + totalSeatsPrice;
 
+      // Apply discount if provided
+      let finalPrice = totalPrice;
+      if (createReservationDto.discountCode) {
+        try {
+          const discountResult = await this.discountCodeService.applyDiscount({
+            discountCode: createReservationDto.discountCode,
+            originalPrice: totalPrice
+          }, userId);
+          
+          if (discountResult.isValid && discountResult.discountedPrice !== undefined) {
+            finalPrice = discountResult.discountedPrice;
+            console.log('Discount applied successfully:', {
+              originalPrice: totalPrice,
+              discountedPrice: finalPrice,
+              discountPercentage: discountResult.discountPercentage,
+              userId: userId
+            });
+          } else {
+            console.warn('Discount validation failed:', discountResult.message);
+            // Continue with original price if discount fails
+          }
+        } catch (discountError) {
+          console.warn('Failed to apply discount:', discountError.message);
+          // Continue with original price if discount fails
+        }
+      }
+
       // Create the reservation entity
       const reservation = this.reservationRepository.create({
         userId,
@@ -70,7 +107,7 @@ export class ReservationService {
         reservationDate: createReservationDto.reservationDate,
         discountCode: createReservationDto.discountCode,
         status: ReservationStatus.PAYMENT_PENDING,
-        price: totalPrice,
+        price: finalPrice,
         // Assign the requested seats to the reservation entity
         seats: requestedSeats,
       } as Partial<Reservation>);
@@ -79,12 +116,14 @@ export class ReservationService {
       const savedReservation = await this.reservationRepository.save(reservation);
 
       // Create payment for the reservation
-      const payment = await this.paymentService.createPayment(savedReservation.id, totalPrice);
+      const payment = await this.paymentService.createPayment(savedReservation.id, finalPrice);
 
       console.log('Creating reservation with payment:', {
         reservationId: savedReservation.id,
         paymentId: payment.id,
-        totalPrice,
+        finalPrice,
+        originalPrice: totalPrice,
+        discountApplied: finalPrice !== totalPrice,
         seatNumbers: createReservationDto.seatNumbers // Log selected seat numbers
       });
 
@@ -192,6 +231,14 @@ export class ReservationService {
     // Save and re-fetch - assert save result
     const confirmedReservation = await this.reservationRepository.save(reservation) as Reservation;
 
+    // Trigger discount code update after confirmation
+    try {
+      await this.discountAutomationService.handleReservationConfirmed(confirmedReservation.userId);
+    } catch (error) {
+      console.error('Error updating discount code after reservation confirmation:', error);
+      // Don't fail the confirmation if discount update fails
+    }
+
     // Automatically create ticket when payment is confirmed (if not already created)
     if (confirmedReservation.payment?.status === PaymentStatus.COMPLETED) {
         try {
@@ -253,6 +300,14 @@ export class ReservationService {
     if (updatedPayment.status === PaymentStatus.COMPLETED) {
       reservation.status = ReservationStatus.CONFIRMED;
       console.log('Payment confirmed, updating reservation status to CONFIRMED');
+
+      // Trigger discount code update after confirmation
+      try {
+        await this.discountAutomationService.handleReservationConfirmed(reservation.userId);
+      } catch (error) {
+        console.error('Error updating discount code after payment confirmation:', error);
+        // Don't fail the payment confirmation if discount update fails
+      }
 
       /*// Automatically create ticket when payment is confirmed (if not already created)
       try {

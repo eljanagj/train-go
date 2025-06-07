@@ -14,6 +14,8 @@ import { ReservationModule } from './modules/reservation/reservation.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { TicketModule } from './modules/ticket/ticket.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
+import { DiscountCodeModule } from './modules/discountCode/discount.module';
+import { ReviewModule } from './modules/review/review.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
     PaymentModule,
     TicketModule,
     MaintenanceModule,
+    DiscountCodeModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

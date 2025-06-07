@@ -50,6 +50,9 @@ export class Reservation {
   @Column({ type: 'timestamp' })
   reservationDate: Date;
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  discountCode: string;
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
   user: User;

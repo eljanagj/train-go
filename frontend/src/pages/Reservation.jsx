@@ -10,6 +10,8 @@ import { FaTrain, FaClock, FaMapMarkerAlt, FaEuroSign, FaChair, FaTimes } from "
 import TrainAnimation from "../components/TrainAnimation";
 import { seatService } from "../services/seatService";
 import { reservationService } from "../services/reservationService";
+import DiscountCodeInput from "../components/DiscountCodeInput";
+import discountService from "../services/discountService";
 
 export default function ReservationPage() {
   const { user, getAccessTokenSilently } = useAuth0();
@@ -20,8 +22,11 @@ export default function ReservationPage() {
   const [formData, setFormData] = useState({
     name: "",
     surname: "",
-    discountCode: ""
   });
+
+  // Discount state
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [discountedPrice, setDiscountedPrice] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -117,7 +122,9 @@ export default function ReservationPage() {
         passengerName: formData.name,
         passengerSurname: formData.surname,
         reservationDate: schedule.travelDate ? new Date(schedule.travelDate) : new Date(),
-        discountCode: formData.discountCode || undefined,
+        ...(appliedDiscount && {
+          discountCode: appliedDiscount.discountCode
+        })
       };
 
       const reservation = await reservationService.createReservation(reservationData);
@@ -130,6 +137,22 @@ export default function ReservationPage() {
       setError(error.response?.data?.message || "Failed to create reservation");
     } finally {
       setIsReserving(false);
+    }
+  };
+
+  // Calculate current total price
+  const calculateTotalPrice = () => {
+    const basePrice = parseFloat(schedule.route.price) + 
+      selectedSeats.reduce((sum, seat) => sum + (parseFloat(seat.price) || 0), 0);
+    return appliedDiscount ? appliedDiscount.discountedPrice : basePrice;
+  };
+
+  const handleDiscountApplied = (discountInfo) => {
+    setAppliedDiscount(discountInfo);
+    if (discountInfo) {
+      setDiscountedPrice(discountInfo.discountedPrice);
+    } else {
+      setDiscountedPrice(null);
     }
   };
 
@@ -180,7 +203,26 @@ export default function ReservationPage() {
                       {selectedSeats.map(seat => `${seat.seatNumber} (€${parseFloat(seat.price).toFixed(2)})`).join(', ')}
                     </strong></p>
                     <div className="total-price mt-3 pt-3 border-top">
-                      <h5><FaEuroSign className="me-2" />Total Price: <strong>€{(parseFloat(schedule.route.price) + selectedSeats.reduce((sum, seat) => sum + (seat.price !== undefined && seat.price !== null && !isNaN(seat.price) ? parseFloat(seat.price) : 0), 0)).toFixed(2)}</strong></h5>
+                      {appliedDiscount ? (
+                        <>
+                          <div className="d-flex justify-content-between mb-2">
+                            <span>Original Price:</span>
+                            <span className="text-decoration-line-through">
+                              €{(parseFloat(schedule.route.price) + selectedSeats.reduce((sum, seat) => sum + (parseFloat(seat.price) || 0), 0)).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="d-flex justify-content-between mb-2">
+                            <span>Discount ({appliedDiscount.discountPercentage}%):</span>
+                            <span className="text-success">-€{appliedDiscount.discountAmount.toFixed(2)}</span>
+                          </div>
+                          <h5 className="d-flex justify-content-between">
+                            <span><FaEuroSign className="me-2" />Final Price:</span>
+                            <strong className="text-success">€{appliedDiscount.discountedPrice.toFixed(2)}</strong>
+                          </h5>
+                        </>
+                      ) : (
+                        <h5><FaEuroSign className="me-2" />Total Price: <strong>€{(parseFloat(schedule.route.price) + selectedSeats.reduce((sum, seat) => sum + (parseFloat(seat.price) || 0), 0)).toFixed(2)}</strong></h5>
+                      )}
                     </div>
                   </>
                 )}
@@ -259,19 +301,19 @@ export default function ReservationPage() {
                     <FaChair className="me-2"/> Select Seat(s) for {selectedClass.toUpperCase()}
                   </button>
                 </div>
-                <div className="mb-4">
-                  <label className="form-label">
-                    Discount Code <small className="text-muted">(Optional)</small>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="discountCode"
-                    value={formData.discountCode}
-                    onChange={handleChange}
-                    placeholder="e.g., SAVE10"
-                  />
-                </div>
+
+                {/* Discount Code Section */}
+                {selectedSeats.length > 0 && (
+                  <div className="mb-4">
+                    <DiscountCodeInput 
+                      originalPrice={parseFloat(schedule.route.price) + selectedSeats.reduce((sum, seat) => sum + (parseFloat(seat.price) || 0), 0)}
+                      onDiscountApplied={handleDiscountApplied}
+                      userId={user?.sub}
+                      disabled={loading || isReserving}
+                    />
+                  </div>
+                )}
+
                 <button
                   className="btn btn-reserve text-white w-100"
                   onClick={handleReserve}

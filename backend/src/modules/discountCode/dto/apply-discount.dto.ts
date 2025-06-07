@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber, Min } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, Min, IsOptional } from 'class-validator';
 
 export class ApplyDiscountDto {
   @IsNotEmpty()
@@ -9,6 +9,10 @@ export class ApplyDiscountDto {
   @IsNumber()
   @Min(0)
   originalPrice: number;
+
+  @IsOptional()
+  @IsString()
+  userId?: string;
 }
 
 export class DiscountApplicationResult {
