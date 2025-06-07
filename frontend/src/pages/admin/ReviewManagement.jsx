@@ -59,7 +59,7 @@ const ReviewManagement = ({ theme, toggleTheme }) => {
 
   const handleDelete = async () => {
     try {
-      await reviewService.deleteReview(deleteReviewId);
+      await reviewService.adminDeleteReview(deleteReviewId);
       setReviews(reviews.filter(r => r.id !== deleteReviewId));
       setDeleteReviewId(null);
       setSuccess('Review deleted successfully');
@@ -234,8 +234,8 @@ const ReviewManagement = ({ theme, toggleTheme }) => {
           )}
 
           <DeleteConfirmationModal
-            show={!!deleteReviewId}
-            onHide={() => setDeleteReviewId(null)}
+            isOpen={!!deleteReviewId}
+            onClose={() => setDeleteReviewId(null)}
             onConfirm={handleDelete}
             title="Delete Review"
             message="Are you sure you want to delete this review? This action cannot be undone."

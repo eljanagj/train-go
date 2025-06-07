@@ -6,8 +6,13 @@ import { Footer } from "../components/Footer";
 import "../styles/Profile.css";
 import { PageLoader } from "../components/PageLoader";
 import { FaCalendarAlt, FaTrain, FaMapMarkerAlt, FaClock, FaEuroSign, FaChair, FaDownload, FaEye, FaTimes, FaCreditCard, FaSync, FaStar, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaCalendarAlt, FaTrain, FaMapMarkerAlt, FaClock, FaEuroSign, FaChair, FaDownload, FaEye, FaTimes, FaCreditCard, FaSync, FaStar, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { reservationService } from "../services/reservationService";
 import { ticketService } from "../services/ticketService";
+import { reviewService } from "../services/reviewService";
+import ReviewForm from "../components/ReviewForm";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import StarRating from "../components/StarRating";
 import { reviewService } from "../services/reviewService";
 import ReviewForm from "../components/ReviewForm";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
@@ -34,6 +39,14 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const [editingReview, setEditingReview] = useState(null);
   const [deleteReviewId, setDeleteReviewId] = useState(null);
 
+
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState("");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [deleteReviewId, setDeleteReviewId] = useState(null);
+
   // Update nickname when user becomes available
   useEffect(() => {
     if (user) {
@@ -45,6 +58,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     if (user) {
       fetchReservations();
       fetchReviews();
+      fetchReviews();
     }
   }, [user]);
 
@@ -52,11 +66,13 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     const handleFocus = () => {
       fetchReservations();
       fetchReviews();
+      fetchReviews();
     };
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchReservations();
+        fetchReviews();
         fetchReviews();
       }
     };
@@ -81,6 +97,44 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
       console.error('Error fetching reservations:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      setReviewsError("");
+      const data = await reviewService.getMyReviews();
+      setReviews(data);
+    } catch (err) {
+      setReviewsError("Failed to load reviews");
+      console.error('Error fetching reviews:', err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleReviewSubmitted = (newReview) => {
+    if (editingReview) {
+      setReviews(reviews.map(r => r.id === newReview.id ? newReview : r));
+      setEditingReview(null);
+    } else {
+      setReviews([newReview, ...reviews]);
+    }
+  };
+
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setShowReviewForm(true);
+  };
+
+  const handleDeleteReview = async () => {
+    try {
+      await reviewService.deleteReview(deleteReviewId);
+      setReviews(reviews.filter(r => r.id !== deleteReviewId));
+      setDeleteReviewId(null);
+    } catch (err) {
+      setReviewsError('Failed to delete review');
     }
   };
 
@@ -554,8 +608,8 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
         />
 
         <DeleteConfirmationModal
-          show={!!deleteReviewId}
-          onHide={() => setDeleteReviewId(null)}
+          isOpen={!!deleteReviewId}
+          onClose={() => setDeleteReviewId(null)}
           onConfirm={handleDeleteReview}
           title="Delete Review"
           message="Are you sure you want to delete this review? This action cannot be undone."
