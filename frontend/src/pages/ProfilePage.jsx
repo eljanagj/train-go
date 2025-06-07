@@ -5,9 +5,13 @@ import { NavBar } from "../components/NavBar";
 import { Footer } from "../components/Footer";
 import "../styles/Profile.css";
 import { PageLoader } from "../components/PageLoader";
-import { FaCalendarAlt, FaTrain, FaMapMarkerAlt, FaClock, FaEuroSign, FaChair, FaDownload, FaEye, FaTimes, FaCreditCard, FaSync } from "react-icons/fa";
+import { FaCalendarAlt, FaTrain, FaMapMarkerAlt, FaClock, FaEuroSign, FaChair, FaDownload, FaEye, FaTimes, FaCreditCard, FaSync, FaStar, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { reservationService } from "../services/reservationService";
 import { ticketService } from "../services/ticketService";
+import { reviewService } from "../services/reviewService";
+import ReviewForm from "../components/ReviewForm";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import StarRating from "../components/StarRating";
 
 const ProfileComponent = ({ theme, toggleTheme }) => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -22,6 +26,14 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const [showModal, setShowModal] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(null);
 
+
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState("");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [deleteReviewId, setDeleteReviewId] = useState(null);
+
   // Update nickname when user becomes available
   useEffect(() => {
     if (user) {
@@ -32,17 +44,20 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   useEffect(() => {
     if (user) {
       fetchReservations();
+      fetchReviews();
     }
   }, [user]);
 
   useEffect(() => {
     const handleFocus = () => {
       fetchReservations();
+      fetchReviews();
     };
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchReservations();
+        fetchReviews();
       }
     };
 
@@ -66,6 +81,44 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
       console.error('Error fetching reservations:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      setReviewsError("");
+      const data = await reviewService.getMyReviews();
+      setReviews(data);
+    } catch (err) {
+      setReviewsError("Failed to load reviews");
+      console.error('Error fetching reviews:', err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleReviewSubmitted = (newReview) => {
+    if (editingReview) {
+      setReviews(reviews.map(r => r.id === newReview.id ? newReview : r));
+      setEditingReview(null);
+    } else {
+      setReviews([newReview, ...reviews]);
+    }
+  };
+
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setShowReviewForm(true);
+  };
+
+  const handleDeleteReview = async () => {
+    try {
+      await reviewService.deleteReview(deleteReviewId);
+      setReviews(reviews.filter(r => r.id !== deleteReviewId));
+      setDeleteReviewId(null);
+    } catch (err) {
+      setReviewsError('Failed to delete review');
     }
   };
 
@@ -345,6 +398,168 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
             </div>
           )}
         </section>
+
+        {/* Reviews Section */}
+        <section className="reviews-section mt-4">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 className="section-title mb-0">Your Reviews</h3>
+            <button
+              className="refresh-btn"
+              onClick={() => setShowReviewForm(true)}
+              title="Write a new review"
+              style={{
+                background: 'none',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '14px',
+                color: '#666'
+              }}
+            >
+              <FaPlus /> Write Review
+            </button>
+          </div>
+          {reviewsError && (
+            <div className="alert alert-danger mb-3" style={{
+              background: '#f8d7da',
+              color: '#721c24',
+              padding: '0.75rem',
+              borderRadius: '0.5rem',
+              border: '1px solid #f5c6cb'
+            }}>
+              {reviewsError}
+            </div>
+          )}
+          {reviewsLoading ? (
+            <div className="text-center">
+              <PageLoader />
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="reservations-table-container">
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <FaStar />
+                </div>
+                <h4 className="empty-state-title">No Reviews Yet</h4>
+                <p className="empty-state-description">
+                  Share your experience with our train service to help other travelers!
+                </p>
+                <button 
+                  className="empty-state-button"
+                  onClick={() => setShowReviewForm(true)}
+                  style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '12px 24px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '16px',
+                    textDecoration: 'none'
+                  }}
+                >
+                  <FaPlus /> Write Your First Review
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="reservations-table-container">
+              <table className="reservations-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Rating</th>
+                    <th>Title</th>
+                    <th>Comment</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reviews.map(review => (
+                    <tr key={review.id} className="reservation-row">
+                      <td className="reservation-date">
+                        {formatDateShort(review.createdAt)}
+                      </td>
+                      <td className="rating-cell">
+                        <StarRating rating={review.rating} readonly size="sm" />
+                      </td>
+                      <td className="review-title">
+                        {review.title || 'No title'}
+                      </td>
+                      <td className="review-comment">
+                        <div style={{ 
+                          maxWidth: '300px', 
+                          overflow: 'hidden', 
+                          textOverflow: 'ellipsis', 
+                          whiteSpace: 'nowrap' 
+                        }}>
+                          {review.comment}
+                        </div>
+                      </td>
+                      <td className="status">
+                        <span
+                          className="status-badge"
+                          style={{ 
+                            backgroundColor: review.isApproved ? '#28a745' : '#ffc107',
+                            color: review.isApproved ? 'white' : '#212529'
+                          }}
+                        >
+                          {review.isApproved ? 'Approved' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className="actions">
+                        <button
+                          className="action-btn view-btn"
+                          onClick={() => handleEditReview(review)}
+                          title="Edit review"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="action-btn delete-btn"
+                          onClick={() => setDeleteReviewId(review.id)}
+                          title="Delete review"
+                          style={{
+                            backgroundColor: '#dc3545',
+                            borderColor: '#dc3545'
+                          }}
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <ReviewForm
+          show={showReviewForm}
+          onHide={() => {
+            setShowReviewForm(false);
+            setEditingReview(null);
+          }}
+          onReviewSubmitted={handleReviewSubmitted}
+          existingReview={editingReview}
+        />
+
+        <DeleteConfirmationModal
+          show={!!deleteReviewId}
+          onHide={() => setDeleteReviewId(null)}
+          onConfirm={handleDeleteReview}
+          title="Delete Review"
+          message="Are you sure you want to delete this review? This action cannot be undone."
+        />
       </div>
       <Footer />
 
