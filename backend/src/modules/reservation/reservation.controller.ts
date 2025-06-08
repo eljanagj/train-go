@@ -9,6 +9,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { User } from 'src/common/decorators/user.decorator';
+import { CancelReservationDto } from './dto/cancel-reservation.dto';
 
 @ApiTags('reservations')
 @Controller('reservations')
@@ -110,8 +111,13 @@ export class ReservationController {
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel a reservation' })
   @ApiResponse({ status: 200, description: 'Reservation cancelled successfully' })
-  cancelReservation(@Param('id') id: string): Promise<ReservationWithSeat> {
-    return this.reservationService.cancelReservation(id);
+  @ApiResponse({ status: 403, description: 'Cannot cancel reservation less than 2 hours before departure time' })
+  @ApiResponse({ status: 400, description: 'Reservation is already cancelled or completed' })
+  cancelReservation(
+    @Param('id') id: string,
+    @Body() cancelDto: CancelReservationDto
+  ): Promise<ReservationWithSeat> {
+    return this.reservationService.cancelReservation(id, cancelDto);
   }
  
   @UseGuards(JwtAuthGuard)

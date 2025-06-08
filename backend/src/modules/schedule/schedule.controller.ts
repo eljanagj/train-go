@@ -27,8 +27,8 @@ export class ScheduleController {
     return this.scheduleService.createSchedule(
       body.trainID,
       body.routeID,
-      new Date(body.departureTime),
-      new Date(body.arrivalTime),
+      body.departureTime,
+      body.arrivalTime,
     );
   }
 
@@ -61,8 +61,8 @@ export class ScheduleController {
       id,
       body.trainID,
       body.routeID,
-      new Date(body.departureTime),
-      new Date(body.arrivalTime),
+      body.departureTime,
+      body.arrivalTime,
     );
   }
 

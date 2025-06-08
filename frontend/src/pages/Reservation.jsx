@@ -109,8 +109,8 @@ export default function ReservationPage() {
   };
 
   const handleReserve = async () => {
-    if (selectedSeats.length === 0) {
-      setError("Please select at least one seat first");
+    if (!selectedSeats.length) {
+      setError('Please select at least one seat');
       return;
     }
 
@@ -121,10 +121,8 @@ export default function ReservationPage() {
         seatNumbers: selectedSeats.map(seat => seat.seatNumber),
         passengerName: formData.name,
         passengerSurname: formData.surname,
-        reservationDate: schedule.travelDate ? new Date(schedule.travelDate) : new Date(),
-        ...(appliedDiscount && {
-          discountCode: appliedDiscount.discountCode
-        })
+        travelDate: schedule.travelDate,
+        discountCode: formData.discountCode || undefined,
       };
 
       const reservation = await reservationService.createReservation(reservationData);
@@ -155,6 +153,17 @@ export default function ReservationPage() {
       setDiscountedPrice(null);
     }
   };
+
+  // Combine travelDate with schedule times
+  const travelDate = new Date(schedule.travelDate);
+  const [depHours, depMinutes] = schedule.departureTime.split(':').map(Number);
+  const [arrHours, arrMinutes] = schedule.arrivalTime.split(':').map(Number);
+
+  const departureDateTime = new Date(travelDate);
+  departureDateTime.setHours(depHours, depMinutes, 0);
+
+  const arrivalDateTime = new Date(travelDate);
+  arrivalDateTime.setHours(arrHours, arrMinutes, 0);
 
   if (!schedule) {
     return (
@@ -188,8 +197,9 @@ export default function ReservationPage() {
               <div className="info-card-content">
                 <p><FaMapMarkerAlt className="me-2" />From: <strong>{schedule.route.departureStation}</strong></p>
                 <p><FaMapMarkerAlt className="me-2" />To: <strong>{schedule.route.arrivalStation}</strong></p>
-                <p><FaClock className="me-2" />Departure: <strong>{new Date(schedule.departureTime).toLocaleString()}</strong></p>
-                <p><FaClock className="me-2" />Arrival: <strong>{new Date(schedule.arrivalTime).toLocaleString()}</strong></p>
+                <p><FaClock className="me-2" />Travel Date: <strong>{new Date(schedule.travelDate).toLocaleDateString()}</strong></p>
+                <p><FaClock className="me-2" />Departure Time: <strong>{departureDateTime.toLocaleTimeString()}</strong></p>
+                <p><FaClock className="me-2" />Arrival Time: <strong>{arrivalDateTime.toLocaleTimeString()}</strong></p>
                 <p><FaTrain className="me-2" />Train: <strong>{schedule.train.trainName} (#{schedule.train.trainNumber})</strong></p>
 
                 {/* Display total and available seats for the train */}

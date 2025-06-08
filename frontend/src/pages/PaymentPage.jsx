@@ -114,10 +114,7 @@ const PaymentPage = ({ theme, toggleTheme }) => {
             <strong>To:</strong> {reservation.schedule?.route?.arrivalStation || 'N/A'}
           </Typography>
           <Typography>
-            <strong>Departure:</strong> {new Date(reservation.schedule?.departureTime).toLocaleString() || 'N/A'}
-          </Typography>
-          <Typography>
-            <strong>Arrival:</strong> {new Date(reservation.schedule?.arrivalTime).toLocaleString() || 'N/A'}
+            <strong>Travel Date:</strong> {new Date(reservation.travelDate).toLocaleDateString() || 'N/A'}
           </Typography>
           <Typography>
             <strong>Seat:</strong> {reservation.seats.map(seat => seat.seatNumber).join(', ')}

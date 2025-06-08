@@ -96,11 +96,10 @@ function TrainSearchPage() {
           const schedules = await scheduleService.getSchedulesByRoute(route.id);
 
           // Store the travel date with each schedule for reservation purposes
-          // but don't filter schedules by date - show all available schedules
           return schedules.map(schedule => ({
             ...schedule,
             route: route,
-            travelDate: travelDate // Include the selected travel date
+            travelDate: new Date(travelDate).toISOString() // Ensure proper date format
           }));
         } catch (err) {
           console.error(`Error fetching schedules for route ${route.id}:`, err);
@@ -122,13 +121,16 @@ function TrainSearchPage() {
     }
   };
 
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
+  const formatTime = (timeString) => {
+    if (!timeString || typeof timeString !== 'string' || !timeString.match(/^\d{2}:\d{2}$/)) {
+      return 'Invalid Time';
+    }
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date(); // Use a dummy date to leverage toLocaleTimeString
+    date.setHours(parseInt(hours, 10));
+    date.setMinutes(parseInt(minutes, 10));
+    date.setSeconds(0);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   return (

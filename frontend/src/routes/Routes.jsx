@@ -19,6 +19,7 @@ import MaintenanceManagement from '../pages/admin/MaintenanceManagement';
 import Reviews from '../pages/Reviews';
 import ReviewManagement from '../pages/admin/ReviewManagement';
 import DiscountCodeManagement from '../pages/admin/DiscountCodeManagement';
+import CancellationManagement from '../pages/admin/CancellationManagement';
 
 export default function AppRoutes({ theme, toggleTheme }) {
   return (
@@ -105,6 +106,11 @@ export default function AppRoutes({ theme, toggleTheme }) {
       <Route path="/admin/discount-codes" element={
         <AdminRoute>
           <DiscountCodeManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/cancellations" element={
+        <AdminRoute>
+          <CancellationManagement theme={theme} toggleTheme={toggleTheme} />
         </AdminRoute>
       } />
     </Routes>

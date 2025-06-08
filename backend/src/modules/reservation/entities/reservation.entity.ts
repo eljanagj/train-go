@@ -9,7 +9,9 @@ export enum ReservationStatus {
   PENDING = 'pending',
   PAYMENT_PENDING = 'payment_pending',
   CONFIRMED = 'confirmed',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed'
 }
 
 @Entity('reservations')
@@ -47,11 +49,17 @@ export class Reservation {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
-  @Column({ type: 'timestamp' })
-  reservationDate: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  travelDate: Date;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   discountCode: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  cancellationReason: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  cancellationDate: Date;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })

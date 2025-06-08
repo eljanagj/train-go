@@ -21,8 +21,8 @@ export class ScheduleService {
   async createSchedule(
     trainID: number,
     routeID: number,
-    departureTime: Date,
-    arrivalTime: Date,
+    departureTime: string,
+    arrivalTime: string,
   ): Promise<Schedule> {
     const train = await this.trainRepo.findOneBy({ trainID });
     if (!train) throw new NotFoundException('Train not found');
@@ -37,6 +37,14 @@ export class ScheduleService {
       arrivalTime,
     });
 
+    // Extract only the time portion before saving to the database
+    const departureTimeOnly = schedule.departureTime.split('T')[1].substring(0, 5);
+    const arrivalTimeOnly = schedule.arrivalTime.split('T')[1].substring(0, 5);
+
+    // Use these extracted time strings when creating or updating the schedule
+    schedule.departureTime = departureTimeOnly;
+    schedule.arrivalTime = arrivalTimeOnly;
+
     return this.scheduleRepo.save(schedule);
   }
 
@@ -44,8 +52,8 @@ export class ScheduleService {
     id: number,
     trainID: number,
     routeID: number,
-    departureTime: Date,
-    arrivalTime: Date,
+    departureTime: string,
+    arrivalTime: string,
   ): Promise<Schedule> {
     const schedule = await this.scheduleRepo.findOneBy({ id });
     if (!schedule) throw new NotFoundException('Schedule not found');
@@ -60,6 +68,14 @@ export class ScheduleService {
     schedule.route = route;
     schedule.departureTime = departureTime;
     schedule.arrivalTime = arrivalTime;
+
+    // Extract only the time portion before saving to the database
+    const departureTimeOnly = schedule.departureTime.split('T')[1].substring(0, 5);
+    const arrivalTimeOnly = schedule.arrivalTime.split('T')[1].substring(0, 5);
+
+    // Use these extracted time strings when creating or updating the schedule
+    schedule.departureTime = departureTimeOnly;
+    schedule.arrivalTime = arrivalTimeOnly;
 
     return this.scheduleRepo.save(schedule);
   }
