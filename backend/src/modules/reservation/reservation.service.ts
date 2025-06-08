@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Reservation, ReservationStatus } from './entities/reservation.entity';
@@ -10,10 +10,7 @@ import { Seat } from '../seats/entities/seat.entity';
 import { Schedule } from '../schedule/schedule.entity';
 import { Payment, PaymentStatus } from '../payment/entities/payment.entity';
 import { TicketService } from '../ticket/ticket.service';
-import { DiscountCodeService } from '../discountCode/discount.service';
-import { DiscountAutomationService } from '../discountCode/discount-automation.service';
-import { User } from '../user/entities/user.entity';
-import { DiscountCode } from '../discountCode/entities/discount.entity';
+import { CancelReservationDto } from './dto/cancel-reservation.dto';
 
 // Simplified interface - Reservation entity now directly includes seats relation
 export interface ReservationWithSeat extends Reservation {
@@ -27,15 +24,9 @@ export class ReservationService {
     private reservationRepository: Repository<Reservation>,
     @InjectRepository(Schedule)
     private scheduleRepository: Repository<Schedule>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-    @InjectRepository(DiscountCode)
-    private discountCodeRepository: Repository<DiscountCode>,
     private seatsService: SeatsService,
     private paymentService: PaymentService,
     private ticketService: TicketService,
-    private discountCodeService: DiscountCodeService,
-    private discountAutomationService: DiscountAutomationService,
   ) {}
 
   async create(createReservationDto: CreateReservationDto, userId: string): Promise<ReservationWithSeat> {
@@ -48,6 +39,14 @@ export class ReservationService {
 
       if (!schedule) {
         throw new NotFoundException(`Schedule with ID ${createReservationDto.scheduleId} not found`);
+      }
+
+      // Validate that the travel date matches the schedule's date
+      const scheduleDate = new Date(schedule.departureTime).toISOString().split('T')[0];
+      const travelDate = new Date(createReservationDto.travelDate).toISOString().split('T')[0];
+      
+      if (scheduleDate !== travelDate) {
+        throw new BadRequestException('Travel date must match the schedule\'s departure date');
       }
 
       const allSeats = await this.seatsService.getAllSeatsForTrain(schedule.train.trainID);
@@ -64,39 +63,12 @@ export class ReservationService {
       });
 
       if (requestedSeats.length === 0) {
-           throw new BadRequestException('No seats selected for reservation');
+        throw new BadRequestException('No seats selected for reservation');
       }
 
       // Calculate total price: Base route price + sum of selected seat prices
       const totalSeatsPrice = requestedSeats.reduce((sum, seat) => sum + Number(seat.price), 0);
       const totalPrice = Number(schedule.route.price) + totalSeatsPrice;
-
-      // Apply discount if provided
-      let finalPrice = totalPrice;
-      if (createReservationDto.discountCode) {
-        try {
-          const discountResult = await this.discountCodeService.applyDiscount({
-            discountCode: createReservationDto.discountCode,
-            originalPrice: totalPrice
-          }, userId);
-          
-          if (discountResult.isValid && discountResult.discountedPrice !== undefined) {
-            finalPrice = discountResult.discountedPrice;
-            console.log('Discount applied successfully:', {
-              originalPrice: totalPrice,
-              discountedPrice: finalPrice,
-              discountPercentage: discountResult.discountPercentage,
-              userId: userId
-            });
-          } else {
-            console.warn('Discount validation failed:', discountResult.message);
-            // Continue with original price if discount fails
-          }
-        } catch (discountError) {
-          console.warn('Failed to apply discount:', discountError.message);
-          // Continue with original price if discount fails
-        }
-      }
 
       // Create the reservation entity
       const reservation = this.reservationRepository.create({
@@ -104,27 +76,25 @@ export class ReservationService {
         scheduleId: createReservationDto.scheduleId,
         passengerName: createReservationDto.passengerName,
         passengerSurname: createReservationDto.passengerSurname,
-        reservationDate: createReservationDto.reservationDate,
+        travelDate: new Date(createReservationDto.travelDate),
         discountCode: createReservationDto.discountCode,
         status: ReservationStatus.PAYMENT_PENDING,
-        price: finalPrice,
-        // Assign the requested seats to the reservation entity
+        price: totalPrice,
         seats: requestedSeats,
       } as Partial<Reservation>);
 
-      // Save the reservation to the database. TypeORM should return the saved entity.
+      // Save the reservation to the database
       const savedReservation = await this.reservationRepository.save(reservation);
 
       // Create payment for the reservation
-      const payment = await this.paymentService.createPayment(savedReservation.id, finalPrice);
+      const payment = await this.paymentService.createPayment(savedReservation.id, totalPrice);
 
       console.log('Creating reservation with payment:', {
         reservationId: savedReservation.id,
         paymentId: payment.id,
-        finalPrice,
-        originalPrice: totalPrice,
-        discountApplied: finalPrice !== totalPrice,
-        seatNumbers: createReservationDto.seatNumbers // Log selected seat numbers
+        totalPrice,
+        travelDate: createReservationDto.travelDate,
+        seatNumbers: createReservationDto.seatNumbers
       });
 
       // Mark all selected seats as reserved
@@ -134,11 +104,10 @@ export class ReservationService {
         // Rollback reservation if seat reservation fails
         await this.reservationRepository.remove(savedReservation);
         console.error('Error reserving one or more seats:', error);
-        throw error; // Re-throw to indicate failure
+        throw error;
       }
 
-      // Return the created reservation with payment details and associated seats
-      // savedReservation entity should now have the seats array loaded
+      // Return the created reservation with payment details
       const result: ReservationWithSeat = {
         ...savedReservation,
         clientSecret: payment.paymentIntentId ? `${payment.paymentIntentId}_secret_placeholder` : undefined
@@ -202,21 +171,79 @@ export class ReservationService {
     await this.reservationRepository.remove(reservation as Reservation);
   }
 
-  async cancelReservation(id: string): Promise<ReservationWithSeat> {
-    // Load seats relation to release them
+  async cancelReservation(id: string, cancelDto?: CancelReservationDto): Promise<ReservationWithSeat> {
     const reservation = await this.findOne(id);
 
-    // Release all associated seats
-    if (reservation.seats && reservation.seats.length > 0) {
-      await Promise.all(reservation.seats.map(seat => this.seatsService.releaseSeat(seat.id)));
+    // Check if reservation exists
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found');
     }
 
-    reservation.status = ReservationStatus.CANCELLED;
-    // Save and return - assert save result
-    const cancelledReservation = await this.reservationRepository.save(reservation) as Reservation;
+    // Check if reservation can be cancelled based on status
+    if (reservation.status === ReservationStatus.CANCELLED) {
+      throw new BadRequestException('Reservation is already cancelled');
+    }
 
-    // Re-fetch to ensure relations are loaded for the return type
-    return this.findOne(cancelledReservation.id);
+    if (reservation.status === ReservationStatus.COMPLETED) {
+      throw new BadRequestException('Cannot cancel a completed reservation');
+    }
+
+    // Get the schedule for time validation
+    const schedule = await this.scheduleRepository.findOne({
+      where: { id: reservation.scheduleId }
+    });
+
+    if (!schedule) {
+      throw new NotFoundException('Schedule not found');
+    }
+
+    // Get current time and travel date
+    const now = new Date();
+    const travelDate = new Date(reservation.travelDate);
+
+    // Calculate hours until departure
+    const hoursTillDeparture = (travelDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    console.log('Cancellation time check:', {
+      now: now.toISOString(),
+      travelDate: travelDate.toISOString(),
+      hoursTillDeparture: hoursTillDeparture,
+      reservationId: id
+    });
+
+    // Check if cancellation is within allowed time window (2 hours before departure)
+    if (hoursTillDeparture < 2) {
+      throw new ForbiddenException('Cannot cancel reservation less than 2 hours before departure time');
+    }
+
+    try {
+      // Release all associated seats
+      if (reservation.seats && reservation.seats.length > 0) {
+        await Promise.all(reservation.seats.map(seat => this.seatsService.releaseSeat(seat.id)));
+      }
+
+      // Update reservation status and cancellation details
+      reservation.status = ReservationStatus.CANCELLED;
+      reservation.cancellationReason = cancelDto?.reason || 'Cancelled by user';
+      reservation.cancellationDate = now;
+
+      // Save the updated reservation
+      const cancelledReservation = await this.reservationRepository.save(reservation);
+
+      console.log('Reservation cancelled successfully:', {
+        reservationId: cancelledReservation.id,
+        status: cancelledReservation.status,
+        cancellationReason: cancelledReservation.cancellationReason,
+        cancellationDate: cancelledReservation.cancellationDate,
+        hoursTillDeparture: hoursTillDeparture
+      });
+
+      // Return the cancelled reservation with all relations loaded
+      return this.findOne(cancelledReservation.id);
+    } catch (error) {
+      console.error('Error during reservation cancellation:', error);
+      throw new BadRequestException('Failed to cancel reservation: ' + error.message);
+    }
   }
 
   async confirmReservation(id: string): Promise<ReservationWithSeat> {
@@ -230,14 +257,6 @@ export class ReservationService {
     reservation.status = ReservationStatus.CONFIRMED;
     // Save and re-fetch - assert save result
     const confirmedReservation = await this.reservationRepository.save(reservation) as Reservation;
-
-    // Trigger discount code update after confirmation
-    try {
-      await this.discountAutomationService.handleReservationConfirmed(confirmedReservation.userId);
-    } catch (error) {
-      console.error('Error updating discount code after reservation confirmation:', error);
-      // Don't fail the confirmation if discount update fails
-    }
 
     // Automatically create ticket when payment is confirmed (if not already created)
     if (confirmedReservation.payment?.status === PaymentStatus.COMPLETED) {
@@ -300,14 +319,6 @@ export class ReservationService {
     if (updatedPayment.status === PaymentStatus.COMPLETED) {
       reservation.status = ReservationStatus.CONFIRMED;
       console.log('Payment confirmed, updating reservation status to CONFIRMED');
-
-      // Trigger discount code update after confirmation
-      try {
-        await this.discountAutomationService.handleReservationConfirmed(reservation.userId);
-      } catch (error) {
-        console.error('Error updating discount code after payment confirmation:', error);
-        // Don't fail the payment confirmation if discount update fails
-      }
 
       /*// Automatically create ticket when payment is confirmed (if not already created)
       try {

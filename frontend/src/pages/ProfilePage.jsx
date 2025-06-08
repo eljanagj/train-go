@@ -178,6 +178,15 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
       case 'confirmed': return '#10b981';
@@ -385,7 +394,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                         {reservation.id}
                       </td>
                       <td className="reservation-date">
-                        {formatDateShort(reservation.reservationDate)}
+                        {formatDateShort(reservation.travelDate)}
                       </td>
                       <td className="route-info">
                         <span className="route-text">
@@ -645,14 +654,14 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                   <label>Departure Time:</label>
                   <span className="detail-value">
                     <FaClock className="detail-icon" />
-                    {formatDate(selectedReservation.schedule.departureTime)}
+                    {formatTime(selectedReservation.schedule.departureTime)}
                   </span>
                 </div>
                 <div className="detail-group">
                   <label>Arrival Time:</label>
                   <span className="detail-value">
                     <FaClock className="detail-icon" />
-                    {formatDate(selectedReservation.schedule.arrivalTime)}
+                    {formatTime(selectedReservation.schedule.arrivalTime)}
                   </span>
                 </div>
                 <div className="detail-group">
@@ -705,7 +714,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                   <label>Reservation Date:</label>
                   <span className="detail-value">
                     <FaCalendarAlt className="detail-icon" />
-                    {formatDate(selectedReservation.reservationDate)}
+                    {formatDateShort(selectedReservation.travelDate)}
                   </span>
                 </div>
               </div>

@@ -18,7 +18,7 @@ export class CreateReservationDto {
   // @IsNumber()
   // seatId: number;
 
-  @ApiProperty({ description: 'The seat number' })
+  @ApiProperty({ description: 'The seat numbers' })
   @IsNotEmpty()
   @IsArray()
   @IsString({ each: true })
@@ -34,11 +34,11 @@ export class CreateReservationDto {
   @IsString()
   passengerSurname?: string;
 
-  @ApiProperty({ description: 'The reservation date' })
+  @ApiProperty({ description: 'The travel date' })
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
-  reservationDate: Date;
+  travelDate: Date;
 
   @ApiProperty({ description: 'The discount code (optional)' })
   @IsOptional()

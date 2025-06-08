@@ -96,11 +96,10 @@ function TrainSearchPage() {
           const schedules = await scheduleService.getSchedulesByRoute(route.id);
 
           // Store the travel date with each schedule for reservation purposes
-          // but don't filter schedules by date - show all available schedules
           return schedules.map(schedule => ({
             ...schedule,
             route: route,
-            travelDate: travelDate // Include the selected travel date
+            travelDate: new Date(travelDate).toISOString() // Ensure proper date format
           }));
         } catch (err) {
           console.error(`Error fetching schedules for route ${route.id}:`, err);
