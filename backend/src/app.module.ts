@@ -16,6 +16,7 @@ import { TicketModule } from './modules/ticket/ticket.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { DiscountCodeModule } from './modules/discountCode/discount.module';
 import { ReviewModule } from './modules/review/review.module';
+import { CancellationModule } from './modules/cancellations/cancellation.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ReviewModule } from './modules/review/review.module';
     MaintenanceModule,
     DiscountCodeModule,
     ReviewModule,
+    CancellationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

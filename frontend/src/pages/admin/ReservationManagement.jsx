@@ -46,8 +46,6 @@ const ReservationManagement = () => {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
@@ -109,7 +107,7 @@ const ReservationManagement = () => {
                         {reservation.id.substring(0, 8)}...
                       </span>
                     </td>
-                    <td>{formatDate(reservation.reservationDate)}</td>
+                    <td>{formatDate(reservation.travelDate)}</td>
                     <td>
                       <div>
                         <strong>{reservation.passengerName} {reservation.passengerSurname}</strong>
@@ -200,7 +198,7 @@ const ReservationManagement = () => {
                   <div className="col-md-6">
                     <h6>Reservation Details</h6>
                     <p><strong>ID:</strong> {selectedReservation.id}</p>
-                    <p><strong>Date:</strong> {formatDate(selectedReservation.reservationDate)}</p>
+                    <p><strong>Date:</strong> {formatDate(selectedReservation.travelDate)}</p>
                     <p><strong>Status:</strong> 
                       <span 
                         className="ms-2"
@@ -222,7 +220,7 @@ const ReservationManagement = () => {
                     <h6>Journey Information</h6>
                     <p><strong>Route:</strong> {selectedReservation.schedule?.route?.departureStation} → {selectedReservation.schedule?.route?.arrivalStation}</p>
                     <p><strong>Train:</strong> {selectedReservation.schedule?.train?.trainName}</p>
-                    {/* Display all seat numbers in modal */}
+                    {/* Display all seat numbers */}
                     <p><strong>Seat/s:</strong> {selectedReservation.seats && selectedReservation.seats.length > 0 ? (
                       selectedReservation.seats.map(seat => seat.seatNumber).join(', ')
                     ) : (

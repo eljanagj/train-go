@@ -15,6 +15,8 @@ import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import StarRating from "../components/StarRating";
 import DiscountCodeCard from "../components/DiscountCodeCard";
 import { paymentService } from '../services/paymentService';
+import api from '../services/api';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
 
 const ProfileComponent = ({ theme, toggleTheme }) => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -47,6 +49,10 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const [cancelError, setCancelError] = useState("");
 
   const [processingRefund, setProcessingRefund] = useState(null);
+
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [selectedReservationId, setSelectedReservationId] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   // Update nickname when user becomes available
   useEffect(() => {
@@ -266,38 +272,39 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     }
   };
 
-  const handleCancelReservation = async (reservationId) => {
+  const handleCancelClick = (reservationId) => {
+    setSelectedReservationId(reservationId);
+    setCancellationReason('');
+    setCancelModalOpen(true);
+  };
+
+  const handleCancelReservation = async () => {
+    if (!selectedReservationId || !cancellationReason.trim()) {
+      setError("Please provide a reason for cancellation");
+      return;
+    }
+
     try {
-      setCancellingReservation(reservationId);
-      setCancelError("");
-      
-      // Get the reservation to check its travel date
-      const reservation = reservations.find(r => r.id === reservationId);
-      if (!reservation) {
-        throw new Error('Reservation not found');
-      }
-
-      // Check if cancellation is allowed (more than 2 hours before departure)
-      const travelDate = new Date(reservation.travelDate);
-      const now = new Date();
-      const hoursDifference = (travelDate - now) / (1000 * 60 * 60);
-
-      if (hoursDifference < 2) {
-        throw new Error('Cancellation is not allowed less than 2 hours before departure');
-      }
-
-      await reservationService.cancelReservation(reservationId);
-      
-      // Refresh reservations list
-      await fetchReservations();
+      setCancellingReservation(selectedReservationId);
+      // Create a cancellation request using the configured api instance
+      await api.post('/cancellations', {
+        reservationId: selectedReservationId,
+        reason: cancellationReason.trim()
+      });
       
       // Show success message
-      setError("Reservation cancelled successfully");
+      setError("Cancellation request submitted successfully");
       setTimeout(() => setError(""), 3000);
-    } catch (err) {
-      console.error('Error cancelling reservation:', err);
-      setCancelError(err.message || 'Failed to cancel reservation');
-      setTimeout(() => setCancelError(""), 3000);
+      
+      // Close modal and refresh reservations
+      setCancelModalOpen(false);
+      setSelectedReservationId(null);
+      setCancellationReason('');
+      fetchReservations();
+    } catch (error) {
+      console.error('Error creating cancellation request:', error);
+      setError("Failed to submit cancellation request");
+      setTimeout(() => setError(""), 3000);
     } finally {
       setCancellingReservation(null);
     }
@@ -511,7 +518,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                             </button>
                             <button
                               className="action-btn cancel-btn"
-                              onClick={() => handleCancelReservation(reservation.id)}
+                              onClick={() => handleCancelClick(reservation.id)}
                               disabled={cancellingReservation === reservation.id || 
                                       reservation.status === 'cancelled' ||
                                       new Date(reservation.travelDate) - new Date() < 2 * 60 * 60 * 1000}
@@ -519,7 +526,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                                 reservation.status === 'cancelled' ? 'Already cancelled' :
                                 new Date(reservation.travelDate) - new Date() < 2 * 60 * 60 * 1000 ? 
                                 'Cannot cancel less than 2 hours before departure' : 
-                                'Cancel Reservation'
+                                'Request Cancellation'
                               }
                               style={{
                                 backgroundColor: '#dc3545',
@@ -701,6 +708,43 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
           title="Delete Review"
           message="Are you sure you want to delete this review? This action cannot be undone."
         />
+
+        {/* Cancellation Request Modal */}
+        <Dialog 
+          open={cancelModalOpen} 
+          onClose={() => setCancelModalOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Request Cancellation</DialogTitle>
+          <DialogContent>
+            <TextField
+              fullWidth
+              label="Reason for Cancellation"
+              multiline
+              rows={4}
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              placeholder="Please provide a reason for your cancellation request..."
+              sx={{ mt: 2 }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button 
+              onClick={() => setCancelModalOpen(false)}
+              color="inherit"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCancelReservation}
+              color="error"
+              disabled={!cancellationReason.trim() || cancellingReservation === selectedReservationId}
+            >
+              {cancellingReservation === selectedReservationId ? 'Submitting...' : 'Submit Request'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
       <Footer />
 
