@@ -5,7 +5,7 @@ import { NavBar } from "../components/NavBar";
 import { Footer } from "../components/Footer";
 import "../styles/Profile.css";
 import { PageLoader } from "../components/PageLoader";
-import { FaCalendarAlt, FaTrain, FaMapMarkerAlt, FaClock, FaEuroSign, FaChair, FaDownload, FaEye, FaTimes, FaCreditCard, FaSync, FaStar, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaCalendarAlt, FaTrain, FaMapMarkerAlt, FaClock, FaEuroSign, FaChair, FaDownload, FaEye, FaTimes, FaCreditCard, FaSync, FaStar, FaPlus, FaEdit, FaTrash, FaBan } from "react-icons/fa";
 import { reservationService } from "../services/reservationService";
 import { ticketService } from "../services/ticketService";
 import { reviewService } from "../services/reviewService";
@@ -14,6 +14,7 @@ import ReviewForm from "../components/ReviewForm";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import StarRating from "../components/StarRating";
 import DiscountCodeCard from "../components/DiscountCodeCard";
+import { paymentService } from '../services/paymentService';
 
 const ProfileComponent = ({ theme, toggleTheme }) => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -41,6 +42,11 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
   const [deleteReviewId, setDeleteReviewId] = useState(null);
+
+  const [cancellingReservation, setCancellingReservation] = useState(null);
+  const [cancelError, setCancelError] = useState("");
+
+  const [processingRefund, setProcessingRefund] = useState(null);
 
   // Update nickname when user becomes available
   useEffect(() => {
@@ -260,6 +266,68 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     }
   };
 
+  const handleCancelReservation = async (reservationId) => {
+    try {
+      setCancellingReservation(reservationId);
+      setCancelError("");
+      
+      // Get the reservation to check its travel date
+      const reservation = reservations.find(r => r.id === reservationId);
+      if (!reservation) {
+        throw new Error('Reservation not found');
+      }
+
+      // Check if cancellation is allowed (more than 2 hours before departure)
+      const travelDate = new Date(reservation.travelDate);
+      const now = new Date();
+      const hoursDifference = (travelDate - now) / (1000 * 60 * 60);
+
+      if (hoursDifference < 2) {
+        throw new Error('Cancellation is not allowed less than 2 hours before departure');
+      }
+
+      await reservationService.cancelReservation(reservationId);
+      
+      // Refresh reservations list
+      await fetchReservations();
+      
+      // Show success message
+      setError("Reservation cancelled successfully");
+      setTimeout(() => setError(""), 3000);
+    } catch (err) {
+      console.error('Error cancelling reservation:', err);
+      setCancelError(err.message || 'Failed to cancel reservation');
+      setTimeout(() => setCancelError(""), 3000);
+    } finally {
+      setCancellingReservation(null);
+    }
+  };
+
+  const handleRefundRequest = async (reservationId) => {
+    try {
+      setProcessingRefund(reservationId);
+      const reservation = reservations.find(r => r.id === reservationId);
+      
+      if (!reservation.payment) {
+        throw new Error('No payment found for this reservation');
+      }
+
+      await paymentService.requestRefund(reservation.payment.id);
+      
+      // Refresh reservations to show updated status
+      await fetchReservations();
+      
+      setError("Refund request processed successfully");
+      setTimeout(() => setError(""), 3000);
+    } catch (err) {
+      console.error('Error requesting refund:', err);
+      setCancelError(err.message || 'Failed to process refund request');
+      setTimeout(() => setCancelError(""), 3000);
+    } finally {
+      setProcessingRefund(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="profile-page-light">
@@ -432,28 +500,37 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                             <FaCreditCard />
                           </button>
                         ) : reservation.status === 'confirmed' ? (
-                          <button
-                            className="action-btn download-btn"
-                            onClick={() => handleDownloadTicket(reservation.id)}
-                            disabled={downloadingPdf === reservation.id}
-                            title="Download Ticket"
-                          >
-                            {downloadingPdf === reservation.id ? '...' : <FaDownload />}
-                          </button>
-                        ) : (
-                          <span
-                            style={{ fontSize: '12px', color: '#666' }}
-                            title={`Status: ${reservation.status}, Payment: ${reservation.payment?.status || 'N/A'}`}
-                          >
-                            {console.log('Reservation debug:', {
-                              id: reservation.id,
-                              status: reservation.status,
-                              paymentStatus: reservation.payment?.status,
-                              payment: reservation.payment
-                            })}
-                            Debug
-                          </span>
-                        )}
+                          <>
+                            <button
+                              className="action-btn download-btn"
+                              onClick={() => handleDownloadTicket(reservation.id)}
+                              disabled={downloadingPdf === reservation.id}
+                              title="Download Ticket"
+                            >
+                              {downloadingPdf === reservation.id ? '...' : <FaDownload />}
+                            </button>
+                            <button
+                              className="action-btn cancel-btn"
+                              onClick={() => handleCancelReservation(reservation.id)}
+                              disabled={cancellingReservation === reservation.id || 
+                                      reservation.status === 'cancelled' ||
+                                      new Date(reservation.travelDate) - new Date() < 2 * 60 * 60 * 1000}
+                              title={
+                                reservation.status === 'cancelled' ? 'Already cancelled' :
+                                new Date(reservation.travelDate) - new Date() < 2 * 60 * 60 * 1000 ? 
+                                'Cannot cancel less than 2 hours before departure' : 
+                                'Cancel Reservation'
+                              }
+                              style={{
+                                backgroundColor: '#dc3545',
+                                borderColor: '#dc3545',
+                                opacity: reservation.status === 'cancelled' ? 0.5 : 1
+                              }}
+                            >
+                              {cancellingReservation === reservation.id ? '...' : <FaBan />}
+                            </button>
+                          </>
+                        ) : null}
                       </td>
                     </tr>
                   ))}
@@ -710,6 +787,26 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                     {selectedReservation.status.replace('_', ' ')}
                   </span>
                 </div>
+                {selectedReservation.payment && (
+                  <>
+                    <div className="detail-group">
+                      <label>Payment Status:</label>
+                      <span className="detail-value">
+                        {selectedReservation.payment.status}
+                      </span>
+                    </div>
+                    {selectedReservation.payment.refundStatus && (
+                      <div className="detail-group">
+                        <label>Refund Status:</label>
+                        <span className="detail-value">
+                          {selectedReservation.payment.refundStatus}
+                          {selectedReservation.payment.refundDate && 
+                            ` (${formatDateShort(selectedReservation.payment.refundDate)})`}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
                 <div className="detail-group">
                   <label>Reservation Date:</label>
                   <span className="detail-value">
@@ -731,19 +828,31 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                     Continue Payment
                   </button>
                 ) : selectedReservation.status === 'confirmed' && selectedReservation.payment?.status === 'completed' ? (
-                  <button
-                    className="modal-download-btn"
-                    onClick={() => handleDownloadTicket(selectedReservation.id)}
-                    disabled={downloadingPdf === selectedReservation.id}
-                  >
-                    <FaDownload className="btn-icon" />
-                    {downloadingPdf === selectedReservation.id ? 'Downloading...' : 'Download Ticket PDF'}
-                  </button>
-                ) : (
-                  <div className="modal-info">
-                    <p>Ticket download will be available after payment confirmation.</p>
-                  </div>
-                )}
+                  <>
+                    <button
+                      className="modal-download-btn"
+                      onClick={() => handleDownloadTicket(selectedReservation.id)}
+                      disabled={downloadingPdf === selectedReservation.id}
+                    >
+                      <FaDownload className="btn-icon" />
+                      {downloadingPdf === selectedReservation.id ? 'Downloading...' : 'Download Ticket PDF'}
+                    </button>
+                    {!selectedReservation.payment?.refundStatus && (
+                      <button
+                        className="modal-refund-btn"
+                        onClick={() => handleRefundRequest(selectedReservation.id)}
+                        disabled={processingRefund === selectedReservation.id}
+                        style={{
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          marginLeft: '10px'
+                        }}
+                      >
+                        {processingRefund === selectedReservation.id ? 'Processing...' : 'Request Refund'}
+                      </button>
+                    )}
+                  </>
+                ) : null}
               </div>
             </div>
           </div>
