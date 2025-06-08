@@ -731,14 +731,14 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                   <label>Departure Time:</label>
                   <span className="detail-value">
                     <FaClock className="detail-icon" />
-                    {formatTime(selectedReservation.schedule.departureTime)}
+                    {selectedReservation.schedule.departureTime}
                   </span>
                 </div>
                 <div className="detail-group">
                   <label>Arrival Time:</label>
                   <span className="detail-value">
                     <FaClock className="detail-icon" />
-                    {formatTime(selectedReservation.schedule.arrivalTime)}
+                    {selectedReservation.schedule.arrivalTime}
                   </span>
                 </div>
                 <div className="detail-group">

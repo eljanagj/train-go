@@ -154,6 +154,17 @@ export default function ReservationPage() {
     }
   };
 
+  // Combine travelDate with schedule times
+  const travelDate = new Date(schedule.travelDate);
+  const [depHours, depMinutes] = schedule.departureTime.split(':').map(Number);
+  const [arrHours, arrMinutes] = schedule.arrivalTime.split(':').map(Number);
+
+  const departureDateTime = new Date(travelDate);
+  departureDateTime.setHours(depHours, depMinutes, 0);
+
+  const arrivalDateTime = new Date(travelDate);
+  arrivalDateTime.setHours(arrHours, arrMinutes, 0);
+
   if (!schedule) {
     return (
       <div className="reservation-page">
@@ -187,8 +198,8 @@ export default function ReservationPage() {
                 <p><FaMapMarkerAlt className="me-2" />From: <strong>{schedule.route.departureStation}</strong></p>
                 <p><FaMapMarkerAlt className="me-2" />To: <strong>{schedule.route.arrivalStation}</strong></p>
                 <p><FaClock className="me-2" />Travel Date: <strong>{new Date(schedule.travelDate).toLocaleDateString()}</strong></p>
-                <p><FaClock className="me-2" />Departure Time: <strong>{new Date(schedule.departureTime).toLocaleTimeString()}</strong></p>
-                <p><FaClock className="me-2" />Arrival Time: <strong>{new Date(schedule.arrivalTime).toLocaleTimeString()}</strong></p>
+                <p><FaClock className="me-2" />Departure Time: <strong>{departureDateTime.toLocaleTimeString()}</strong></p>
+                <p><FaClock className="me-2" />Arrival Time: <strong>{arrivalDateTime.toLocaleTimeString()}</strong></p>
                 <p><FaTrain className="me-2" />Train: <strong>{schedule.train.trainName} (#{schedule.train.trainNumber})</strong></p>
 
                 {/* Display total and available seats for the train */}

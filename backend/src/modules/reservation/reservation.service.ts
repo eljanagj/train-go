@@ -41,12 +41,20 @@ export class ReservationService {
         throw new NotFoundException(`Schedule with ID ${createReservationDto.scheduleId} not found`);
       }
 
-      // Validate that the travel date matches the schedule's date
-      const scheduleDate = new Date(schedule.departureTime).toISOString().split('T')[0];
-      const travelDate = new Date(createReservationDto.travelDate).toISOString().split('T')[0];
-      
-      if (scheduleDate !== travelDate) {
-        throw new BadRequestException('Travel date must match the schedule\'s departure date');
+      // Combine travelDate with schedule times
+      const travelDate = new Date(createReservationDto.travelDate);
+      const [depHours, depMinutes] = schedule.departureTime.split(':').map(Number);
+      const [arrHours, arrMinutes] = schedule.arrivalTime.split(':').map(Number);
+
+      const departureDateTime = new Date(travelDate);
+      departureDateTime.setHours(depHours, depMinutes, 0);
+
+      const arrivalDateTime = new Date(travelDate);
+      arrivalDateTime.setHours(arrHours, arrMinutes, 0);
+
+      // Validate that the travel date is valid
+      if (travelDate.toISOString().split('T')[0] !== new Date(createReservationDto.travelDate).toISOString().split('T')[0]) {
+        throw new BadRequestException('Travel date must match the intended schedule date');
       }
 
       const allSeats = await this.seatsService.getAllSeatsForTrain(schedule.train.trainID);

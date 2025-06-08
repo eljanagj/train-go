@@ -24,7 +24,6 @@ export class TripStatusService {
       return reservation;
     }
 
-    const now = new Date();
     const schedule = await this.scheduleRepository.findOne({
       where: { id: reservation.scheduleId }
     });
@@ -33,11 +32,18 @@ export class TripStatusService {
       return reservation;
     }
 
-    const departureTime = new Date(schedule.departureTime);
-    const arrivalTime = new Date(schedule.arrivalTime);
+    const departureTime = schedule.departureTime;
+    const arrivalTime = schedule.arrivalTime;
 
-    // Calculate hours until departure
-    const hoursTillDeparture = (departureTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const [depHours, depMinutes] = departureTime.split(':').map(Number);
+    const [arrHours, arrMinutes] = arrivalTime.split(':').map(Number);
+
+    const now = new Date();
+    const depTimeInMinutes = depHours * 60 + depMinutes;
+    const arrTimeInMinutes = arrHours * 60 + arrMinutes;
+    const nowInMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const hoursTillDeparture = (depTimeInMinutes - nowInMinutes) / 60;
 
     // Auto-cancel if less than 2 hours till departure and payment is not completed
     if (hoursTillDeparture < 2 && 
@@ -51,9 +57,9 @@ export class TripStatusService {
 
     // Update status based on journey progress
     if (reservation.status === ReservationStatus.CONFIRMED) {
-      if (now >= departureTime && now < arrivalTime) {
+      if (nowInMinutes >= depTimeInMinutes && nowInMinutes < arrTimeInMinutes) {
         reservation.status = ReservationStatus.IN_PROGRESS;
-      } else if (now >= arrivalTime) {
+      } else if (nowInMinutes >= arrTimeInMinutes) {
         reservation.status = ReservationStatus.COMPLETED;
       }
     }

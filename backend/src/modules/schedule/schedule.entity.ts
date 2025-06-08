@@ -23,11 +23,11 @@ export class Schedule {
   @JoinColumn({ name: 'routeID' })
   route: Route;
 
-  @Column({ type: 'timestamp' })
-  departureTime: Date;
+  @Column({ type: 'varchar', length: 5 })
+  departureTime: string;
 
-  @Column({ type: 'timestamp' })
-  arrivalTime: Date;
+  @Column({ type: 'varchar', length: 5 })
+  arrivalTime: string;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -43,8 +43,8 @@ export class PdfService {
 
   private generateTicketHtml(ticketData: TicketData): string {
     const { reservation, passengerName, passengerSurname, ticketNumber } = ticketData;
-    const departureDate = new Date(reservation.schedule.departureTime);
-    const arrivalDate = new Date(reservation.schedule.arrivalTime);
+    const departureTime = reservation.schedule.departureTime;
+    const arrivalTime = reservation.schedule.arrivalTime;
 
     // Use passenger info from reservation if not provided in ticketData
     const finalPassengerName = passengerName || reservation.passengerName || 'N/A';
@@ -61,6 +61,25 @@ export class PdfService {
       minute: '2-digit',
       hour12: false
     });
+
+    // Combine travelDate with schedule times
+    const travelDate = new Date(reservation.travelDate);
+    const [depHours, depMinutes] = departureTime.split(':').map(Number);
+    const [arrHours, arrMinutes] = arrivalTime.split(':').map(Number);
+
+    const departureDateTime = new Date(travelDate);
+    departureDateTime.setHours(depHours, depMinutes, 0);
+
+    const arrivalDateTime = new Date(travelDate);
+    arrivalDateTime.setHours(arrHours, arrMinutes, 0);
+
+    // Use these combined date-time values for display
+    const formattedDepartureDate = formatDate(departureDateTime);
+    const formattedArrivalDate = formatDate(arrivalDateTime);
+
+    // Adjust the formatting logic to display time strings
+    const formattedDepartureTime = departureTime; // Directly use the time string
+    const formattedArrivalTime = arrivalTime; // Directly use the time string
 
     return `
     <!DOCTYPE html>
@@ -260,14 +279,14 @@ export class PdfService {
                     <div class="route-info">
                         <div class="station">
                             <div class="station-name">${reservation.schedule.route.departureStation}</div>
-                            <div class="station-date">${formatDate(departureDate)}</div>
-                            <div class="station-time">${formatTime(departureDate)}</div>
+                            <div class="station-date">${formattedDepartureDate}</div>
+                            <div class="station-time">${formattedDepartureTime}</div>
                         </div>
                         <div class="route-arrow">→</div>
                         <div class="station">
                             <div class="station-name">${reservation.schedule.route.arrivalStation}</div>
-                            <div class="station-date">${formatDate(arrivalDate)}</div>
-                            <div class="station-time">${formatTime(arrivalDate)}</div>
+                            <div class="station-date">${formattedArrivalDate}</div>
+                            <div class="station-time">${formattedArrivalTime}</div>
                         </div>
                     </div>
                 </div>
