@@ -275,6 +275,11 @@
   justify-content: flex-end;
 }
 
+/* Center action buttons when the parent cell is centered */
+.table-cell-center .action-buttons {
+  justify-content: center;
+}
+
 .edit-button,
 .delete-button,
 .save-button,
@@ -531,5 +536,16 @@
 
 .maintenance-button svg {
   font-size: 16px;
+}
+
+.table-cell-center {
+  text-align: center;
+}
+
+.table-cell-content-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 

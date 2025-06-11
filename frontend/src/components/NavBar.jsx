@@ -113,6 +113,29 @@ export function NavBar() {
                                 Reviews
                             </Link>
                         </li>
+                        <li className="nav-item">
+                            <Link
+                                className="nav-link"
+                                to="/about"
+                                style={{
+                                    color: '#64748b',
+                                    fontWeight: '500',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '6px',
+                                    transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.color = '#3b82f6';
+                                    e.target.style.backgroundColor = '#f1f5f9';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.color = '#64748b';
+                                    e.target.style.backgroundColor = 'transparent';
+                                }}
+                            >
+                                About
+                            </Link>
+                        </li>
                         {isAdmin() && (
                             <li className="nav-item">
                                 <Link

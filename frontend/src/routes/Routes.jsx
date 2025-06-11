@@ -20,6 +20,8 @@ import Reviews from '../pages/Reviews';
 import ReviewManagement from '../pages/admin/ReviewManagement';
 import DiscountCodeManagement from '../pages/admin/DiscountCodeManagement';
 import CancellationManagement from '../pages/admin/CancellationManagement';
+import About from '../pages/About';
+import FAQManagement from '../pages/admin/FAQManagement';
 
 export default function AppRoutes({ theme, toggleTheme }) {
   return (
@@ -28,6 +30,7 @@ export default function AppRoutes({ theme, toggleTheme }) {
       <Route path="/" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
       <Route path="/reviews" element={<Reviews theme={theme} toggleTheme={toggleTheme} />} />
       <Route path="/unauthorized" element={<Unauthorized theme={theme} toggleTheme={toggleTheme} />} />
+      <Route path="/about" element={<About theme={theme} toggleTheme={toggleTheme} />} />
       
       {/* Protected Routes - Authentication Required */}
       <Route path="/profile" element={
@@ -111,6 +114,11 @@ export default function AppRoutes({ theme, toggleTheme }) {
       <Route path="/admin/cancellations" element={
         <AdminRoute>
           <CancellationManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/faqs" element={
+        <AdminRoute>
+          <FAQManagement theme={theme} toggleTheme={toggleTheme} />
         </AdminRoute>
       } />
     </Routes>
