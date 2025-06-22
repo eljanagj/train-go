@@ -1,80 +1,107 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
-import { SeatsService } from './seats.service';
-import { SeatType, SeatClass } from './entities/seat.entity';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Patch,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
+import { SeatsService, SeatData } from './seats.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @ApiTags('seats')
 @Controller('seats')
+@UseGuards(JwtAuthGuard)
 export class SeatsController {
   constructor(private readonly seatsService: SeatsService) {}
 
   @Post('train/:trainId')
-  @ApiOperation({ summary: 'Create seats for a train' })
-  @ApiResponse({ status: 201, description: 'Seats created successfully' })
+  @ApiOperation({ summary: 'Set seat configuration for a train' })
+  @ApiResponse({ status: 201, description: 'Seat configuration set successfully' })
   createSeatsForTrain(
-    @Param('trainId') trainId: number,
-    @Body() seatConfig: {
+    @Param('trainId') trainId: string,
+    @Body()
+    seatConfig: {
       seatNumber: string;
-      type: SeatType;
+      type: string;
+      class: string;
       price: number;
       location: string;
       row: number;
       position: string;
-      class: SeatClass;
-    }[]
+    }[],
   ) {
-    return this.seatsService.createSeatsForTrain(trainId, seatConfig);
-  }
-
-  @Get('train/:trainId/available')
-  @ApiOperation({ summary: 'Get available seats for a train' })
-  @ApiResponse({ status: 200, description: 'Returns list of available seats' })
-  getAvailableSeats(@Param('trainId') trainId: number) {
-    return this.seatsService.getAvailableSeats(trainId);
+    return this.seatsService.createSeatsForTrain(parseInt(trainId), seatConfig);
   }
 
   @Get('train/:trainId')
   @ApiOperation({ summary: 'Get all seats for a train' })
-  @ApiResponse({ status: 200, description: 'Returns list of all seats' })
-  getAllSeatsForTrain(@Param('trainId') trainId: number) {
-    return this.seatsService.getAllSeatsForTrain(trainId);
+  @ApiResponse({ status: 200, description: 'Returns all seats for the train' })
+  getAllSeatsForTrain(
+    @Param('trainId') trainId: string,
+    @Query('date') date?: string,
+    @Query('time') time?: string
+  ): Promise<Record<string, SeatData>> {
+    return this.seatsService.getSeatDetails(trainId, date, time);
   }
 
-  @Get(':seatId')
-  @ApiOperation({ summary: 'Get seat details' })
-  @ApiResponse({ status: 200, description: 'Returns seat details' })
-  getSeatDetails(@Param('seatId') seatId: string) {
-    return this.seatsService.getSeatDetails(seatId);
-  }
-
-  @Post(':seatId/reserve')
-  @ApiOperation({ summary: 'Reserve a seat' })
-  @ApiResponse({ status: 200, description: 'Seat reserved successfully' })
-  reserveSeat(@Param('seatId') seatId: string) {
-    return this.seatsService.reserveSeat(seatId);
-  }
-
-  @Post(':seatId/release')
-  @ApiOperation({ summary: 'Release a seat' })
-  @ApiResponse({ status: 200, description: 'Seat released successfully' })
-  releaseSeat(@Param('seatId') seatId: string) {
-    return this.seatsService.releaseSeat(seatId);
-  }
-
-  @Delete(':seatId')
-  @ApiOperation({ summary: 'Delete a seat' })
-  @ApiResponse({ status: 200, description: 'Seat deleted successfully' })
-  deleteSeat(@Param('seatId') seatId: string) {
-    return this.seatsService.deleteSeat(seatId);
-  }
-
-  @Patch(':seatId')
-  @ApiOperation({ summary: 'Update seat price' })
-  @ApiResponse({ status: 200, description: 'Seat updated successfully' })
-  updateSeatPrice(
-    @Param('seatId') seatId: string,
-    @Body() updateData: { price: number }
+  @Get(':trainId/:date/:time/available')
+  @ApiOperation({ summary: 'Get available seats for a train schedule' })
+  @ApiResponse({ status: 200, description: 'List of available seats' })
+  getAvailableSeats(
+    @Param('trainId') trainId: string,
+    @Param('date') date: string, // Format: YYYY-MM-DD
+    @Param('time') time: string, // Format: HH:mm
   ) {
-    return this.seatsService.updateSeatPrice(seatId, updateData.price);
+    return this.seatsService.getAvailableSeats(parseInt(trainId), date, time);
   }
-} 
+
+  @Post(':trainId/:date/:time/:seatId/reserve/:userId')
+  @ApiOperation({ summary: 'Reserve a seat temporarily' })
+  @ApiResponse({ status: 200, description: 'Seat marked as pending for user' })
+  reserveSeat(
+    @Param('trainId') trainId: string,
+    @Param('date') date: string,
+    @Param('time') time: string,
+    @Param('seatId') seatId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.seatsService.reserveSeat(trainId, date, time, seatId, userId);
+  }
+
+  @Post(':trainId/:date/:time/:seatId/release/:userId')
+  @ApiOperation({ summary: 'Release a pending reservation' })
+  @ApiResponse({ status: 200, description: 'Seat released successfully' })
+  releaseSeat(
+    @Param('trainId') trainId: string,
+    @Param('date') date: string,
+    @Param('time') time: string,
+    @Param('seatId') seatId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.seatsService.releaseSeat(trainId, date, time, seatId, userId);
+  }
+
+  @Delete('train/:trainId')
+  async deleteSeats(
+    @Param('trainId') trainId: string,
+    @Body() body: { seatNumbers: string[] }
+  ) {
+    return this.seatsService.deleteSeats(trainId, body.seatNumbers);
+  }
+
+  @Patch('train/:trainId/:seatNumber/price')
+  @ApiOperation({ summary: 'Update seat price' })
+  @ApiResponse({ status: 200, description: 'Seat price updated successfully' })
+  updateSeatPrice(
+    @Param('trainId') trainId: string,
+    @Param('seatNumber') seatNumber: string,
+    @Body() body: { price: number }
+  ) {
+    return this.seatsService.updateSeatPrice(trainId, seatNumber, body.price);
+  }
+}

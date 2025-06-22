@@ -12,6 +12,7 @@ import { seatService } from "../services/seatService";
 import { reservationService } from "../services/reservationService";
 import DiscountCodeInput from "../components/DiscountCodeInput";
 import discountService from "../services/discountService";
+import SeatSelectionPopup from "../components/SeatSelectionPopup";
 
 export default function ReservationPage() {
   const { user, getAccessTokenSilently } = useAuth0();
@@ -72,34 +73,55 @@ export default function ReservationPage() {
 
   const fetchAvailableSeats = async () => {
     try {
-      const data = await seatService.getAllSeatsForTrain(schedule.train.trainID);
-      setAllSeats(data);
+      setLoading(true);
+      // First get all seats configuration
+      const data = await seatService.getSeatDetails(
+        schedule.train.trainID,
+        schedule.travelDate,
+        schedule.departureTime
+      );
       
-      const classes = [...new Set(data.map(seat => seat.class))];
+      console.log('All seats data:', data);
+
+      // Update seat status based on the data returned
+      const updatedSeats = {};
+      Object.entries(data).forEach(([seatNumber, seatData]) => {
+        updatedSeats[seatNumber] = {
+          ...seatData,
+          seatNumber,
+          status: seatData.status || 'available',
+          isAvailable: seatData.status !== 'reserved'
+        };
+      });
+      
+      setAllSeats(updatedSeats);
+      
+      const classes = [...new Set(Object.values(updatedSeats).map(seat => seat.class))];
       setUniqueClasses(classes);
       if (classes.length > 0) {
         setSelectedClass(classes[0]);
       }
-
     } catch (err) {
       setError("Failed to load seats");
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSeatClick = (seat) => {
     // Only allow selection of available seats
-    if (seat.status !== 'available') {
+    if (!seat.isAvailable) {
       return;
     }
 
-    const isSelected = selectedSeats.some(selectedSeat => selectedSeat.id === seat.id);
+    const isSelected = selectedSeats.some(selectedSeat => selectedSeat.seatNumber === seat.seatNumber);
 
     if (isSelected) {
       // Deselect seat
-      setSelectedSeats(selectedSeats.filter(selectedSeat => selectedSeat.id !== seat.id));
+      setSelectedSeats(selectedSeats.filter(selectedSeat => selectedSeat.seatNumber !== seat.seatNumber));
     } else {
-      // Select seat
+      // Select seat (always use the seat object from allSeats)
       setSelectedSeats([...selectedSeats, seat]);
     }
   };
@@ -116,6 +138,26 @@ export default function ReservationPage() {
 
     try {
       setIsReserving(true);
+      
+      // Double check seat availability before making reservation
+      const availableSeats = await seatService.getAvailableSeats(
+        schedule.train.trainID,
+        schedule.travelDate,
+        schedule.departureTime
+      );
+
+      console.log('Final availability check - Available seats:', availableSeats);
+      console.log('Selected seats:', selectedSeats.map(s => s.seatNumber));
+
+      // Verify all selected seats are still available
+      const unavailableSeats = selectedSeats.filter(seat => !availableSeats.includes(seat.seatNumber));
+      if (unavailableSeats.length > 0) {
+        setError(`Seats ${unavailableSeats.map(s => s.seatNumber).join(', ')} are no longer available. Please select different seats.`);
+        setIsReserving(false);
+        return;
+      }
+
+      // Prepare reservation data with only necessary fields
       const reservationData = {
         scheduleId: schedule.id,
         seatNumbers: selectedSeats.map(seat => seat.seatNumber),
@@ -124,6 +166,8 @@ export default function ReservationPage() {
         travelDate: schedule.travelDate,
         discountCode: formData.discountCode || undefined,
       };
+
+      console.log('Sending reservation data:', reservationData);
 
       const reservation = await reservationService.createReservation(reservationData);
       setTimeout(() => {
@@ -164,6 +208,27 @@ export default function ReservationPage() {
 
   const arrivalDateTime = new Date(travelDate);
   arrivalDateTime.setHours(arrHours, arrMinutes, 0);
+
+  // Update the seat rendering part
+  const renderSeat = (seat) => {
+    const isSelected = selectedSeats.some(s => s.seatNumber === seat.seatNumber);
+    const isReserved = seat.status === 'reserved';
+    const isAvailable = !isReserved && seat.isAvailable;
+
+    return (
+      <div
+        key={seat.seatNumber}
+        className={`seat ${isSelected ? 'selected' : ''} ${isReserved ? 'reserved' : ''} ${isAvailable ? 'available' : ''}`}
+        onClick={() => {
+          if (isAvailable) {
+            handleSeatClick(seat);
+          }
+        }}
+      >
+        {seat.seatNumber}
+      </div>
+    );
+  };
 
   if (!schedule) {
     return (
@@ -338,89 +403,28 @@ export default function ReservationPage() {
       </main>
       <Footer />
 
-      {/* Seat Selection Modal */}
+      {/* Seat Selection Popup */}
       {showSeatPopup && (
-        <div className="seat-selection-overlay">
-          <div className="seat-selection-popup">
-            <button
-              className="close-button"
-              onClick={() => setShowSeatPopup(false)}
-            >
-              <FaTimes />
-            </button>
-            <h3>Select Seat(s) for {selectedClass.toUpperCase()} Class</h3>
-            <div className="seat-selection-layout mt-3"> {/* Use the layout class inside modal */}
-              {/* Filter seats by selected class and render the layout */}
-              {allSeats && allSeats.length > 0 && allSeats.filter(seat => seat.class === selectedClass).length > 0 ? (
-                (
-                  Object.values(allSeats.filter(seat => seat.class === selectedClass).reduce((acc, seat) => {
-                    if (!acc[seat.row]) {
-                      acc[seat.row] = [];
-                    }
-                    acc[seat.row].push(seat);
-                    return acc;
-                  }, {})).sort((a, b) => Number(Object.values(a)[0].row) - Number(Object.values(b)[0].row)).map(rowSeats => {
-                    const rowNum = Object.values(rowSeats)[0].row;
-
-                    // Determine seats per side based on class (assuming 3+3 for economy, 2+2 for others)
-                    const seatsPerSide = selectedClass === 'economy' ? 3 : 2;
-
-                    // Sort seats based on their position and type
-                    const sortedRowSeats = Object.values(rowSeats).sort((a, b) => {
-                      // For economy class, ensure D is aisle and F is window
-                      if (selectedClass === 'economy') {
-                        const positionOrder = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5 };
-                        return positionOrder[a.position] - positionOrder[b.position];
-                      }
-                      // For other classes, maintain original sorting
-                      return a.position.localeCompare(b.position);
-                    });
-
-                    return (
-                      <div key={rowNum} className="seat-row"> {/* Container for a single row */}
-                        <div className="row-number">{rowNum}</div> {/* Row number */}
-                        <div className="row-seats"> {/* Container for seats in the row */}
-                          {/* Left side seats */}
-                          <div className="seat-group left">
-                            {sortedRowSeats.slice(0, seatsPerSide).map(seat => (
-                              <span
-                                key={seat.id}
-                                className={`seat-name ${selectedSeats.some(s => s.id === seat.id) ? 'selected' : ''} ${seat.status === 'available' ? 'available' : 'blocked'}`}
-                                onClick={() => handleSeatClick(seat)}
-                                title={`${seat.seatNumber} (${seat.type}) - €${seat.price}`}
-                              >
-                                {seat.seatNumber}
-                              </span>
-                            ))}
-                          </div>
-
-                          {/* Aisle */}
-                          <div className="row-aisle"></div>
-
-                          {/* Right side seats */}
-                          <div className="seat-group right">
-                            {sortedRowSeats.slice(seatsPerSide).map(seat => (
-                              <span
-                                key={seat.id}
-                                className={`seat-name ${selectedSeats.some(s => s.id === seat.id) ? 'selected' : ''} ${seat.status === 'available' ? 'available' : 'blocked'}`}
-                                onClick={() => handleSeatClick(seat)}
-                                title={`${seat.seatNumber} (${seat.type}) - €${seat.price}`}
-                              >
-                                {seat.seatNumber}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )
-              ) : (
-                <div className="no-seats-message">No seats available for this class.</div>
-              )}
-            </div>
-          </div>
-        </div>
+        <SeatSelectionPopup
+          isOpen={showSeatPopup}
+          onClose={() => setShowSeatPopup(false)}
+          trainId={schedule.train.trainID}
+          date={schedule.travelDate}
+          time={schedule.departureTime}
+          selectedSeats={selectedSeats.map(seat => seat.seatNumber)}
+          onSeatSelect={(seat) => {
+            // Always use the seat object from allSeats
+            const seatObj = allSeats[seat.seatNumber] ? { seatNumber: seat.seatNumber, ...allSeats[seat.seatNumber] } : seat;
+            const isSelected = selectedSeats.some(s => s.seatNumber === seat.seatNumber);
+            if (isSelected) {
+              setSelectedSeats(selectedSeats.filter(s => s.seatNumber !== seat.seatNumber));
+            } else {
+              setSelectedSeats([...selectedSeats, seatObj]);
+            }
+          }}
+          userId={user?.sub}
+          selectedClass={selectedClass}
+        />
       )}
     </div>
   );

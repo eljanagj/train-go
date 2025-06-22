@@ -6,6 +6,11 @@ export const scheduleService = {
     return response.data;
   },
 
+  getSchedulesByTrain: async (trainId) => {
+    const response = await api.get(`/schedules/train/${trainId}`);
+    return response.data;
+  },
+
   getSchedulesByRoute: async (routeId) => {
     const response = await api.get(`/schedules/route/${routeId}`);
     return response.data;

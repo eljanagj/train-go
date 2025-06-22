@@ -2,6 +2,7 @@ import {
     Injectable,
     NotFoundException,
     BadRequestException,
+    Logger
   } from '@nestjs/common';
   import { InjectRepository } from '@nestjs/typeorm';
   import { Repository } from 'typeorm';
@@ -10,10 +11,16 @@ import {
 //  import { TrainStatusHistory } from './entities/train-status-history.entity';
   import { CreateTrainDto } from './dto/create-train.dto';
   import { UpdateTrainDto } from './dto/update-train.dto';
-  import { Seat, SeatStatus } from '../seats/entities/seat.entity';
+  import { SeatsService, SeatData } from '../seats/seats.service';
+
+  interface SeatWithNumber extends SeatData {
+    seatNumber: string;
+  }
 
   @Injectable()
   export class TrainService {
+    private readonly logger = new Logger(TrainService.name);
+
     // Define allowed status transitions in one place
     private static readonly VALID_TRANSITIONS: Record<TrainStatus, TrainStatus[]> = {
       [TrainStatus.ACTIVE]:         [TrainStatus.DECOMMISSIONED],
@@ -23,10 +30,7 @@ import {
     constructor(
       @InjectRepository(Train)
       private readonly trainRepo: Repository<Train>,
-      @InjectRepository(Seat)
-      private readonly seatRepo: Repository<Seat>,
-
-
+      private readonly seatsService: SeatsService,
     ) {}
 
     async create(dto: CreateTrainDto): Promise<Train> {
@@ -92,13 +96,52 @@ import {
     }
 
     private async updateTrainCapacity(train: Train): Promise<Train> {
-      const seats = await this.seatRepo.find({
-        where: { trainId: train.trainID }
-      });
+      try {
+        const seats = await this.seatsService.getSeatDetails(train.trainID.toString());
+        const seatArray = Object.values(seats) as SeatData[];
+        
+        train.totalCapacity = seatArray.length;
+        train.availableSeats = seatArray.filter(seat => seat.status === 'available').length;
 
-      train.totalCapacity = seats.length;
-      train.availableSeats = seats.filter(seat => seat.status === SeatStatus.AVAILABLE).length;
+        return this.trainRepo.save(train);
+      } catch (error) {
+        // If there's an error getting seats (e.g., no seats configured yet),
+        // set capacity to 0
+        train.totalCapacity = 0;
+        train.availableSeats = 0;
+        return this.trainRepo.save(train);
+      }
+    }
 
-      return this.trainRepo.save(train);
+    async getAvailableSeats(trainId: number, date: string, time: string) {
+      try {
+        const seats = await this.seatsService.getSeatDetails(String(trainId), date, time);
+        const seatArray: SeatWithNumber[] = Object.entries(seats).map(([seatNumber, seatData]) => {
+          const seat = seatData as SeatData;
+          return {
+            seatNumber,
+            type: seat.type,
+            class: seat.class,
+            price: seat.price,
+            location: seat.location,
+            row: seat.row,
+            position: seat.position,
+            status: seat.status || 'available'
+          };
+        });
+        
+        const train = await this.trainRepo.findOne({ where: { trainID: trainId } });
+        if (!train) {
+          throw new Error(`Train ${trainId} not found`);
+        }
+
+        train.availableSeats = seatArray.filter(seat => seat.status === 'available').length;
+        await this.trainRepo.save(train);
+
+        return seatArray;
+      } catch (error) {
+        this.logger.error(`Error getting available seats for train ${trainId}:`, error);
+        throw error;
+      }
     }
   }

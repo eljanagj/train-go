@@ -117,7 +117,11 @@ const PaymentPage = ({ theme, toggleTheme }) => {
             <strong>Travel Date:</strong> {new Date(reservation.travelDate).toLocaleDateString() || 'N/A'}
           </Typography>
           <Typography>
-            <strong>Seat:</strong> {reservation.seats.map(seat => seat.seatNumber).join(', ')}
+            <strong>Seat:</strong> {(reservation.seatNumbers && reservation.seatNumbers.length > 0)
+              ? reservation.seatNumbers.join(', ')
+              : (reservation.seats && reservation.seats.length > 0
+                  ? reservation.seats.map(seat => seat.seatNumber).join(', ')
+                  : 'N/A')}
           </Typography>
           <Typography>
             <strong>Price:</strong> €{reservation.price}

@@ -1538,3 +1538,34 @@
     }
   }
   
+  .schedule-selection {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    align-items: center;
+  }
+  
+  .date-picker,
+  .schedule-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .date-picker input,
+  .schedule-picker select {
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .date-picker .icon,
+  .schedule-picker .icon {
+    color: #6c757d;
+    font-size: 1.2rem;
+  }
+  
