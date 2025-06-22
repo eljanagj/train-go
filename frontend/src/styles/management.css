@@ -61,6 +61,15 @@
   gap: 0.5rem;
 }
 
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.textarea {
+  max-width: 700px;
+  width: 100%;
+}
+
 .form-label {
   font-weight: 600;
   color: #374151;
@@ -69,7 +78,8 @@
 }
 
 .form-grid input,
-.form-grid select {
+.form-grid select,
+.form-grid textarea {
   padding: 0.875rem 1rem;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
@@ -547,5 +557,29 @@
   justify-content: center;
   align-items: center;
   height: 100%;
+}
+
+/* Add textarea to error selector */
+.form-grid textarea.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+/* Table cell textarea styling */
+.management-table td textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  color: #1e293b;
+  resize: vertical;
+}
+
+.management-table td textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
 }
 

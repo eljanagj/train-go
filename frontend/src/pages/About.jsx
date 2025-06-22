@@ -23,6 +23,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth0 } from '@auth0/auth0-react';
 import { faqService } from '../services/faqService';
+import { termsConditionService } from '../services/termsConditionService';
 import { NavBar } from '../components/NavBar';
 import { Footer } from '../components/Footer';
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -50,6 +51,7 @@ const TabPanel = (props) => {
 const About = () => {
   const [value, setValue] = useState(0);
   const [faqs, setFaqs] = useState([]);
+  const [terms, setTerms] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingFaq, setEditingFaq] = useState(null);
   const [formData, setFormData] = useState({ question: '', answer: '' });
@@ -60,6 +62,7 @@ const About = () => {
 
   React.useEffect(() => {
     loadFaqs();
+    loadTerms();
   }, []);
 
   const loadFaqs = async () => {
@@ -71,6 +74,16 @@ const About = () => {
       console.error('Error loading FAQs:', error);
       setError('Failed to load FAQs. Please try again later.');
       setFaqs([]);
+    }
+  };
+
+  const loadTerms = async () => {
+    try {
+      const data = await termsConditionService.getAllTerms();
+      setTerms(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error loading terms:', err);
+      setTerms([]);
     }
   };
 
@@ -146,7 +159,6 @@ const About = () => {
               <Tab label="About Us" />
               <Tab label="FAQs" />
               <Tab label="Terms & Conditions" />
-              <Tab label="Privacy Policy" />
             </Tabs>
           </Box>
 
@@ -227,71 +239,21 @@ const About = () => {
             <Typography variant="h5" gutterBottom>
               Terms and Conditions
             </Typography>
-            <Typography paragraph>
-              By using TrainGo's services, you agree to comply with and be bound by the following terms and conditions.
-              Please read them carefully before using our platform.
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              1. Booking and Reservations
-            </Typography>
-            <Typography paragraph>
-              • All bookings are subject to availability and confirmation.
-              • Prices are subject to change without notice.
-              • Cancellation policies vary by ticket type and route.
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              2. Payment Terms
-            </Typography>
-            <Typography paragraph>
-              • All payments must be made in full at the time of booking.
-              • We accept various payment methods as indicated during checkout.
-              • Refunds are processed according to our cancellation policy.
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              3. Travel Requirements
-            </Typography>
-            <Typography paragraph>
-              • Passengers must present valid identification and tickets.
-              • Children under 12 must be accompanied by an adult.
-              • Special assistance requirements should be notified in advance.
-            </Typography>
+            {terms.length === 0 ? (
+              <Typography variant="body1" color="text.secondary">
+                No terms and conditions available.
+              </Typography>
+            ) : (
+              terms.map(term => (
+                <Box key={term.id} sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>{term.title}</Typography>
+                  <Typography paragraph sx={{ whiteSpace: 'pre-wrap' }}>{term.content}</Typography>
+                </Box>
+              ))
+            )}
           </TabPanel>
 
-          <TabPanel value={value} index={3}>
-            <Typography variant="h5" gutterBottom>
-              Privacy Policy
-            </Typography>
-            <Typography paragraph>
-              At TrainGo, we take your privacy seriously. This policy outlines how we collect, use, and protect your personal information.
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              1. Information Collection
-            </Typography>
-            <Typography paragraph>
-              • Personal information (name, email, contact details)
-              • Payment information
-              • Travel preferences and history
-              • Device and usage information
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              2. Information Usage
-            </Typography>
-            <Typography paragraph>
-              • To process your bookings and payments
-              • To communicate about your travel
-              • To improve our services
-              • To send promotional offers (with your consent)
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              3. Data Protection
-            </Typography>
-            <Typography paragraph>
-              • We implement security measures to protect your data
-              • We do not sell your personal information
-              • You can request access to your data
-              • You can opt-out of marketing communications
-            </Typography>
-          </TabPanel>
+          
         </Paper>
       </Container>
 

@@ -22,6 +22,7 @@ import DiscountCodeManagement from '../pages/admin/DiscountCodeManagement';
 import CancellationManagement from '../pages/admin/CancellationManagement';
 import About from '../pages/About';
 import FAQManagement from '../pages/admin/FAQManagement';
+import TermsConditionManagement from '../pages/admin/TermsConditionManagement';
 
 export default function AppRoutes({ theme, toggleTheme }) {
   return (
@@ -119,6 +120,11 @@ export default function AppRoutes({ theme, toggleTheme }) {
       <Route path="/admin/faqs" element={
         <AdminRoute>
           <FAQManagement theme={theme} toggleTheme={toggleTheme} />
+        </AdminRoute>
+      } />
+      <Route path="/admin/terms-conditions" element={
+        <AdminRoute>
+          <TermsConditionManagement theme={theme} toggleTheme={toggleTheme} />
         </AdminRoute>
       } />
     </Routes>

@@ -18,6 +18,7 @@ import { DiscountCodeModule } from './modules/discountCode/discount.module';
 import { ReviewModule } from './modules/review/review.module';
 import { CancellationModule } from './modules/cancellations/cancellation.module';
 import { FaqModule } from './modules/faq/faq.module';
+import { TermsConditionModule } from './modules/terms-and-conditions/terms-condition.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { FaqModule } from './modules/faq/faq.module';
     ReviewModule,
     CancellationModule,
     FaqModule,
+    TermsConditionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
