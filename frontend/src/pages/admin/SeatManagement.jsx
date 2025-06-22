@@ -5,6 +5,7 @@ import { PageLoader } from '../../components/PageLoader';
 import Sidebar from '../../components/Sidebar';
 import { trainService } from '../../services/trainService';
 import { seatService } from '../../services/seatService';
+import { scheduleService } from '../../services/scheduleService';
 import '../../styles/seats.css';
 import { 
   FaChair, 
@@ -19,7 +20,10 @@ import {
   FaRedo,
   FaCopy,
   FaEye,
-  FaDownload
+  FaDownload,
+  FaCalendarAlt,
+  FaClock,
+  FaCheckDouble
 } from 'react-icons/fa';
 
 const SEAT_TYPES = {
@@ -50,6 +54,9 @@ const SeatManagement = () => {
   const [showPriceConfig, setShowPriceConfig] = useState(false);
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [priceConfig, setPriceConfig] = useState({
     premium: { window: '', aisle: '', middle: '' },
     business: { window: '', aisle: '', middle: '' },
@@ -73,17 +80,45 @@ const SeatManagement = () => {
 
   useEffect(() => {
     fetchTrainAndSeats();
+    fetchSchedules();
   }, [trainId]);
 
+  const fetchSchedules = async () => {
+    try {
+      const data = await scheduleService.getSchedulesByTrain(trainId);
+      setSchedules(data);
+      if (data.length > 0) {
+        setSelectedSchedule(data[0]);
+      }
+      console.log("DEBUG: Schedules fetched: ", data);
+    } catch (err) {
+      console.error('Error fetching schedules:', err);
+    }
+  };
+
   const fetchTrainAndSeats = async () => {
+    console.log("DEBUG: fetchTrainAndSeats called.");
     try {
       setLoading(true);
       const trainData = await trainService.getTrain(trainId);
       setTrain(trainData);
 
-      const seatsData = await seatService.getAllSeatsForTrain(trainId);
-      console.log('Fetched seats data:', seatsData);
-      setSeats(seatsData);
+      if (selectedSchedule) {
+        console.log("DEBUG: Fetching seat details for date:", selectedDate, "time:", selectedSchedule.departureTime);
+        const seatsData = await seatService.getSeatDetails(
+          trainId,
+          selectedDate,
+          selectedSchedule.departureTime
+        );
+        console.log('DEBUG: Fetched seats data (raw):', seatsData);
+        setSeats(Object.entries(seatsData).map(([seatNumber, config]) => ({
+          seatNumber,
+          ...config
+        })));
+        console.log("DEBUG: Seats state updated.");
+      } else {
+        console.log("DEBUG: No schedule selected, not fetching seat details.");
+      }
 
       // Populate priceConfig with current prices based on fetched seats
       const currentPriceConfig = {};
@@ -91,7 +126,7 @@ const SeatManagement = () => {
         currentPriceConfig[classType] = {};
         Object.values(SEAT_TYPES).forEach(seatType => {
           // Find the price of the first seat of this class and type to pre-fill the config
-          const seat = seatsData.find(s => s.class === classType && s.type === seatType);
+          const seat = seats.find(s => s.class === classType && s.type === seatType);
           currentPriceConfig[classType][seatType] = seat ? seat.price.toString() : ''; // Convert price to string for input value
         });
       });
@@ -104,6 +139,12 @@ const SeatManagement = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (selectedSchedule) {
+      fetchTrainAndSeats();
+    }
+  }, [selectedDate, selectedSchedule]);
 
   const getSeatsPerRowForClass = (classType) => {
     switch (classType) {
@@ -142,11 +183,15 @@ const SeatManagement = () => {
       const seatsPerRow = getSeatsPerRowForClass(newCoach.class);
       const totalSeats = newCoach.rows * seatsPerRow;
       
+      // Get the prefix for the coach class
+      const coachPrefix = coachClass.charAt(0).toUpperCase(); // P for Premium, B for Business, E for Economy
+      
       for (let i = 0; i < newCoach.rows; i++) {
         const row = newCoach.startRow + i;
         for (let pos = 0; pos < seatsPerRow; pos++) {
           const position = String.fromCharCode(65 + pos); // A, B, C, etc.
-          const seatNumber = `${row}${position}`;
+          // Include coach class prefix in seat number
+          const seatNumber = `${coachPrefix}${row}${position}`;
           
           let type;
           const positionIndex = pos; // pos is the 0-based index (0 for A, 1 for B, etc.)
@@ -203,42 +248,11 @@ const SeatManagement = () => {
     }
   };
 
-  const handleBulkSeatUpdate = async (updates) => {
-    try {
-      let seatsToUpdate = [];
-
-      if (updates.status === SEAT_STATUS.BLOCKED) {
-        // Filter to only block seats that are currently available
-        seatsToUpdate = seats.filter(seat =>
-          selectedSeats.includes(seat.id) && seat.status === SEAT_STATUS.AVAILABLE
-        );
-      } else if (updates.status === SEAT_STATUS.AVAILABLE) {
-        // Filter to only unblock seats that are not available
-        seatsToUpdate = seats.filter(seat =>
-          selectedSeats.includes(seat.id) && seat.status !== SEAT_STATUS.AVAILABLE
-        );
-      }
-
-      const promises = seatsToUpdate.map(seat =>
-        updates.status === SEAT_STATUS.BLOCKED
-          ? seatService.reserveSeat(seat.id)
-          : seatService.releaseSeat(seat.id)
-      );
-
-      if (promises.length === 0) {
-        setError('No seats were updated as they were already in the desired state.');
-        setSelectedSeats([]); // Clear selection if no seats were eligible for update
-        return; // Exit if no updates are needed
-      }
-
-      await Promise.all(promises);
-      await fetchTrainAndSeats();
-      setSelectedSeats([]);
-      setError(null);
-    } catch (err) {
-      setError('Failed to update seats');
-      console.error(err);
-    }
+  const handleSelectAllSeats = () => {
+    const allAvailableSeatNumbers = seats
+      .filter(seat => seat.status === SEAT_STATUS.AVAILABLE) // Only select currently available seats
+      .map(seat => seat.seatNumber);
+    setSelectedSeats(allAvailableSeatNumbers);
   };
 
   const handleDeleteSelectedSeats = async () => {
@@ -246,14 +260,12 @@ const SeatManagement = () => {
     if (!window.confirm(`Are you sure you want to delete ${selectedSeats.length} selected seats?`)) {
       return;
     }
+
     try {
-      const promises = selectedSeats.map(seatId =>
-        seatService.deleteSeat(seatId)
-      );
-      await Promise.all(promises);
+      setError(null);
+      await seatService.deleteSeats(trainId, selectedSeats);
       await fetchTrainAndSeats();
       setSelectedSeats([]);
-      setError(null);
     } catch (err) {
       setError('Failed to delete seats');
       console.error(err);
@@ -269,7 +281,7 @@ const SeatManagement = () => {
 
         if (priceString !== undefined && priceString !== null && !isNaN(price)) {
           updates.push(
-            seatService.updateSeatPrice(seat.id, price)
+            seatService.updateSeatPrice(trainId, seat.seatNumber, price)
           );
         }
       });
@@ -288,16 +300,16 @@ const SeatManagement = () => {
     setNewSeatError(null); // Clear previous errors
     const { class: seatClass, seatNumber } = newSeat;
 
-    // Validate seat number format (e.g., 1A, 5B)
-    const seatNumberRegex = /^\d+[A-Z]$/;
+    // Validate seat number format (e.g., B3A, E5B)
+    const seatNumberRegex = /^[A-Z]\d+[A-Z]$/;
     if (!seatNumberRegex.test(seatNumber)) {
-      setNewSeatError('Invalid seat number format. Please use the format like 1A or 5B.');
+      setNewSeatError('Invalid seat number format. Please use the format like B3A or E5B.');
       return;
     }
 
     // Extract row and position from seat number
-    const rowMatch = seatNumber.match(/^(\d+)/);
-    const positionMatch = seatNumber.match(/([A-Z])$/);
+    const rowMatch = seatNumber.match(/[A-Z](\d+)[A-Z]/);
+    const positionMatch = seatNumber.match(/[A-Z]\d+([A-Z])$/);
 
     if (!rowMatch || !positionMatch) {
        setNewSeatError('Invalid seat number format. Could not extract row or position.');
@@ -359,9 +371,11 @@ const SeatManagement = () => {
     }
   };
 
-  if (loading) {
-    return <PageLoader />;
-  }
+  // Calculate available seats count
+  const availableSeatsCount = seats.filter(seat => seat.status === SEAT_STATUS.AVAILABLE).length;
+
+  if (loading) return <PageLoader />;
+  if (error) return <div className="error-message">Error: {error}</div>;
 
   const seatsByClass = seats.reduce((acc, seat) => {
     if (!acc[seat.class]) {
@@ -385,28 +399,63 @@ const SeatManagement = () => {
   const classOrder = ['economy', 'business', 'premium'];
 
   return (
-    <>
-    <div className="management-page seat-management">
+    <div className="page-container">
       <Sidebar />
-      <div className="management-content">
-        <div className="management-header">
-          <h1>
-            <FaChair className="me-2" />
-            Seat Management - {train?.trainName}
-          </h1>
-          <div className="coach-counts">
-            <p>Total Coaches: <strong>{new Set(seats.map(seat => seat.coachId)).size}</strong></p>
-            <p>Total Seats: <strong>{seats.length}</strong></p>
+      <div className="management-page">
+        <h1>Seat Management</h1>
+        
+        {/* Display available seats count */} 
+        <div className="available-seats-info">
+          <p>Total Available Seats: {availableSeatsCount}</p>
+        </div>
+
+        {/* Date and Schedule Selection */}
+        <div className="schedule-selection">
+          <div className="date-picker">
+            <FaCalendarAlt className="icon" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+          
+          <div className="schedule-picker">
+            <FaClock className="icon" />
+            <select
+              value={selectedSchedule?.id || ''}
+              onChange={(e) => {
+                const schedule = schedules.find(s => s.id === parseInt(e.target.value));
+                setSelectedSchedule(schedule);
+              }}
+            >
+              <option value="">Select a schedule</option>
+              {schedules.map((schedule) => (
+                <option key={schedule.id} value={schedule.id}>
+                  {schedule.departureTime} - {schedule.arrivalTime} ({schedule.route.departureStation} to {schedule.route.arrivalStation})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        <div className="header-actions">
-          <button
+        <div className="management-content">
+          <div className="management-header">
+            <h1>
+              <FaChair className="me-2" />
+              Seat Management - {train?.trainName}
+            </h1>
+            <div className="coach-counts">
+              <p>Total Coaches: <strong>{new Set(seats.map(seat => seat.coachId)).size}</strong></p>
+              <p>Total Seats: <strong>{seats.length}</strong></p>
+            </div>
+          </div>
+
+          <div className="header-actions">
+            <button
               className="btn btn-primary"
-              onClick={() => {
-                console.log('Opening modal...');
-                setShowAddCoach(true);
-              }}
+              onClick={() => setShowAddCoach(true)}
             >
               <FaPlus className="me-2" />
               Add Coach
@@ -421,35 +470,34 @@ const SeatManagement = () => {
             <button
               className="btn btn-info"
               onClick={() => setShowPriceConfig(true)}
-          >
-            <FaMoneyBillWave className="me-2" />
+            >
+              <FaMoneyBillWave className="me-2" />
               Configure Prices
             </button>
-          <button
-            className="btn btn-danger"
-            onClick={handleDeleteSelectedSeats}
-            disabled={selectedSeats.length === 0}
-          >
-            <FaTimes className="me-2" />
-            Delete Selected
-          </button>
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate('/admin/trains')}
-          >
-            Back to Trains
-          </button>
-        </div>
-
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
+            <button
+              className="btn btn-danger"
+              onClick={handleDeleteSelectedSeats}
+              disabled={selectedSeats.length === 0}
+            >
+              <FaTimes className="me-2" />
+              Delete Selected
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate('/admin/trains')}
+            >
+              Back to Trains
+            </button>
           </div>
-        )}
+
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
+            </div>
+          )}
 
           <div className="coaches-container">
             {classOrder.map(classType => {
-              // Group seats by row for the current class
               const seatsInClassByRow = seatsByClass[classType]?.reduce((acc, seat) => {
                 if (!acc[seat.row]) {
                   acc[seat.row] = [];
@@ -458,7 +506,6 @@ const SeatManagement = () => {
                 return acc;
               }, {}) || {};
 
-              // Sort rows numerically
               const sortedRowNumbers = Object.keys(seatsInClassByRow).sort((a, b) => Number(a) - Number(b));
 
               return (
@@ -467,67 +514,40 @@ const SeatManagement = () => {
                     <h3>{classType.toUpperCase()} Class</h3>
                     <div className="coach-actions">
                       <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => {
-                          const seatIdsInClass = seatsByClass[classType].map(seat => seat.id);
-                          const availableSeatIdsInClass = seatsByClass[classType].filter(seat => seat.status === SEAT_STATUS.AVAILABLE).map(seat => seat.id);
-                          const newSelected = Array.from(new Set([...selectedSeats, ...availableSeatIdsInClass]));
-                          setSelectedSeats(newSelected);
-                        }}
-                      >
-                        <FaChair className="me-2" /> Select Available
-                      </button>
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => {
-                          const seatIdsInClass = seatsByClass[classType].map(seat => seat.id);
-                          const newSelected = selectedSeats.filter(id => !seatIdsInClass.includes(id));
-                          setSelectedSeats(newSelected);
-                        }}
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => setSelectedSeats([])}
+                        disabled={selectedSeats.length === 0}
                       >
                         <FaTimes className="me-2" /> Deselect All
                       </button>
                       <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => handleBulkSeatUpdate({ status: SEAT_STATUS.AVAILABLE })}
-                        disabled={selectedSeats.length === 0}
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={handleSelectAllSeats}
+                        disabled={seats.filter(seat => seat.status === SEAT_STATUS.AVAILABLE).length === 0 ||
+                                  selectedSeats.length === seats.filter(seat => seat.status === SEAT_STATUS.AVAILABLE).length} /* Disable if no available seats or all available are already selected */
                       >
-                        <FaUndo className="me-2" />
-                        Unblock Selected
-                      </button>
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => handleBulkSeatUpdate({ status: SEAT_STATUS.BLOCKED })}
-                        disabled={selectedSeats.length === 0}
-                      >
-                        <FaRedo className="me-2" />
-                        Block Selected
+                        <FaCheckDouble className="me-2" /> Select All
                       </button>
                     </div>
                   </div>
-                  <div className="coach-layout"> {/* This will contain rows and aisle */}
-                     {/* Aisle label here */}
+                  <div className="coach-layout">
                     <div className="aisle-label">Aisle</div>
-                    
                     {sortedRowNumbers.length > 0 ? (
-                      <div className="seat-rows"> {/* Container for all rows */}
+                      <div className="seat-rows">
                         {sortedRowNumbers.map(rowNum => {
                           const seatsInRow = seatsInClassByRow[rowNum].sort((a, b) => a.position.localeCompare(b.position));
-                          
-                          // Determine seats per side based on class (assuming 3+3 for economy, 2+2 for others)
                           const seatsPerSide = classType === 'economy' ? 3 : 2;
 
                           return (
-                            <div key={rowNum} className="seat-row"> {/* Container for a single row */}
-                              <div className="row-number">{rowNum}</div> {/* Row number */}
-                              <div className="row-seats"> {/* Container for seats in the row */}
-                                {/* Left side seats */}
+                            <div key={rowNum} className="seat-row">
+                              <div className="row-number">{rowNum}</div>
+                              <div className="row-seats">
                                 <div className="seat-group left">
                                   {seatsInRow.slice(0, seatsPerSide).map(seat => (
                                     <span
-                                      key={seat.id}
-                                      className={`seat-name ${selectedSeats.includes(seat.id) ? 'selected' : ''} ${seat.status !== SEAT_STATUS.AVAILABLE ? 'blocked' : 'available'}`}
-                                      onClick={() => handleSeatClick(null, seat.id)}
+                                      key={seat.seatNumber}
+                                      className={`seat-name ${selectedSeats.includes(seat.seatNumber) ? 'selected' : ''} ${seat.status !== SEAT_STATUS.AVAILABLE ? 'blocked' : 'available'}`}
+                                      onClick={() => handleSeatClick(null, seat.seatNumber)}
                                       data-row={seat.row}
                                       title={`Row ${seat.row}, ${seat.type} seat`}
                                     >
@@ -535,17 +555,13 @@ const SeatManagement = () => {
                                     </span>
                                   ))}
                                 </div>
-
-                                {/* Aisle */}
                                 <div className="row-aisle"></div>
-
-                                {/* Right side seats */}
                                 <div className="seat-group right">
                                   {seatsInRow.slice(seatsPerSide).map(seat => (
                                     <span
-                                      key={seat.id}
-                                      className={`seat-name ${selectedSeats.includes(seat.id) ? 'selected' : ''} ${seat.status !== SEAT_STATUS.AVAILABLE ? 'blocked' : 'available'}`}
-                                      onClick={() => handleSeatClick(null, seat.id)}
+                                      key={seat.seatNumber}
+                                      className={`seat-name ${selectedSeats.includes(seat.seatNumber) ? 'selected' : ''} ${seat.status !== SEAT_STATUS.AVAILABLE ? 'blocked' : 'available'}`}
+                                      onClick={() => handleSeatClick(null, seat.seatNumber)}
                                       data-row={seat.row}
                                       title={`Row ${seat.row}, ${seat.type} seat`}
                                     >
@@ -570,323 +586,329 @@ const SeatManagement = () => {
             )}
           </div>
         </div>
-        </div>
+      </div>
 
       {showAddCoach && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999
-          }}
-        >
+        <div className="modal">
           <div
             style={{
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '8px',
-              width: '90%',
-              maxWidth: '500px',
-              position: 'relative',
-              zIndex: 10000
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 9999
             }}
           >
-              <button
+            <div
               style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.2rem',
-                cursor: 'pointer',
-                padding: '0.25rem',
-                lineHeight: 1
+                backgroundColor: 'white',
+                padding: '2rem',
+                borderRadius: '8px',
+                width: '90%',
+                maxWidth: '500px',
+                position: 'relative',
+                zIndex: 10000
               }}
-              onClick={() => {
-                console.log('Closing modal...');
-                setShowAddCoach(false);
-                setAddCoachError(null);
-              }}
+            >
+              <button
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.2rem',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  lineHeight: 1
+                }}
+                onClick={() => {
+                  console.log('Closing modal...');
+                  setShowAddCoach(false);
+                  setAddCoachError(null);
+                }}
               >
                 <FaTimes />
               </button>
-            <h3>Add New Coach</h3>
-            {addCoachError && (
-              <div className="alert alert-danger" role="alert">
-                {addCoachError}
+              <h3>Add New Coach</h3>
+              {addCoachError && (
+                <div className="alert alert-danger" role="alert">
+                  {addCoachError}
+                </div>
+              )}
+              <div className="form-group">
+                <label>Class</label>
+                <select
+                  value={newCoach.class}
+                  onChange={(e) => {
+                    const classType = e.target.value;
+                    setNewCoach(prev => ({
+                      ...prev,
+                      class: classType,
+                      seatsPerRow: getSeatsPerRowForClass(classType)
+                    }));
+                  }}
+                >
+                  {Object.entries(COACH_CLASSES).map(([key, value]) => (
+                    <option key={value} value={value}>{key}</option>
+                  ))}
+                </select>
               </div>
-            )}
-            <div className="form-group">
-              <label>Class</label>
-              <select
-                value={newCoach.class}
-                onChange={(e) => {
-                  const classType = e.target.value;
-                  setNewCoach(prev => ({
-                    ...prev,
-                    class: classType,
-                    seatsPerRow: getSeatsPerRowForClass(classType)
-                  }));
-                }}
-              >
-                {Object.entries(COACH_CLASSES).map(([key, value]) => (
-                  <option key={value} value={value}>{key}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Number of Rows</label>
-              <input
-                type="number"
-                value={newCoach.rows}
-                onChange={(e) => setNewCoach(prev => ({ ...prev, rows: parseInt(e.target.value) }))}
-                min="1"
-                max="20"
-              />
-            </div>
-            <div className="form-group">
-              <label>Starting Row Number</label>
-              <input
-                type="number"
-                value={newCoach.startRow}
-                onChange={(e) => setNewCoach(prev => ({ ...prev, startRow: parseInt(e.target.value) }))}
-                min="1"
-                max="100"
-              />
-            </div>
-            <div className="form-group">
-              <label>Seats per Row</label>
-              <input
-                type="number"
-                value={newCoach.seatsPerRow}
-                disabled
-                className="disabled-input"
-              />
-            </div>
+              <div className="form-group">
+                <label>Number of Rows</label>
+                <input
+                  type="number"
+                  value={newCoach.rows}
+                  onChange={(e) => setNewCoach(prev => ({ ...prev, rows: parseInt(e.target.value) }))}
+                  min="1"
+                  max="20"
+                />
+              </div>
+              <div className="form-group">
+                <label>Starting Row Number</label>
+                <input
+                  type="number"
+                  value={newCoach.startRow}
+                  onChange={(e) => setNewCoach(prev => ({ ...prev, startRow: parseInt(e.target.value) }))}
+                  min="1"
+                  max="100"
+                />
+              </div>
+              <div className="form-group">
+                <label>Seats per Row</label>
+                <input
+                  type="number"
+                  value={newCoach.seatsPerRow}
+                  disabled
+                  className="disabled-input"
+                />
+              </div>
               <button
                 className="btn btn-primary"
-              onClick={() => {
-                console.log('Adding coach...');
-                handleAddCoach();
-              }}
-            >
-              Add Coach
+                onClick={() => {
+                  console.log('Adding coach...');
+                  handleAddCoach();
+                }}
+              >
+                Add Coach
               </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       {showAddSingleSeat && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999
-          }}
-        >
+        <div className="modal">
           <div
             style={{
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '8px',
-              width: '90%',
-              maxWidth: '400px',
-              position: 'relative',
-              zIndex: 10000
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 9999
             }}
           >
-            <button
+            <div
               style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.2rem',
-                cursor: 'pointer',
-                padding: '0.25rem',
-                lineHeight: 1
-              }}
-              onClick={() => {
-                setShowAddSingleSeat(false);
-                setNewSeatError(null);
-                setNewSeat({
-                  class: COACH_CLASSES.ECONOMY,
-                  seatNumber: '',
-                });
+                backgroundColor: 'white',
+                padding: '2rem',
+                borderRadius: '8px',
+                width: '90%',
+                maxWidth: '400px',
+                position: 'relative',
+                zIndex: 10000
               }}
             >
-              <FaTimes />
-            </button>
-            <h3>Add Single Seat</h3>
-            {newSeatError && (
-              <div className="alert alert-danger" role="alert">
-                {newSeatError}
-              </div>
-            )}
-            <div className="form-group">
-              <label>Class</label>
-              <select
-                value={newSeat.class}
-                onChange={(e) => setNewSeat(prev => ({ ...prev, class: e.target.value }))}
+              <button
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.2rem',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  lineHeight: 1
+                }}
+                onClick={() => {
+                  setShowAddSingleSeat(false);
+                  setNewSeatError(null);
+                  setNewSeat({
+                    class: COACH_CLASSES.ECONOMY,
+                    seatNumber: '',
+                  });
+                }}
               >
-                {Object.entries(COACH_CLASSES).map(([key, value]) => (
-                  <option key={value} value={value}>{key}</option>
-                ))}
-              </select>
+                <FaTimes />
+              </button>
+              <h3>Add Single Seat</h3>
+              {newSeatError && (
+                <div className="alert alert-danger" role="alert">
+                  {newSeatError}
+                </div>
+              )}
+              <div className="form-group">
+                <label>Class</label>
+                <select
+                  value={newSeat.class}
+                  onChange={(e) => setNewSeat(prev => ({ ...prev, class: e.target.value }))}
+                >
+                  {Object.entries(COACH_CLASSES).map(([key, value]) => (
+                    <option key={value} value={value}>{key}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Seat Number (e.g., 1A, 5B)</label>
+                <input
+                  type="text"
+                  value={newSeat.seatNumber}
+                  onChange={(e) => setNewSeat(prev => ({ ...prev, seatNumber: e.target.value.toUpperCase() }))}
+                  placeholder="e.g., 1A"
+                />
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={handleAddSingleSeat}
+              >
+                Add Seat
+              </button>
             </div>
-            <div className="form-group">
-              <label>Seat Number (e.g., 1A, 5B)</label>
-              <input
-                type="text"
-                value={newSeat.seatNumber}
-                onChange={(e) => setNewSeat(prev => ({ ...prev, seatNumber: e.target.value.toUpperCase() }))}
-                placeholder="e.g., 1A"
-              />
-            </div>
-            <button
-              className="btn btn-primary"
-              onClick={handleAddSingleSeat}
-            >
-              Add Seat
-            </button>
           </div>
         </div>
       )}
 
       {showPriceConfig && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999
-          }}
-        >
+        <div className="modal">
           <div
             style={{
-              backgroundColor: 'white',
-              padding: '2rem',
-              borderRadius: '8px',
-              width: '90%',
-              maxWidth: '750px',
-              position: 'relative',
-              zIndex: 10000
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 9999
             }}
           >
-            <button
+            <div
               style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.2rem',
-                cursor: 'pointer',
-                padding: '0.25rem',
-                lineHeight: 1
+                backgroundColor: 'white',
+                padding: '2rem',
+                borderRadius: '8px',
+                width: '90%',
+                maxWidth: '750px',
+                position: 'relative',
+                zIndex: 10000
               }}
-              onClick={() => setShowPriceConfig(false)}
             >
-              <FaTimes />
-            </button>
-            <h3>Price Configuration</h3>
-            <div className="price-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Class</th>
-                    <th>Window</th>
-                    <th>Aisle</th>
-                    {Object.values(COACH_CLASSES).some(classType => getSeatsPerRowForClass(classType) > 4) && (
-                      <th>Middle</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(COACH_CLASSES).map(([key, value]) => (
-                    <tr key={value}>
-                      <td>{key}</td>
-                      <td>
-                        <input
-                          type="number"
-                          value={priceConfig[value]?.window || ''}
-                          onChange={(e) => setPriceConfig(prev => ({
-                            ...prev,
-                            [value]: { ...prev[value], window: e.target.value }
-                          }))}
-                          placeholder="Price"
-                          min="0"
-                          step="0.01"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={priceConfig[value]?.aisle || ''}
-                          onChange={(e) => setPriceConfig(prev => ({
-                            ...prev,
-                            [value]: { ...prev[value], aisle: e.target.value }
-                          }))}
-                          placeholder="Price"
-                          min="0"
-                          step="0.01"
-                        />
-                      </td>
-                      {getSeatsPerRowForClass(value) > 4 && (
+              <button
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.2rem',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  lineHeight: 1
+                }}
+                onClick={() => setShowPriceConfig(false)}
+              >
+                <FaTimes />
+              </button>
+              <h3>Price Configuration</h3>
+              <div className="price-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Class</th>
+                      <th>Window</th>
+                      <th>Aisle</th>
+                      {Object.values(COACH_CLASSES).some(classType => getSeatsPerRowForClass(classType) > 4) && (
+                        <th>Middle</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(COACH_CLASSES).map(([key, value]) => (
+                      <tr key={value}>
+                        <td>{key}</td>
                         <td>
                           <input
                             type="number"
-                            value={priceConfig[value]?.middle || ''}
+                            value={priceConfig[value]?.window || ''}
                             onChange={(e) => setPriceConfig(prev => ({
                               ...prev,
-                              [value]: { ...prev[value], middle: e.target.value }
+                              [value]: { ...prev[value], window: e.target.value }
                             }))}
                             placeholder="Price"
                             min="0"
                             step="0.01"
                           />
                         </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <td>
+                          <input
+                            type="number"
+                            value={priceConfig[value]?.aisle || ''}
+                            onChange={(e) => setPriceConfig(prev => ({
+                              ...prev,
+                              [value]: { ...prev[value], aisle: e.target.value }
+                            }))}
+                            placeholder="Price"
+                            min="0"
+                            step="0.01"
+                          />
+                        </td>
+                        {getSeatsPerRowForClass(value) > 4 && (
+                          <td>
+                            <input
+                              type="number"
+                              value={priceConfig[value]?.middle || ''}
+                              onChange={(e) => setPriceConfig(prev => ({
+                                ...prev,
+                                [value]: { ...prev[value], middle: e.target.value }
+                              }))}
+                              placeholder="Price"
+                              min="0"
+                              step="0.01"
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={handlePriceConfigUpdate}
+              >
+                Update Prices
+              </button>
             </div>
-            <button
-              className="btn btn-primary"
-              onClick={handlePriceConfigUpdate}
-            >
-              Update Prices
-            </button>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
 export default withAuthenticationRequired(SeatManagement, {
-  onRedirecting: () => <PageLoader />,
+  onRedirecting: () => <PageLoader />
 }); 

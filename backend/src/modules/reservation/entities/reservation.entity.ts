@@ -61,6 +61,9 @@ export class Reservation {
   @Column({ type: 'timestamp', nullable: true })
   cancellationDate: Date;
 
+  @Column('simple-array', { nullable: true })
+  seatNumbers: string[];
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
   user: User;

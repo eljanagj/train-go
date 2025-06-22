@@ -1,49 +1,85 @@
 import api from './api';
 
 export const seatService = {
+  getSeatDetails: async (trainId, date, time) => {
+    try {
+      const response = await api.get(`/seats/train/${trainId}`, {
+        params: { date, time }
+      });
+      console.log('Seat details response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in getSeatDetails:', error);
+      throw error;
+    }
+  },
+
   createSeatsForTrain: async (trainId, seatConfig) => {
     const response = await api.post(`/seats/train/${trainId}`, seatConfig);
     return response.data;
   },
 
-  getAvailableSeats: async (trainId) => {
-    const response = await api.get(`/seats/train/${trainId}/available`);
+  deleteSeats: async (trainId, seatNumbers) => {
+    const response = await api.delete(`/seats/train/${trainId}`, {
+      data: { seatNumbers }
+    });
     return response.data;
   },
 
-  getAllSeatsForTrain: async (trainId) => {
-    const response = await api.get(`/seats/train/${trainId}`);
-    return response.data;
-  },
-
-  getSeatDetails: async (seatId) => {
-    const response = await api.get(`/seats/${seatId}`);
-    return response.data;
-  },
-
-  reserveSeat: async (seatId) => {
-    const response = await api.post(`/seats/${seatId}/reserve`);
-    return response.data;
-  },
-
-  releaseSeat: async (seatId) => {
-    const response = await api.post(`/seats/${seatId}/release`);
-    return response.data;
-  },
-
-  deleteSeat: async (seatId) => {
+  getAvailableSeats: async (trainId, date, time) => {
     try {
-      const response = await api.delete(`/seats/${seatId}`);
+      const response = await api.get(`/seats/${trainId}/${date}/${time}/available`);
+      console.log('Available seats response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error in deleteSeat:', error);
+      console.error('Error in getAvailableSeats:', error);
       throw error;
     }
   },
 
-  updateSeatPrice: async (seatId, price) => {
+  reserveSeat: async (trainId, date, time, seatId, userId) => {
     try {
-      const response = await api.patch(`/seats/${seatId}`, { price });
+      const response = await api.post(
+        `/seats/train/${trainId}/reserve/${date}/${time}/${seatId}`,
+        { userId }
+      );
+      console.log('Reserve seat response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in reserveSeat:', error);
+      throw error;
+    }
+  },
+
+  releaseSeat: async (trainId, date, time, seatId, userId) => {
+    try {
+      const response = await api.post(
+        `/seats/train/${trainId}/release/${date}/${time}/${seatId}`,
+        { userId }
+      );
+      console.log('Release seat response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in releaseSeat:', error);
+      throw error;
+    }
+  },
+
+  getSeatConfig: async (trainId) => {
+    try {
+      const response = await api.get(`/seats/train/${trainId}`);
+      console.log('Seat config response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in getSeatConfig:', error);
+      throw error;
+    }
+  },
+
+  updateSeatPrice: async (trainId, seatNumber, price) => {
+    try {
+      const response = await api.patch(`/seats/train/${trainId}/${seatNumber}/price`, { price });
+      console.log('Update seat price response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error in updateSeatPrice:', error);

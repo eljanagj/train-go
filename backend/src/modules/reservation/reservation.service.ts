@@ -4,13 +4,14 @@ import { Repository } from 'typeorm';
 import { Reservation, ReservationStatus } from './entities/reservation.entity';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
-import { SeatsService } from '../seats/seats.service';
+import { SeatsService } from '../seats/seats.service.js';
 import { PaymentService } from '../payment/payment.service';
 import { Seat } from '../seats/entities/seat.entity';
 import { Schedule } from '../schedule/schedule.entity';
 import { Payment, PaymentStatus } from '../payment/entities/payment.entity';
 import { TicketService } from '../ticket/ticket.service';
 import { CancelReservationDto } from './dto/cancel-reservation.dto';
+import { Logger } from '@nestjs/common';
 
 // Simplified interface - Reservation entity now directly includes seats relation
 export interface ReservationWithSeat extends Reservation {
@@ -19,6 +20,8 @@ export interface ReservationWithSeat extends Reservation {
 
 @Injectable()
 export class ReservationService {
+  private readonly logger = new Logger(ReservationService.name);
+
   constructor(
     @InjectRepository(Reservation)
     private reservationRepository: Repository<Reservation>,
@@ -57,17 +60,22 @@ export class ReservationService {
         throw new BadRequestException('Travel date must match the intended schedule date');
       }
 
-      const allSeats = await this.seatsService.getAllSeatsForTrain(schedule.train.trainID);
+      const seatConfigData = await this.seatsService.getSeatDetails(String(schedule.train.trainID));
+      const availableSeats = await this.seatsService.getAvailableSeats(
+        schedule.train.trainID,
+        travelDate.toISOString().split('T')[0],
+        schedule.departureTime
+      );
 
       const requestedSeats = createReservationDto.seatNumbers.map(seatNumber => {
-        const seat = allSeats.find(s => s.seatNumber === seatNumber);
-        if (!seat) {
+        const seatData = seatConfigData[seatNumber];
+        if (!seatData) {
           throw new BadRequestException(`Seat ${seatNumber} not found`);
         }
-        if (seat.status !== 'available') {
+        if (!availableSeats.includes(seatNumber)) {
           throw new BadRequestException(`Seat ${seatNumber} is not available`);
         }
-        return seat;
+        return { seatNumber, ...seatData };
       });
 
       if (requestedSeats.length === 0) {
@@ -89,6 +97,7 @@ export class ReservationService {
         status: ReservationStatus.PAYMENT_PENDING,
         price: totalPrice,
         seats: requestedSeats,
+        seatNumbers: createReservationDto.seatNumbers,
       } as Partial<Reservation>);
 
       // Save the reservation to the database
@@ -107,7 +116,15 @@ export class ReservationService {
 
       // Mark all selected seats as reserved
       try {
-        await Promise.all(requestedSeats.map(seat => this.seatsService.reserveSeat(seat.id)));
+        await Promise.all(requestedSeats.map(seat => 
+          this.seatsService.reserveSeat(
+            String(schedule.train.trainID),
+            travelDate.toISOString().split('T')[0],
+            schedule.departureTime,
+            seat.seatNumber,
+            userId
+          )
+        ));
       } catch (error) {
         // Rollback reservation if seat reservation fails
         await this.reservationRepository.remove(savedReservation);
@@ -169,10 +186,26 @@ export class ReservationService {
   async remove(id: string): Promise<void> {
     // Load seats relation to release them
     const reservation = await this.findOne(id);
+    const schedule = await this.scheduleRepository.findOne({
+      where: { id: reservation.scheduleId },
+      relations: ['train']
+    });
+
+    if (!schedule) {
+      throw new NotFoundException('Schedule not found');
+    }
 
     // Release all associated seats
     if (reservation.seats && reservation.seats.length > 0) {
-      await Promise.all(reservation.seats.map(seat => this.seatsService.releaseSeat(seat.id)));
+      await Promise.all(reservation.seats.map(seat => 
+        this.seatsService.releaseSeat(
+          String(schedule.train.trainID),
+          reservation.travelDate.toISOString().split('T')[0],
+          schedule.departureTime,
+          seat.seatNumber,
+          reservation.userId
+        )
+      ));
     }
 
     // Remove the reservation
@@ -181,6 +214,14 @@ export class ReservationService {
 
   async cancelReservation(id: string, cancelDto?: CancelReservationDto): Promise<ReservationWithSeat> {
     const reservation = await this.findOne(id);
+    const schedule = await this.scheduleRepository.findOne({
+      where: { id: reservation.scheduleId },
+      relations: ['train']
+    });
+
+    if (!schedule) {
+      throw new NotFoundException('Schedule not found');
+    }
 
     // Check if reservation exists
     if (!reservation) {
@@ -194,15 +235,6 @@ export class ReservationService {
 
     if (reservation.status === ReservationStatus.COMPLETED) {
       throw new BadRequestException('Cannot cancel a completed reservation');
-    }
-
-    // Get the schedule for time validation
-    const schedule = await this.scheduleRepository.findOne({
-      where: { id: reservation.scheduleId }
-    });
-
-    if (!schedule) {
-      throw new NotFoundException('Schedule not found');
     }
 
     // Get current time and travel date
@@ -227,7 +259,15 @@ export class ReservationService {
     try {
       // Release all associated seats
       if (reservation.seats && reservation.seats.length > 0) {
-        await Promise.all(reservation.seats.map(seat => this.seatsService.releaseSeat(seat.id)));
+        await Promise.all(reservation.seats.map(seat => 
+          this.seatsService.releaseSeat(
+            String(schedule.train.trainID),
+            reservation.travelDate.toISOString().split('T')[0],
+            schedule.departureTime,
+            seat.seatNumber,
+            reservation.userId
+          )
+        ));
       }
 
       // Update reservation status and cancellation details
@@ -306,63 +346,95 @@ export class ReservationService {
   }
 
   async updatePaymentStatus(id: string, paymentIntentId: string): Promise<ReservationWithSeat> {
-    // Load seats relation
-    const reservation = await this.findOne(id);
+    try {
+      const reservation = await this.findOne(id);
+      if (!reservation) {
+        throw new NotFoundException('Reservation not found');
+      }
 
-    if (!reservation.payment) {
-      throw new BadRequestException('No payment found for this reservation');
-    }
+      this.logger.debug('Found reservation:', {
+        id: reservation.id,
+        seats: reservation.seats,
+        schedule: reservation.schedule
+      });
 
-    // Update payment status through PaymentService
-    const updatedPayment = await this.paymentService.updatePaymentStatus(reservation.payment.id, paymentIntentId);
+      const payment = await this.paymentService.findByReservationId(id);
+      if (!payment) {
+        throw new NotFoundException('Payment not found for this reservation');
+      }
 
-    console.log('Payment status updated:', {
-      paymentId: updatedPayment.id,
-      status: updatedPayment.status,
-      reservationId: id,
-      paymentDate: updatedPayment.paymentDate
-    });
+      // Update payment status
+      const updatedPayment = await this.paymentService.updatePaymentStatus(payment.id, paymentIntentId);
 
-    // Update reservation status based on payment status
-    if (updatedPayment.status === PaymentStatus.COMPLETED) {
-      reservation.status = ReservationStatus.CONFIRMED;
-      console.log('Payment confirmed, updating reservation status to CONFIRMED');
+      // Update reservation status based on payment status
+      if (updatedPayment.status === PaymentStatus.COMPLETED) {
+        reservation.status = ReservationStatus.CONFIRMED;
+        
+        // Confirm all seats in the reservation
+        try {
+          this.logger.debug('Starting seat confirmation process', {
+            trainId: reservation.schedule.train.trainID,
+            date: reservation.travelDate.toISOString().split('T')[0],
+            time: reservation.schedule.departureTime,
+            seats: reservation.seats.map(s => s.seatNumber)
+          });
 
-      /*// Automatically create ticket when payment is confirmed (if not already created)
-      try {
-        // Check if ticket already exists to avoid duplicates
-        const existingTicket = await this.ticketService.findByReservationId(reservation.id);
-        if (!existingTicket) {
-          const ticket = await this.ticketService.createTicket(reservation.id);
-           console.log('Ticket created automatically:', {
-             ticketId: ticket.id,
-             ticketNumber: ticket.ticketNumber,
-             reservationId: reservation.id
-           });
+          await Promise.all(reservation.seats.map(async (seat) => {
+            this.logger.debug('Confirming seat:', {
+              seatNumber: seat.seatNumber,
+              trainId: reservation.schedule.train.trainID
+            });
+            
+            await this.seatsService.confirmReservation(
+              String(reservation.schedule.train.trainID),
+              reservation.travelDate.toISOString().split('T')[0],
+              reservation.schedule.departureTime,
+              seat.seatNumber,
+              reservation.userId
+            );
+            
+            this.logger.debug('Seat confirmed successfully:', seat.seatNumber);
+          }));
+        } catch (error) {
+          this.logger.error('Error confirming seats after payment:', error);
+          throw new Error('Failed to confirm seats after payment');
         }
-      } catch (error) {
-        console.error('Error creating ticket after payment confirmation:', error);
-        // Don't fail the payment confirmation if ticket creation fails
-      } */
-    } else if (updatedPayment.status === PaymentStatus.FAILED) {
-      reservation.status = ReservationStatus.CANCELLED;
-      console.log('Payment failed, updating reservation status to CANCELLED');
+      } else if (updatedPayment.status === PaymentStatus.FAILED) {
+        reservation.status = ReservationStatus.CANCELLED;
+        
+        // Release all seats if payment failed
+        try {
+          await Promise.all(reservation.seats.map(seat => 
+            this.seatsService.releaseSeat(
+              String(reservation.schedule.train.trainID),
+              reservation.travelDate.toISOString().split('T')[0],
+              reservation.schedule.departureTime,
+              seat.seatNumber,
+              reservation.userId
+            )
+          ));
+        } catch (error) {
+          this.logger.error('Error releasing seats after failed payment:', error);
+        }
+      }
+
+      // Update the payment reference in the reservation object
+      reservation.payment = updatedPayment;
+
+      // Save and re-fetch
+      const updatedReservation = await this.reservationRepository.save(reservation) as Reservation;
+
+      this.logger.log('Reservation status updated:', {
+        reservationId: updatedReservation.id,
+        status: updatedReservation.status,
+        paymentStatus: updatedReservation.payment.status
+      });
+
+      return this.findOne(updatedReservation.id);
+    } catch (error) {
+      this.logger.error('Error updating payment status:', error);
+      throw error;
     }
-
-    // Update the payment reference in the reservation object to reflect the new status
-    reservation.payment = updatedPayment;
-
-    // Save and re-fetch - assert save result
-    const updatedReservation = await this.reservationRepository.save(reservation) as Reservation;
-
-    console.log('Reservation status updated:', {
-      reservationId: updatedReservation.id,
-      status: updatedReservation.status,
-      paymentStatus: updatedReservation.payment.status
-    });
-
-    // Re-fetch to ensure relations are loaded for the return type
-    return this.findOne(updatedReservation.id);
   }
 
   async findAllForAdmin(): Promise<ReservationWithSeat[]> {

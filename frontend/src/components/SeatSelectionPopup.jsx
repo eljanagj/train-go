@@ -1,130 +1,147 @@
-import React from 'react';
-import { FaTimes, FaChair, FaTrain } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaTimes } from 'react-icons/fa';
+import { seatService } from '../services/seatService';
 import '../styles/SeatSelectionPopup.css';
 
-const SEAT_TYPES = {
-  WINDOW: 'window',
-  AISLE: 'aisle',
-  PREMIUM: 'premium',
-  ECONOMY: 'economy',
-  BUSINESS: 'business'
-};
+const SeatSelectionPopup = ({ isOpen, onClose, trainId, date, time, selectedSeats = [], onSeatSelect, userId, selectedClass }) => {
+  const [seatConfig, setSeatConfig] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-const LOCATIONS = ['Front', 'Middle', 'Back'];
+  useEffect(() => {
+    const fetchSeatData = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching seat data for:', { trainId, date, time });
+        // Get seat details for specific date and time
+        const seatConfigData = await seatService.getSeatDetails(
+          trainId,
+          date,
+          time
+        );
+        console.log('Seat config data received:', seatConfigData);
+        setSeatConfig(seatConfigData);
+      } catch (err) {
+        setError('Failed to load seat data');
+        console.error('Error fetching seat data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-const SeatSelectionPopup = ({ isOpen, onClose, availableSeats, selectedSeat, onSeatSelect }) => {
-  if (!isOpen) return null;
+    if (isOpen && trainId && date && time) {
+      fetchSeatData();
+    }
+  }, [isOpen, trainId, date, time]);
 
-  const getSeatStatus = (seat) => {
-    console.log("Checking status for seat:", seat.seatNumber, "Status:", seat.status);
-    if (selectedSeat === seat.seatNumber) return 'selected';
-    if (seat.status === 'reserved') return 'reserved';
-    if (seat.status === 'pending') return 'pending';
-    return 'available';
+  const getSeatStatus = (seatNumber) => {
+    if (selectedSeats && selectedSeats.includes(seatNumber)) return 'selected';
+    const seat = seatConfig[seatNumber];
+    if (!seat) {
+      console.log(`No seat data found for seat ${seatNumber}`);
+      return 'unknown';
+    }
+    console.log(`Seat ${seatNumber} status:`, seat.status);
+    return seat.status || 'available';
   };
 
   const getSeatInfo = (seatNumber) => {
-    const row = parseInt(seatNumber.match(/\d+/)[0]);
-    let position = 'left';
-    if (seatNumber.endsWith('R') || seatNumber.endsWith('AR')) {
-      position = 'right';
+    const seatData = seatConfig[seatNumber];
+    if (!seatData) {
+      console.log(`No seat info found for seat ${seatNumber}`);
+      return { row: 0, position: 'unknown' };
     }
-    return { row, position };
+    return {
+      row: seatData.row,
+      position: seatData.position,
+      type: seatData.type,
+      class: seatData.class,
+      price: seatData.price,
+      status: seatData.status || 'available'
+    };
   };
 
-  const renderSeat = (seat) => {
-    const status = getSeatStatus(seat);
+  const renderSeat = (seatNumber) => {
+    const status = getSeatStatus(seatNumber);
+    const seatInfo = getSeatInfo(seatNumber);
     const isClickable = status === 'available' || status === 'selected';
-    const { row, position } = getSeatInfo(seat.seatNumber);
 
-    console.log("Seat object being rendered and passed to onSeatSelect:", seat);
+    if (seatInfo.class !== selectedClass) {
+      return null;
+    }
 
     return (
       <div
-        key={seat.seatNumber}
-        className={`seat ${seat.type} ${status}`}
-        onClick={() => isClickable && onSeatSelect(seat)}
-        title={`Seat ${seat.seatNumber} - ${seat.type} - ${status}`}
+        key={seatNumber}
+        className={`seat ${status}`}
+        onClick={() => isClickable && onSeatSelect({ seatNumber, ...seatInfo })}
+        title={`Seat ${seatNumber} - ${seatInfo.type} - ${seatInfo.class} - €${seatInfo.price} - ${status}`}
       >
-        <FaChair className="seat-icon" />
-        <span className="seat-number">{seat.seatNumber}</span>
-        {seat.price && <span className="seat-price">${parseFloat(seat.price).toFixed(0)}</span>}
+        {seatNumber}
       </div>
     );
   };
 
-  const renderRow = (seats, rowNumber) => {
-    const rowSeats = seats.filter(seat => getSeatInfo(seat.seatNumber).row === rowNumber);
-    return (
-      <div key={rowNumber} className="train-row">
-        <div className="row-number">{rowNumber}</div>
-        <div className="row-seats">
-          <div className="seat-group left">
-            {rowSeats.filter(seat => getSeatInfo(seat.seatNumber).position === 'left').map(renderSeat)}
-          </div>
-          <div className="aisle"></div>
-          <div className="seat-group right">
-            {rowSeats.filter(seat => getSeatInfo(seat.seatNumber).position === 'right').map(renderSeat)}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  if (!isOpen) return null;
+  if (loading) return <div className="seat-selection-popup">Loading seats...</div>;
+  if (error) return <div className="seat-selection-popup">{error}</div>;
 
-  const renderLocationSection = (location) => {
-    const locationSeats = availableSeats.filter(seat => seat.location === location);
-    const rows = [...new Set(locationSeats.map(seat => getSeatInfo(seat.seatNumber).row))].sort((a, b) => a - b);
-    
-    return (
-      <div key={location} className="train-section">
-        <h4>{location} Section</h4>
-        <div className="train-rows">
-          {rows.map(row => renderRow(locationSeats, row))}
-        </div>
-      </div>
-    );
-  };
+  // Group seats by row
+  const seatsByRow = Object.entries(seatConfig).reduce((acc, [seatNumber, seatData]) => {
+    if (seatData.class === selectedClass) {
+      if (!acc[seatData.row]) {
+        acc[seatData.row] = [];
+      }
+      acc[seatData.row].push({ seatNumber, ...seatData });
+    }
+    return acc;
+  }, {});
+
+  // Sort rows numerically
+  const sortedRows = Object.keys(seatsByRow).sort((a, b) => Number(a) - Number(b));
 
   return (
-    <div className="seat-selection-overlay">
-      <div className="seat-selection-popup">
+    <div className="seat-selection-popup">
+      <div className="popup-header">
+        <h2>Select Seat(s) for {selectedClass.toUpperCase()} Class</h2>
         <button className="close-button" onClick={onClose}>
           <FaTimes />
         </button>
-        
-        <div className="train-header">
-          <FaTrain className="train-icon" />
-          <h3>Select Your Seat</h3>
-        </div>
-        
-        <div className="seat-legend">
-          <div className="legend-item">
-            <div className="seat available"></div>
-            <span>Available</span>
+      </div>
+      <div className="seat-map">
+        {sortedRows.map(rowNum => (
+          <div key={rowNum} className="seat-row">
+            <div className="row-number">{rowNum}</div>
+            <div className="row-seats">
+              {seatsByRow[rowNum]
+                .sort((a, b) => a.position.localeCompare(b.position))
+                .map(seat => renderSeat(seat.seatNumber))}
+            </div>
           </div>
-          <div className="legend-item">
-            <div className="seat selected"></div>
-            <span>Selected</span>
-          </div>
-          <div className="legend-item">
-            <div className="seat reserved"></div>
-            <span>Reserved</span>
-          </div>
-          <div className="legend-item">
-            <div className="seat pending"></div>
-            <span>Pending</span>
-          </div>
+        ))}
+      </div>
+      <div className="seat-legend">
+        <div className="legend-item">
+          <div className="seat-sample available" />
+          <span>Available</span>
         </div>
-
-        <div className="train-layout">
-          {LOCATIONS.map(location => renderLocationSection(location))}
+        <div className="legend-item">
+          <div className="seat-sample selected" />
+          <span>Selected</span>
         </div>
-
-        <div className="selected-seat-info">
-          {selectedSeat && (
-            <p>Selected Seat: {selectedSeat}</p>
-          )}
+        <div className="legend-item">
+          <div className="seat-sample reserved" />
+          <span>Reserved</span>
         </div>
+      </div>
+      <div className="seat-info">
+        <p className="text-muted">
+          <small>
+            • Click on available seats to select them<br />
+            • Reserved seats cannot be selected<br />
+            • Hover over seats to see more details
+          </small>
+        </p>
       </div>
     </div>
   );

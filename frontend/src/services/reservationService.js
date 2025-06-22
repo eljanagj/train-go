@@ -1,11 +1,6 @@
 import api from './api';
 
 export const reservationService = {
-  // Get available seats for a schedule
-  getAvailableSeats: async (scheduleId) => {
-    const response = await api.get(`/reservations/available-seats/${scheduleId}`);
-    return response.data;
-  },
 
   // Create a new reservation
   createReservation: async (reservationData) => {
