@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import React, { useState, useEffect } from "react";
+import api from "../../services/api";
 import {
   Container,
   Typography,
@@ -21,18 +21,24 @@ import {
   Chip,
   IconButton,
   Tooltip,
-} from '@mui/material';
-import { CheckCircle, Cancel, Close, Delete, Visibility } from '@mui/icons-material';
-import Sidebar from '../../components/Sidebar';
+} from "@mui/material";
+import {
+  CheckCircle,
+  Cancel,
+  Close,
+  Delete,
+  Visibility,
+} from "@mui/icons-material";
+import Sidebar from "../../components/Sidebar";
 
 const CancellationManagement = ({ theme, toggleTheme }) => {
   const [cancellations, setCancellations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCancellation, setSelectedCancellation] = useState(null);
-  const [adminNotes, setAdminNotes] = useState('');
-  const [refundAmount, setRefundAmount] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [adminNotes, setAdminNotes] = useState("");
+  const [refundAmount, setRefundAmount] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cancellationToDelete, setCancellationToDelete] = useState(null);
 
@@ -43,10 +49,10 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
   const fetchCancellations = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/cancellations');
+      const response = await api.get("/cancellations");
       setCancellations(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      setError('Failed to fetch cancellation requests');
+      setError("Failed to fetch cancellation requests");
       setCancellations([]);
     } finally {
       setLoading(false);
@@ -62,16 +68,18 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
         adminNotes,
         refundAmount: parseFloat(refundAmount) || undefined,
       });
-      setSuccessMessage(`Cancellation request ${status.toLowerCase()} successfully`);
+      setSuccessMessage(
+        `Cancellation request ${status.toLowerCase()} successfully`
+      );
       setSelectedCancellation(null);
-      setAdminNotes('');
-      setRefundAmount('');
+      setAdminNotes("");
+      setRefundAmount("");
       fetchCancellations();
-      
+
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      setError('Failed to update cancellation status');
+      setError("Failed to update cancellation status");
     }
   };
 
@@ -85,15 +93,17 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
 
     try {
       await api.delete(`/cancellations/${cancellationToDelete.id}`);
-      setSuccessMessage('Cancellation request and reservation deleted successfully');
+      setSuccessMessage(
+        "Cancellation request and reservation deleted successfully"
+      );
       setDeleteDialogOpen(false);
       setCancellationToDelete(null);
       fetchCancellations();
-      
+
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      setError('Failed to delete cancellation request');
+      setError("Failed to delete cancellation request");
     } finally {
       // Ensure delete dialog is closed even on error
       if (deleteDialogOpen) {
@@ -108,7 +118,12 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
         <Sidebar />
         <div className="management-page">
           <Container>
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              minHeight="50vh"
+            >
               <Typography>Loading...</Typography>
             </Box>
           </Container>
@@ -123,7 +138,12 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
         <Sidebar />
         <div className="management-page">
           <Container>
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              minHeight="50vh"
+            >
               <Alert severity="error">{error}</Alert>
             </Box>
           </Container>
@@ -132,9 +152,15 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
     );
   }
 
-  const pendingCancellations = cancellations.filter(c => c.status === 'PENDING');
-  const approvedCancellations = cancellations.filter(c => c.status === 'APPROVED');
-  const rejectedCancellations = cancellations.filter(c => c.status === 'REJECTED');
+  const pendingCancellations = cancellations.filter(
+    (c) => c.status === "PENDING"
+  );
+  const approvedCancellations = cancellations.filter(
+    (c) => c.status === "APPROVED"
+  );
+  const rejectedCancellations = cancellations.filter(
+    (c) => c.status === "REJECTED"
+  );
 
   return (
     <>
@@ -147,31 +173,28 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
             </Typography>
 
             {successMessage && (
-              <Alert 
-                severity="success" 
-                sx={{ mb: 2 }}
-              >
+              <Alert severity="success" sx={{ mb: 2 }}>
                 {successMessage}
               </Alert>
             )}
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-              <Chip 
+            <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+              <Chip
                 label={`Total: ${cancellations.length}`}
                 color="primary"
                 variant="outlined"
               />
-              <Chip 
+              <Chip
                 label={`Pending: ${pendingCancellations.length}`}
                 color="warning"
                 variant="outlined"
               />
-              <Chip 
+              <Chip
                 label={`Approved: ${approvedCancellations.length}`}
                 color="success"
                 variant="outlined"
               />
-              <Chip 
+              <Chip
                 label={`Rejected: ${rejectedCancellations.length}`}
                 color="error"
                 variant="outlined"
@@ -199,11 +222,11 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
                         <Chip
                           label={cancellation.status}
                           color={
-                            cancellation.status === 'PENDING'
-                              ? 'warning'
-                              : cancellation.status === 'APPROVED'
-                              ? 'success'
-                              : 'error'
+                            cancellation.status === "PENDING"
+                              ? "warning"
+                              : cancellation.status === "APPROVED"
+                              ? "success"
+                              : "error"
                           }
                           size="small"
                         />
@@ -214,19 +237,21 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
                       <TableCell>
                         {cancellation.refundAmount
                           ? `$${cancellation.refundAmount}`
-                          : '-'}
+                          : "-"}
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          {cancellation.status === 'PENDING' ? (
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          {cancellation.status === "PENDING" ? (
                             <Tooltip title="Review">
                               <IconButton
                                 color="info"
                                 size="small"
                                 onClick={() => {
                                   setSelectedCancellation(cancellation);
-                                  setAdminNotes(cancellation.adminNotes || '');
-                                  setRefundAmount(cancellation.refundAmount || '');
+                                  setAdminNotes(cancellation.adminNotes || "");
+                                  setRefundAmount(
+                                    cancellation.refundAmount || ""
+                                  );
                                 }}
                               >
                                 <Visibility />
@@ -253,8 +278,8 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
           </Box>
         </Container>
 
-        <Dialog 
-          open={!!selectedCancellation} 
+        <Dialog
+          open={!!selectedCancellation}
           onClose={() => setSelectedCancellation(null)}
           maxWidth="sm"
           fullWidth
@@ -296,7 +321,7 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
                 value={refundAmount}
                 onChange={(e) => setRefundAmount(e.target.value)}
                 InputProps={{
-                  startAdornment: '$',
+                  startAdornment: "$",
                 }}
                 sx={{ mt: 2 }}
               />
@@ -310,14 +335,14 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
               Cancel
             </Button>
             <Button
-              onClick={() => handleStatusUpdate('REJECTED')}
+              onClick={() => handleStatusUpdate("REJECTED")}
               color="error"
               startIcon={<Cancel />}
             >
               Reject
             </Button>
             <Button
-              onClick={() => handleStatusUpdate('APPROVED')}
+              onClick={() => handleStatusUpdate("APPROVED")}
               color="success"
               startIcon={<CheckCircle />}
             >
@@ -335,8 +360,8 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
           <DialogTitle>Delete Cancellation Request</DialogTitle>
           <DialogContent>
             <Typography>
-              Are you sure you want to delete this cancellation request and its associated reservation?
-              This action cannot be undone.
+              Are you sure you want to delete this cancellation request and its
+              associated reservation? This action cannot be undone.
             </Typography>
           </DialogContent>
           <DialogActions>
@@ -360,4 +385,4 @@ const CancellationManagement = ({ theme, toggleTheme }) => {
   );
 };
 
-export default CancellationManagement; 
+export default CancellationManagement;

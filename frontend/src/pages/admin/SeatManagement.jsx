@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { withAuthenticationRequired } from '@auth0/auth0-react';
-import { PageLoader } from '../../components/PageLoader';
-import Sidebar from '../../components/Sidebar';
-import { trainService } from '../../services/trainService';
-import { seatService } from '../../services/seatService';
-import { scheduleService } from '../../services/scheduleService';
-import '../../styles/seats.css';
-import { 
-  FaChair, 
-  FaMoneyBillWave, 
-  FaTimes, 
-  FaInfoCircle, 
-  FaPlus, 
-  FaWindowMaximize, 
-  FaDoorOpen, 
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { withAuthenticationRequired } from "@auth0/auth0-react";
+import { PageLoader } from "../../components/PageLoader";
+import Sidebar from "../../components/Sidebar";
+import { trainService } from "../../services/trainService";
+import { seatService } from "../../services/seatService";
+import { scheduleService } from "../../services/scheduleService";
+import "../../styles/seats.css";
+import {
+  FaChair,
+  FaMoneyBillWave,
+  FaTimes,
+  FaInfoCircle,
+  FaPlus,
+  FaWindowMaximize,
+  FaDoorOpen,
   FaUserFriends,
   FaUndo,
   FaRedo,
@@ -23,24 +23,25 @@ import {
   FaDownload,
   FaCalendarAlt,
   FaClock,
-  FaCheckDouble
-} from 'react-icons/fa';
+  FaCheckDouble,
+} from "react-icons/fa";
+import SearchBar from "../../components/SearchBar";
 
 const SEAT_TYPES = {
-  WINDOW: 'window',
-  AISLE: 'aisle',
-  MIDDLE: 'middle'
+  WINDOW: "window",
+  AISLE: "aisle",
+  MIDDLE: "middle",
 };
 
 const COACH_CLASSES = {
-  PREMIUM: 'premium',
-  BUSINESS: 'business',
-  ECONOMY: 'economy'
+  PREMIUM: "premium",
+  BUSINESS: "business",
+  ECONOMY: "economy",
 };
 
 const SEAT_STATUS = {
-  AVAILABLE: 'available',
-  BLOCKED: 'blocked'
+  AVAILABLE: "available",
+  BLOCKED: "blocked",
 };
 
 const SeatManagement = () => {
@@ -55,28 +56,32 @@ const SeatManagement = () => {
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [schedules, setSchedules] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [priceConfig, setPriceConfig] = useState({
-    premium: { window: '', aisle: '', middle: '' },
-    business: { window: '', aisle: '', middle: '' },
-    economy: { window: '', aisle: '', middle: '' }
+    premium: { window: "", aisle: "", middle: "" },
+    business: { window: "", aisle: "", middle: "" },
+    economy: { window: "", aisle: "", middle: "" },
   });
   const [newCoach, setNewCoach] = useState({
     class: COACH_CLASSES.ECONOMY,
     rows: 10,
     seatsPerRow: 6,
-    startRow: 1
+    startRow: 1,
   });
 
   const [showAddSingleSeat, setShowAddSingleSeat] = useState(false);
   const [newSeat, setNewSeat] = useState({
     class: COACH_CLASSES.ECONOMY,
-    seatNumber: '',
+    seatNumber: "",
   });
   const [newSeatError, setNewSeatError] = useState(null);
 
   const [addCoachError, setAddCoachError] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchTrainAndSeats();
@@ -92,7 +97,7 @@ const SeatManagement = () => {
       }
       console.log("DEBUG: Schedules fetched: ", data);
     } catch (err) {
-      console.error('Error fetching schedules:', err);
+      console.error("Error fetching schedules:", err);
     }
   };
 
@@ -104,17 +109,24 @@ const SeatManagement = () => {
       setTrain(trainData);
 
       if (selectedSchedule) {
-        console.log("DEBUG: Fetching seat details for date:", selectedDate, "time:", selectedSchedule.departureTime);
+        console.log(
+          "DEBUG: Fetching seat details for date:",
+          selectedDate,
+          "time:",
+          selectedSchedule.departureTime
+        );
         const seatsData = await seatService.getSeatDetails(
           trainId,
           selectedDate,
           selectedSchedule.departureTime
         );
-        console.log('DEBUG: Fetched seats data (raw):', seatsData);
-        setSeats(Object.entries(seatsData).map(([seatNumber, config]) => ({
-          seatNumber,
-          ...config
-        })));
+        console.log("DEBUG: Fetched seats data (raw):", seatsData);
+        setSeats(
+          Object.entries(seatsData).map(([seatNumber, config]) => ({
+            seatNumber,
+            ...config,
+          }))
+        );
         console.log("DEBUG: Seats state updated.");
       } else {
         console.log("DEBUG: No schedule selected, not fetching seat details.");
@@ -122,18 +134,21 @@ const SeatManagement = () => {
 
       // Populate priceConfig with current prices based on fetched seats
       const currentPriceConfig = {};
-      Object.values(COACH_CLASSES).forEach(classType => {
+      Object.values(COACH_CLASSES).forEach((classType) => {
         currentPriceConfig[classType] = {};
-        Object.values(SEAT_TYPES).forEach(seatType => {
+        Object.values(SEAT_TYPES).forEach((seatType) => {
           // Find the price of the first seat of this class and type to pre-fill the config
-          const seat = seats.find(s => s.class === classType && s.type === seatType);
-          currentPriceConfig[classType][seatType] = seat ? seat.price.toString() : ''; // Convert price to string for input value
+          const seat = seats.find(
+            (s) => s.class === classType && s.type === seatType
+          );
+          currentPriceConfig[classType][seatType] = seat
+            ? seat.price.toString()
+            : ""; // Convert price to string for input value
         });
       });
       setPriceConfig(currentPriceConfig);
-
     } catch (err) {
-      setError('Failed to load train and seat data');
+      setError("Failed to load train and seat data");
       console.error(err);
     } finally {
       setLoading(false);
@@ -165,16 +180,19 @@ const SeatManagement = () => {
       const { class: coachClass, rows: numRows, startRow } = newCoach;
 
       // Get existing row numbers for the selected class
-      const existingRows = new Set(seats
-        .filter(seat => seat.class === coachClass)
-        .map(seat => seat.row)
+      const existingRows = new Set(
+        seats
+          .filter((seat) => seat.class === coachClass)
+          .map((seat) => seat.row)
       );
 
       // Check for conflicts with existing rows
       for (let i = 0; i < numRows; i++) {
         const currentRow = startRow + i;
         if (existingRows.has(currentRow)) {
-          setAddCoachError(`Row ${currentRow} in ${coachClass.toUpperCase()} class already exists. Please choose a different starting row or fewer rows.`);
+          setAddCoachError(
+            `Row ${currentRow} in ${coachClass.toUpperCase()} class already exists. Please choose a different starting row or fewer rows.`
+          );
           return;
         }
       }
@@ -182,33 +200,35 @@ const SeatManagement = () => {
       const seatConfigs = [];
       const seatsPerRow = getSeatsPerRowForClass(newCoach.class);
       const totalSeats = newCoach.rows * seatsPerRow;
-      
+
       // Get the prefix for the coach class
       const coachPrefix = coachClass.charAt(0).toUpperCase(); // P for Premium, B for Business, E for Economy
-      
+
       for (let i = 0; i < newCoach.rows; i++) {
         const row = newCoach.startRow + i;
         for (let pos = 0; pos < seatsPerRow; pos++) {
           const position = String.fromCharCode(65 + pos); // A, B, C, etc.
           // Include coach class prefix in seat number
           const seatNumber = `${coachPrefix}${row}${position}`;
-          
+
           let type;
           const positionIndex = pos; // pos is the 0-based index (0 for A, 1 for B, etc.)
           const coachClass = newCoach.class;
 
-          if (coachClass === COACH_CLASSES.ECONOMY) { // Economy class (3+3)
-            if (position === 'A' || position === 'F') {
+          if (coachClass === COACH_CLASSES.ECONOMY) {
+            // Economy class (3+3)
+            if (position === "A" || position === "F") {
               type = SEAT_TYPES.WINDOW;
-            } else if (position === 'C' || position === 'D') {
+            } else if (position === "C" || position === "D") {
               type = SEAT_TYPES.AISLE;
-            } else if (position === 'B' || position === 'E') {
+            } else if (position === "B" || position === "E") {
               type = SEAT_TYPES.MIDDLE;
             }
-          } else { // Business/Premium class (2+2)
-            if (position === 'A' || position === 'D') {
+          } else {
+            // Business/Premium class (2+2)
+            if (position === "A" || position === "D") {
               type = SEAT_TYPES.WINDOW;
-            } else if (position === 'B' || position === 'C'){
+            } else if (position === "B" || position === "C") {
               type = SEAT_TYPES.AISLE;
             } // No middle seats in 2+2 layout
           }
@@ -218,9 +238,14 @@ const SeatManagement = () => {
             type,
             class: newCoach.class,
             price: 0,
-            location: row <= newCoach.rows / 3 ? 'Front' : row <= (newCoach.rows * 2) / 3 ? 'Middle' : 'Back',
+            location:
+              row <= newCoach.rows / 3
+                ? "Front"
+                : row <= (newCoach.rows * 2) / 3
+                ? "Middle"
+                : "Back",
             row,
-            position
+            position,
           });
         }
       }
@@ -232,17 +257,17 @@ const SeatManagement = () => {
         class: COACH_CLASSES.ECONOMY,
         rows: 10,
         seatsPerRow: 6,
-        startRow: 1
+        startRow: 1,
       });
     } catch (err) {
-      setAddCoachError('Failed to add coach');
+      setAddCoachError("Failed to add coach");
       console.error(err);
     }
   };
 
   const handleSeatClick = (coachId, seatId) => {
     if (selectedSeats.includes(seatId)) {
-      setSelectedSeats(selectedSeats.filter(id => id !== seatId));
+      setSelectedSeats(selectedSeats.filter((id) => id !== seatId));
     } else {
       setSelectedSeats([...selectedSeats, seatId]);
     }
@@ -250,14 +275,18 @@ const SeatManagement = () => {
 
   const handleSelectAllSeats = () => {
     const allAvailableSeatNumbers = seats
-      .filter(seat => seat.status === SEAT_STATUS.AVAILABLE) // Only select currently available seats
-      .map(seat => seat.seatNumber);
+      .filter((seat) => seat.status === SEAT_STATUS.AVAILABLE) // Only select currently available seats
+      .map((seat) => seat.seatNumber);
     setSelectedSeats(allAvailableSeatNumbers);
   };
 
   const handleDeleteSelectedSeats = async () => {
     if (selectedSeats.length === 0) return;
-    if (!window.confirm(`Are you sure you want to delete ${selectedSeats.length} selected seats?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedSeats.length} selected seats?`
+      )
+    ) {
       return;
     }
 
@@ -267,7 +296,7 @@ const SeatManagement = () => {
       await fetchTrainAndSeats();
       setSelectedSeats([]);
     } catch (err) {
-      setError('Failed to delete seats');
+      setError("Failed to delete seats");
       console.error(err);
     }
   };
@@ -275,11 +304,15 @@ const SeatManagement = () => {
   const handlePriceConfigUpdate = async () => {
     try {
       const updates = [];
-      seats.forEach(seat => {
+      seats.forEach((seat) => {
         const priceString = priceConfig?.[seat.class]?.[seat.type];
         const price = parseFloat(priceString);
 
-        if (priceString !== undefined && priceString !== null && !isNaN(price)) {
+        if (
+          priceString !== undefined &&
+          priceString !== null &&
+          !isNaN(price)
+        ) {
           updates.push(
             seatService.updateSeatPrice(trainId, seat.seatNumber, price)
           );
@@ -291,7 +324,7 @@ const SeatManagement = () => {
       setShowPriceConfig(false);
       setError(null);
     } catch (err) {
-      setError('Failed to update prices');
+      setError("Failed to update prices");
       console.error(err);
     }
   };
@@ -303,7 +336,9 @@ const SeatManagement = () => {
     // Validate seat number format (e.g., B3A, E5B)
     const seatNumberRegex = /^[A-Z]\d+[A-Z]$/;
     if (!seatNumberRegex.test(seatNumber)) {
-      setNewSeatError('Invalid seat number format. Please use the format like B3A or E5B.');
+      setNewSeatError(
+        "Invalid seat number format. Please use the format like B3A or E5B."
+      );
       return;
     }
 
@@ -312,17 +347,23 @@ const SeatManagement = () => {
     const positionMatch = seatNumber.match(/[A-Z]\d+([A-Z])$/);
 
     if (!rowMatch || !positionMatch) {
-       setNewSeatError('Invalid seat number format. Could not extract row or position.');
-       return;
+      setNewSeatError(
+        "Invalid seat number format. Could not extract row or position."
+      );
+      return;
     }
 
     const row = parseInt(rowMatch[1], 10);
     const position = positionMatch[1];
 
     // Check for duplicate seat number within the current train's seats
-    const isDuplicate = seats.some(seat => seat.seatNumber === seatNumber && seat.class === seatClass);
+    const isDuplicate = seats.some(
+      (seat) => seat.seatNumber === seatNumber && seat.class === seatClass
+    );
     if (isDuplicate) {
-      setNewSeatError(`Seat number ${seatNumber} in ${seatClass.toUpperCase()} class already exists.`);
+      setNewSeatError(
+        `Seat number ${seatNumber} in ${seatClass.toUpperCase()} class already exists.`
+      );
       return;
     }
 
@@ -332,16 +373,18 @@ const SeatManagement = () => {
       const positionIndex = position.charCodeAt(0) - 65;
       const seatsPerRow = getSeatsPerRowForClass(seatClass);
 
-      if (seatsPerRow === 6) { // Economy class
-        if (position === 'A' || position === 'F') {
+      if (seatsPerRow === 6) {
+        // Economy class
+        if (position === "A" || position === "F") {
           type = SEAT_TYPES.WINDOW;
-        } else if (position === 'C' || position === 'D') {
+        } else if (position === "C" || position === "D") {
           type = SEAT_TYPES.AISLE;
-        } else if (position === 'B' || position === 'E') {
+        } else if (position === "B" || position === "E") {
           type = SEAT_TYPES.MIDDLE;
         }
-      } else { // Business/Premium class (2+2)
-        if (position === 'A' || position === 'D') {
+      } else {
+        // Business/Premium class (2+2)
+        if (position === "A" || position === "D") {
           type = SEAT_TYPES.WINDOW;
         } else {
           type = SEAT_TYPES.AISLE;
@@ -353,7 +396,12 @@ const SeatManagement = () => {
         type,
         class: seatClass,
         price: 0, // Default price for a single added seat
-        location: row <= (train?.totalRows || 0) / 3 ? 'Front' : row <= ((train?.totalRows || 0) * 2) / 3 ? 'Middle' : 'Back', // Basic location logic
+        location:
+          row <= (train?.totalRows || 0) / 3
+            ? "Front"
+            : row <= ((train?.totalRows || 0) * 2) / 3
+            ? "Middle"
+            : "Back", // Basic location logic
         row,
         position,
       };
@@ -363,48 +411,66 @@ const SeatManagement = () => {
       setShowAddSingleSeat(false); // Close modal
       setNewSeat({
         class: COACH_CLASSES.ECONOMY,
-        seatNumber: '',
+        seatNumber: "",
       }); // Reset form
     } catch (err) {
-      setNewSeatError('Failed to add single seat');
+      setNewSeatError("Failed to add single seat");
       console.error(err);
     }
   };
 
   // Calculate available seats count
-  const availableSeatsCount = seats.filter(seat => seat.status === SEAT_STATUS.AVAILABLE).length;
+  const availableSeatsCount = seats.filter(
+    (seat) => seat.status === SEAT_STATUS.AVAILABLE
+  ).length;
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+  };
+
+  const filteredSeats = seats.filter(
+    (seat) =>
+      seat.seatNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      seat.class?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) return <PageLoader />;
   if (error) return <div className="error-message">Error: {error}</div>;
 
-  const seatsByClass = seats.reduce((acc, seat) => {
-    if (!acc[seat.class]) {
-      acc[seat.class] = [];
+  const seatsByClass = seats.reduce(
+    (acc, seat) => {
+      if (!acc[seat.class]) {
+        acc[seat.class] = [];
+      }
+      acc[seat.class].push(seat);
+      return acc;
+    },
+    {
+      economy: [],
+      business: [],
+      premium: [],
     }
-    acc[seat.class].push(seat);
-    return acc;
-  }, {
-    economy: [],
-    business: [],
-    premium: []
-  });
+  );
 
-  Object.keys(seatsByClass).forEach(className => {
+  Object.keys(seatsByClass).forEach((className) => {
     seatsByClass[className].sort((a, b) => {
       const rowCompare = Number(a.row) - Number(b.row);
-      return rowCompare !== 0 ? rowCompare : a.position.localeCompare(b.position);
+      return rowCompare !== 0
+        ? rowCompare
+        : a.position.localeCompare(b.position);
     });
   });
 
-  const classOrder = ['economy', 'business', 'premium'];
+  const classOrder = ["economy", "business", "premium"];
 
   return (
     <div className="page-container">
       <Sidebar />
       <div className="management-page">
         <h1>Seat Management</h1>
-        
-        {/* Display available seats count */} 
+        <SearchBar onSearch={handleSearch} placeholder="Search seats..." />
+
+        {/* Display available seats count */}
         <div className="available-seats-info">
           <p>Total Available Seats: {availableSeatsCount}</p>
         </div>
@@ -417,23 +483,27 @@ const SeatManagement = () => {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
+              min={new Date().toISOString().split("T")[0]}
             />
           </div>
-          
+
           <div className="schedule-picker">
             <FaClock className="icon" />
             <select
-              value={selectedSchedule?.id || ''}
+              value={selectedSchedule?.id || ""}
               onChange={(e) => {
-                const schedule = schedules.find(s => s.id === parseInt(e.target.value));
+                const schedule = schedules.find(
+                  (s) => s.id === parseInt(e.target.value)
+                );
                 setSelectedSchedule(schedule);
               }}
             >
               <option value="">Select a schedule</option>
               {schedules.map((schedule) => (
                 <option key={schedule.id} value={schedule.id}>
-                  {schedule.departureTime} - {schedule.arrivalTime} ({schedule.route.departureStation} to {schedule.route.arrivalStation})
+                  {schedule.departureTime} - {schedule.arrivalTime} (
+                  {schedule.route.departureStation} to{" "}
+                  {schedule.route.arrivalStation})
                 </option>
               ))}
             </select>
@@ -447,8 +517,15 @@ const SeatManagement = () => {
               Seat Management - {train?.trainName}
             </h1>
             <div className="coach-counts">
-              <p>Total Coaches: <strong>{new Set(seats.map(seat => seat.coachId)).size}</strong></p>
-              <p>Total Seats: <strong>{seats.length}</strong></p>
+              <p>
+                Total Coaches:{" "}
+                <strong>
+                  {new Set(seats.map((seat) => seat.coachId)).size}
+                </strong>
+              </p>
+              <p>
+                Total Seats: <strong>{seats.length}</strong>
+              </p>
             </div>
           </div>
 
@@ -484,7 +561,7 @@ const SeatManagement = () => {
             </button>
             <button
               className="btn btn-secondary"
-              onClick={() => navigate('/admin/trains')}
+              onClick={() => navigate("/admin/trains")}
             >
               Back to Trains
             </button>
@@ -497,19 +574,26 @@ const SeatManagement = () => {
           )}
 
           <div className="coaches-container">
-            {classOrder.map(classType => {
-              const seatsInClassByRow = seatsByClass[classType]?.reduce((acc, seat) => {
-                if (!acc[seat.row]) {
-                  acc[seat.row] = [];
-                }
-                acc[seat.row].push(seat);
-                return acc;
-              }, {}) || {};
+            {classOrder.map((classType) => {
+              const seatsInClassByRow =
+                seatsByClass[classType]?.reduce((acc, seat) => {
+                  if (!acc[seat.row]) {
+                    acc[seat.row] = [];
+                  }
+                  acc[seat.row].push(seat);
+                  return acc;
+                }, {}) || {};
 
-              const sortedRowNumbers = Object.keys(seatsInClassByRow).sort((a, b) => Number(a) - Number(b));
+              const sortedRowNumbers = Object.keys(seatsInClassByRow).sort(
+                (a, b) => Number(a) - Number(b)
+              );
 
               return (
-                <div key={classType} className="coach-section" data-class={classType}>
+                <div
+                  key={classType}
+                  className="coach-section"
+                  data-class={classType}
+                >
                   <div className="coach-header">
                     <h3>{classType.toUpperCase()} Class</h3>
                     <div className="coach-actions">
@@ -523,8 +607,15 @@ const SeatManagement = () => {
                       <button
                         className="btn btn-sm btn-outline-primary"
                         onClick={handleSelectAllSeats}
-                        disabled={seats.filter(seat => seat.status === SEAT_STATUS.AVAILABLE).length === 0 ||
-                                  selectedSeats.length === seats.filter(seat => seat.status === SEAT_STATUS.AVAILABLE).length} /* Disable if no available seats or all available are already selected */
+                        disabled={
+                          seats.filter(
+                            (seat) => seat.status === SEAT_STATUS.AVAILABLE
+                          ).length === 0 ||
+                          selectedSeats.length ===
+                            seats.filter(
+                              (seat) => seat.status === SEAT_STATUS.AVAILABLE
+                            ).length
+                        } /* Disable if no available seats or all available are already selected */
                       >
                         <FaCheckDouble className="me-2" /> Select All
                       </button>
@@ -534,40 +625,70 @@ const SeatManagement = () => {
                     <div className="aisle-label">Aisle</div>
                     {sortedRowNumbers.length > 0 ? (
                       <div className="seat-rows">
-                        {sortedRowNumbers.map(rowNum => {
-                          const seatsInRow = seatsInClassByRow[rowNum].sort((a, b) => a.position.localeCompare(b.position));
-                          const seatsPerSide = classType === 'economy' ? 3 : 2;
+                        {sortedRowNumbers.map((rowNum) => {
+                          const seatsInRow = seatsInClassByRow[rowNum].sort(
+                            (a, b) => a.position.localeCompare(b.position)
+                          );
+                          const seatsPerSide = classType === "economy" ? 3 : 2;
 
                           return (
                             <div key={rowNum} className="seat-row">
                               <div className="row-number">{rowNum}</div>
                               <div className="row-seats">
                                 <div className="seat-group left">
-                                  {seatsInRow.slice(0, seatsPerSide).map(seat => (
-                                    <span
-                                      key={seat.seatNumber}
-                                      className={`seat-name ${selectedSeats.includes(seat.seatNumber) ? 'selected' : ''} ${seat.status !== SEAT_STATUS.AVAILABLE ? 'blocked' : 'available'}`}
-                                      onClick={() => handleSeatClick(null, seat.seatNumber)}
-                                      data-row={seat.row}
-                                      title={`Row ${seat.row}, ${seat.type} seat`}
-                                    >
-                                      {seat.seatNumber}
-                                    </span>
-                                  ))}
+                                  {seatsInRow
+                                    .slice(0, seatsPerSide)
+                                    .map((seat) => (
+                                      <span
+                                        key={seat.seatNumber}
+                                        className={`seat-name ${
+                                          selectedSeats.includes(
+                                            seat.seatNumber
+                                          )
+                                            ? "selected"
+                                            : ""
+                                        } ${
+                                          seat.status !== SEAT_STATUS.AVAILABLE
+                                            ? "blocked"
+                                            : "available"
+                                        }`}
+                                        onClick={() =>
+                                          handleSeatClick(null, seat.seatNumber)
+                                        }
+                                        data-row={seat.row}
+                                        title={`Row ${seat.row}, ${seat.type} seat`}
+                                      >
+                                        {seat.seatNumber}
+                                      </span>
+                                    ))}
                                 </div>
                                 <div className="row-aisle"></div>
                                 <div className="seat-group right">
-                                  {seatsInRow.slice(seatsPerSide).map(seat => (
-                                    <span
-                                      key={seat.seatNumber}
-                                      className={`seat-name ${selectedSeats.includes(seat.seatNumber) ? 'selected' : ''} ${seat.status !== SEAT_STATUS.AVAILABLE ? 'blocked' : 'available'}`}
-                                      onClick={() => handleSeatClick(null, seat.seatNumber)}
-                                      data-row={seat.row}
-                                      title={`Row ${seat.row}, ${seat.type} seat`}
-                                    >
-                                      {seat.seatNumber}
-                                    </span>
-                                  ))}
+                                  {seatsInRow
+                                    .slice(seatsPerSide)
+                                    .map((seat) => (
+                                      <span
+                                        key={seat.seatNumber}
+                                        className={`seat-name ${
+                                          selectedSeats.includes(
+                                            seat.seatNumber
+                                          )
+                                            ? "selected"
+                                            : ""
+                                        } ${
+                                          seat.status !== SEAT_STATUS.AVAILABLE
+                                            ? "blocked"
+                                            : "available"
+                                        }`}
+                                        onClick={() =>
+                                          handleSeatClick(null, seat.seatNumber)
+                                        }
+                                        data-row={seat.row}
+                                        title={`Row ${seat.row}, ${seat.type} seat`}
+                                      >
+                                        {seat.seatNumber}
+                                      </span>
+                                    ))}
                                 </div>
                               </div>
                             </div>
@@ -581,9 +702,14 @@ const SeatManagement = () => {
                 </div>
               );
             })}
-            {new Set(seats.map(seat => seat.coachId)).size === 0 && !loading && !error && (
-              <div className="no-coaches-message">No coaches or seats available for this train. Add a coach above!</div>
-            )}
+            {new Set(seats.map((seat) => seat.coachId)).size === 0 &&
+              !loading &&
+              !error && (
+                <div className="no-coaches-message">
+                  No coaches or seats available for this train. Add a coach
+                  above!
+                </div>
+              )}
           </div>
         </div>
       </div>
@@ -592,43 +718,43 @@ const SeatManagement = () => {
         <div className="modal">
           <div
             style={{
-              position: 'fixed',
+              position: "fixed",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 9999
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 9999,
             }}
           >
             <div
               style={{
-                backgroundColor: 'white',
-                padding: '2rem',
-                borderRadius: '8px',
-                width: '90%',
-                maxWidth: '500px',
-                position: 'relative',
-                zIndex: 10000
+                backgroundColor: "white",
+                padding: "2rem",
+                borderRadius: "8px",
+                width: "90%",
+                maxWidth: "500px",
+                position: "relative",
+                zIndex: 10000,
               }}
             >
               <button
                 style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.2rem',
-                  cursor: 'pointer',
-                  padding: '0.25rem',
-                  lineHeight: 1
+                  position: "absolute",
+                  top: "1rem",
+                  right: "1rem",
+                  background: "none",
+                  border: "none",
+                  fontSize: "1.2rem",
+                  cursor: "pointer",
+                  padding: "0.25rem",
+                  lineHeight: 1,
                 }}
                 onClick={() => {
-                  console.log('Closing modal...');
+                  console.log("Closing modal...");
                   setShowAddCoach(false);
                   setAddCoachError(null);
                 }}
@@ -647,15 +773,17 @@ const SeatManagement = () => {
                   value={newCoach.class}
                   onChange={(e) => {
                     const classType = e.target.value;
-                    setNewCoach(prev => ({
+                    setNewCoach((prev) => ({
                       ...prev,
                       class: classType,
-                      seatsPerRow: getSeatsPerRowForClass(classType)
+                      seatsPerRow: getSeatsPerRowForClass(classType),
                     }));
                   }}
                 >
                   {Object.entries(COACH_CLASSES).map(([key, value]) => (
-                    <option key={value} value={value}>{key}</option>
+                    <option key={value} value={value}>
+                      {key}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -664,7 +792,12 @@ const SeatManagement = () => {
                 <input
                   type="number"
                   value={newCoach.rows}
-                  onChange={(e) => setNewCoach(prev => ({ ...prev, rows: parseInt(e.target.value) }))}
+                  onChange={(e) =>
+                    setNewCoach((prev) => ({
+                      ...prev,
+                      rows: parseInt(e.target.value),
+                    }))
+                  }
                   min="1"
                   max="20"
                 />
@@ -674,7 +807,12 @@ const SeatManagement = () => {
                 <input
                   type="number"
                   value={newCoach.startRow}
-                  onChange={(e) => setNewCoach(prev => ({ ...prev, startRow: parseInt(e.target.value) }))}
+                  onChange={(e) =>
+                    setNewCoach((prev) => ({
+                      ...prev,
+                      startRow: parseInt(e.target.value),
+                    }))
+                  }
                   min="1"
                   max="100"
                 />
@@ -691,7 +829,7 @@ const SeatManagement = () => {
               <button
                 className="btn btn-primary"
                 onClick={() => {
-                  console.log('Adding coach...');
+                  console.log("Adding coach...");
                   handleAddCoach();
                 }}
               >
@@ -706,47 +844,47 @@ const SeatManagement = () => {
         <div className="modal">
           <div
             style={{
-              position: 'fixed',
+              position: "fixed",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 9999
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 9999,
             }}
           >
             <div
               style={{
-                backgroundColor: 'white',
-                padding: '2rem',
-                borderRadius: '8px',
-                width: '90%',
-                maxWidth: '400px',
-                position: 'relative',
-                zIndex: 10000
+                backgroundColor: "white",
+                padding: "2rem",
+                borderRadius: "8px",
+                width: "90%",
+                maxWidth: "400px",
+                position: "relative",
+                zIndex: 10000,
               }}
             >
               <button
                 style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.2rem',
-                  cursor: 'pointer',
-                  padding: '0.25rem',
-                  lineHeight: 1
+                  position: "absolute",
+                  top: "1rem",
+                  right: "1rem",
+                  background: "none",
+                  border: "none",
+                  fontSize: "1.2rem",
+                  cursor: "pointer",
+                  padding: "0.25rem",
+                  lineHeight: 1,
                 }}
                 onClick={() => {
                   setShowAddSingleSeat(false);
                   setNewSeatError(null);
                   setNewSeat({
                     class: COACH_CLASSES.ECONOMY,
-                    seatNumber: '',
+                    seatNumber: "",
                   });
                 }}
               >
@@ -762,10 +900,14 @@ const SeatManagement = () => {
                 <label>Class</label>
                 <select
                   value={newSeat.class}
-                  onChange={(e) => setNewSeat(prev => ({ ...prev, class: e.target.value }))}
+                  onChange={(e) =>
+                    setNewSeat((prev) => ({ ...prev, class: e.target.value }))
+                  }
                 >
                   {Object.entries(COACH_CLASSES).map(([key, value]) => (
-                    <option key={value} value={value}>{key}</option>
+                    <option key={value} value={value}>
+                      {key}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -774,14 +916,16 @@ const SeatManagement = () => {
                 <input
                   type="text"
                   value={newSeat.seatNumber}
-                  onChange={(e) => setNewSeat(prev => ({ ...prev, seatNumber: e.target.value.toUpperCase() }))}
+                  onChange={(e) =>
+                    setNewSeat((prev) => ({
+                      ...prev,
+                      seatNumber: e.target.value.toUpperCase(),
+                    }))
+                  }
                   placeholder="e.g., 1A"
                 />
               </div>
-              <button
-                className="btn btn-primary"
-                onClick={handleAddSingleSeat}
-              >
+              <button className="btn btn-primary" onClick={handleAddSingleSeat}>
                 Add Seat
               </button>
             </div>
@@ -793,40 +937,40 @@ const SeatManagement = () => {
         <div className="modal">
           <div
             style={{
-              position: 'fixed',
+              position: "fixed",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 9999
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 9999,
             }}
           >
             <div
               style={{
-                backgroundColor: 'white',
-                padding: '2rem',
-                borderRadius: '8px',
-                width: '90%',
-                maxWidth: '750px',
-                position: 'relative',
-                zIndex: 10000
+                backgroundColor: "white",
+                padding: "2rem",
+                borderRadius: "8px",
+                width: "90%",
+                maxWidth: "750px",
+                position: "relative",
+                zIndex: 10000,
               }}
             >
               <button
                 style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.2rem',
-                  cursor: 'pointer',
-                  padding: '0.25rem',
-                  lineHeight: 1
+                  position: "absolute",
+                  top: "1rem",
+                  right: "1rem",
+                  background: "none",
+                  border: "none",
+                  fontSize: "1.2rem",
+                  cursor: "pointer",
+                  padding: "0.25rem",
+                  lineHeight: 1,
                 }}
                 onClick={() => setShowPriceConfig(false)}
               >
@@ -840,9 +984,9 @@ const SeatManagement = () => {
                       <th>Class</th>
                       <th>Window</th>
                       <th>Aisle</th>
-                      {Object.values(COACH_CLASSES).some(classType => getSeatsPerRowForClass(classType) > 4) && (
-                        <th>Middle</th>
-                      )}
+                      {Object.values(COACH_CLASSES).some(
+                        (classType) => getSeatsPerRowForClass(classType) > 4
+                      ) && <th>Middle</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -852,11 +996,16 @@ const SeatManagement = () => {
                         <td>
                           <input
                             type="number"
-                            value={priceConfig[value]?.window || ''}
-                            onChange={(e) => setPriceConfig(prev => ({
-                              ...prev,
-                              [value]: { ...prev[value], window: e.target.value }
-                            }))}
+                            value={priceConfig[value]?.window || ""}
+                            onChange={(e) =>
+                              setPriceConfig((prev) => ({
+                                ...prev,
+                                [value]: {
+                                  ...prev[value],
+                                  window: e.target.value,
+                                },
+                              }))
+                            }
                             placeholder="Price"
                             min="0"
                             step="0.01"
@@ -865,11 +1014,16 @@ const SeatManagement = () => {
                         <td>
                           <input
                             type="number"
-                            value={priceConfig[value]?.aisle || ''}
-                            onChange={(e) => setPriceConfig(prev => ({
-                              ...prev,
-                              [value]: { ...prev[value], aisle: e.target.value }
-                            }))}
+                            value={priceConfig[value]?.aisle || ""}
+                            onChange={(e) =>
+                              setPriceConfig((prev) => ({
+                                ...prev,
+                                [value]: {
+                                  ...prev[value],
+                                  aisle: e.target.value,
+                                },
+                              }))
+                            }
                             placeholder="Price"
                             min="0"
                             step="0.01"
@@ -879,11 +1033,16 @@ const SeatManagement = () => {
                           <td>
                             <input
                               type="number"
-                              value={priceConfig[value]?.middle || ''}
-                              onChange={(e) => setPriceConfig(prev => ({
-                                ...prev,
-                                [value]: { ...prev[value], middle: e.target.value }
-                              }))}
+                              value={priceConfig[value]?.middle || ""}
+                              onChange={(e) =>
+                                setPriceConfig((prev) => ({
+                                  ...prev,
+                                  [value]: {
+                                    ...prev[value],
+                                    middle: e.target.value,
+                                  },
+                                }))
+                              }
                               placeholder="Price"
                               min="0"
                               step="0.01"
@@ -910,5 +1069,5 @@ const SeatManagement = () => {
 };
 
 export default withAuthenticationRequired(SeatManagement, {
-  onRedirecting: () => <PageLoader />
-}); 
+  onRedirecting: () => <PageLoader />,
+});

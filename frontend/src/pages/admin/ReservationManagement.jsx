@@ -1,10 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { withAuthenticationRequired } from '@auth0/auth0-react';
-import { PageLoader } from '../../components/PageLoader';
-import Sidebar from '../../components/Sidebar';
-import { reservationService } from '../../services/reservationService';
-import { FaCalendar, FaUser, FaTrain, FaRoute, FaEuroSign, FaEye } from 'react-icons/fa';
-import '../../styles/management.css';
+import React, { useState, useEffect } from "react";
+import { withAuthenticationRequired } from "@auth0/auth0-react";
+import { PageLoader } from "../../components/PageLoader";
+import Sidebar from "../../components/Sidebar";
+import { reservationService } from "../../services/reservationService";
+import {
+  FaCalendar,
+  FaUser,
+  FaTrain,
+  FaRoute,
+  FaEuroSign,
+  FaEye,
+} from "react-icons/fa";
+import "../../styles/management.css";
+import SearchBar from "../../components/SearchBar";
 
 const ReservationManagement = () => {
   const [reservations, setReservations] = useState([]);
@@ -12,6 +20,7 @@ const ReservationManagement = () => {
   const [error, setError] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchReservations();
@@ -24,8 +33,8 @@ const ReservationManagement = () => {
       setReservations(data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch reservations');
-      console.error('Error:', err);
+      setError("Failed to fetch reservations");
+      console.error("Error:", err);
     } finally {
       setLoading(false);
     }
@@ -33,19 +42,24 @@ const ReservationManagement = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'confirmed': return '#198754';
-      case 'payment_pending': return '#fd7e14';
-      case 'pending': return '#6c757d';
-      case 'cancelled': return '#dc3545';
-      default: return '#6c757d';
+      case "confirmed":
+        return "#198754";
+      case "payment_pending":
+        return "#fd7e14";
+      case "pending":
+        return "#6c757d";
+      case "cancelled":
+        return "#dc3545";
+      default:
+        return "#6c757d";
     }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -53,6 +67,19 @@ const ReservationManagement = () => {
     setSelectedReservation(reservation);
     setShowDetailsModal(true);
   };
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+  };
+
+  const filteredReservations = reservations.filter(
+    (reservation) =>
+      reservation.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reservation.passengerName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      reservation.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) return <PageLoader />;
 
@@ -65,6 +92,10 @@ const ReservationManagement = () => {
             <FaCalendar className="me-2" />
             Reservation Management
           </h1>
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search reservations..."
+          />
           <p className="text-muted">View and manage all reservations</p>
         </div>
 
@@ -90,7 +121,7 @@ const ReservationManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {reservations.length === 0 ? (
+              {filteredReservations.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="text-center py-4">
                     <div className="empty-state">
@@ -100,7 +131,7 @@ const ReservationManagement = () => {
                   </td>
                 </tr>
               ) : (
-                reservations.map((reservation) => (
+                filteredReservations.map((reservation) => (
                   <tr key={reservation.id}>
                     <td>
                       <span className="text-monospace">
@@ -110,15 +141,21 @@ const ReservationManagement = () => {
                     <td>{formatDate(reservation.travelDate)}</td>
                     <td>
                       <div>
-                        <strong>{reservation.passengerName} {reservation.passengerSurname}</strong>
+                        <strong>
+                          {reservation.passengerName}{" "}
+                          {reservation.passengerSurname}
+                        </strong>
                         <br />
-                        <small className="text-muted">{reservation.user?.email}</small>
+                        <small className="text-muted">
+                          {reservation.user?.email}
+                        </small>
                       </div>
                     </td>
                     <td>
                       <div className="route-info">
                         <FaRoute className="me-1" />
-                        {reservation.schedule?.route?.departureStation} → {reservation.schedule?.route?.arrivalStation}
+                        {reservation.schedule?.route?.departureStation} →{" "}
+                        {reservation.schedule?.route?.arrivalStation}
                       </div>
                     </td>
                     <td>
@@ -129,15 +166,17 @@ const ReservationManagement = () => {
                     </td>
                     <td>
                       {/* Display all seat numbers */}
-                      {reservation.seats && reservation.seats.length > 0 ? (
-                        reservation.seats.map((seat, index) => (
-                          <span key={seat.id || index} className="seat-number">
-                            {seat.seatNumber}{index < reservation.seats.length - 1 ? ', ' : ''}
-                          </span>
-                        ))
-                      ) : (
-                        'N/A'
-                      )}
+                      {reservation.seats && reservation.seats.length > 0
+                        ? reservation.seats.map((seat, index) => (
+                            <span
+                              key={seat.id || index}
+                              className="seat-number"
+                            >
+                              {seat.seatNumber}
+                              {index < reservation.seats.length - 1 ? ", " : ""}
+                            </span>
+                          ))
+                        : "N/A"}
                     </td>
                     <td>
                       <span className="price">
@@ -146,17 +185,17 @@ const ReservationManagement = () => {
                       </span>
                     </td>
                     <td>
-                      <span 
+                      <span
                         className="status-badge"
-                        style={{ 
+                        style={{
                           backgroundColor: getStatusColor(reservation.status),
-                          color: 'white',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          fontSize: '0.875rem'
+                          color: "white",
+                          padding: "4px 8px",
+                          borderRadius: "4px",
+                          fontSize: "0.875rem",
                         }}
                       >
-                        {reservation.status.replace('_', ' ').toUpperCase()}
+                        {reservation.status.replace("_", " ").toUpperCase()}
                       </span>
                     </td>
                     <td>
@@ -177,40 +216,59 @@ const ReservationManagement = () => {
 
         {/* Details Modal */}
         {showDetailsModal && selectedReservation && (
-          <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div
+            className="modal-overlay"
+            onClick={() => setShowDetailsModal(false)}
+          >
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h5>Reservation Details</h5>
-                <button 
-                  className="btn-close" 
+                <button
+                  className="btn-close"
                   onClick={() => setShowDetailsModal(false)}
-                >
-                </button>
+                ></button>
               </div>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-6">
                     <h6>Passenger Information</h6>
-                    <p><strong>Name:</strong> {selectedReservation.passengerName} {selectedReservation.passengerSurname}</p>
-                    <p><strong>Email:</strong> {selectedReservation.user?.email}</p>
-                    <p><strong>User ID:</strong> {selectedReservation.user?.id}</p>
+                    <p>
+                      <strong>Name:</strong> {selectedReservation.passengerName}{" "}
+                      {selectedReservation.passengerSurname}
+                    </p>
+                    <p>
+                      <strong>Email:</strong> {selectedReservation.user?.email}
+                    </p>
+                    <p>
+                      <strong>User ID:</strong> {selectedReservation.user?.id}
+                    </p>
                   </div>
                   <div className="col-md-6">
                     <h6>Reservation Details</h6>
-                    <p><strong>ID:</strong> {selectedReservation.id}</p>
-                    <p><strong>Date:</strong> {formatDate(selectedReservation.travelDate)}</p>
-                    <p><strong>Status:</strong> 
-                      <span 
+                    <p>
+                      <strong>ID:</strong> {selectedReservation.id}
+                    </p>
+                    <p>
+                      <strong>Date:</strong>{" "}
+                      {formatDate(selectedReservation.travelDate)}
+                    </p>
+                    <p>
+                      <strong>Status:</strong>
+                      <span
                         className="ms-2"
-                        style={{ 
-                          backgroundColor: getStatusColor(selectedReservation.status),
-                          color: 'white',
-                          padding: '2px 6px',
-                          borderRadius: '3px',
-                          fontSize: '0.8rem'
+                        style={{
+                          backgroundColor: getStatusColor(
+                            selectedReservation.status
+                          ),
+                          color: "white",
+                          padding: "2px 6px",
+                          borderRadius: "3px",
+                          fontSize: "0.8rem",
                         }}
                       >
-                        {selectedReservation.status.replace('_', ' ').toUpperCase()}
+                        {selectedReservation.status
+                          .replace("_", " ")
+                          .toUpperCase()}
                       </span>
                     </p>
                   </div>
@@ -218,31 +276,63 @@ const ReservationManagement = () => {
                 <div className="row mt-3">
                   <div className="col-md-6">
                     <h6>Journey Information</h6>
-                    <p><strong>Route:</strong> {selectedReservation.schedule?.route?.departureStation} → {selectedReservation.schedule?.route?.arrivalStation}</p>
-                    <p><strong>Train:</strong> {selectedReservation.schedule?.train?.trainName}</p>
+                    <p>
+                      <strong>Route:</strong>{" "}
+                      {selectedReservation.schedule?.route?.departureStation} →{" "}
+                      {selectedReservation.schedule?.route?.arrivalStation}
+                    </p>
+                    <p>
+                      <strong>Train:</strong>{" "}
+                      {selectedReservation.schedule?.train?.trainName}
+                    </p>
                     {/* Display all seat numbers */}
-                    <p><strong>Seat/s:</strong> {selectedReservation.seats && selectedReservation.seats.length > 0 ? (
-                      selectedReservation.seats.map(seat => seat.seatNumber).join(', ')
-                    ) : (
-                      'N/A'
-                    )}</p>
-                    <p><strong>Price:</strong> €{Number(selectedReservation.price).toFixed(2)}</p>
+                    <p>
+                      <strong>Seat/s:</strong>{" "}
+                      {selectedReservation.seats &&
+                      selectedReservation.seats.length > 0
+                        ? selectedReservation.seats
+                            .map((seat) => seat.seatNumber)
+                            .join(", ")
+                        : "N/A"}
+                    </p>
+                    <p>
+                      <strong>Price:</strong> €
+                      {Number(selectedReservation.price).toFixed(2)}
+                    </p>
                   </div>
                   <div className="col-md-6">
                     <h6>Payment Information</h6>
                     {selectedReservation.payment ? (
                       <>
-                        <p><strong>Payment Status:</strong> {selectedReservation.payment.status}</p>
-                        <p><strong>Amount:</strong> €{Number(selectedReservation.payment.amount).toFixed(2)}</p>
+                        <p>
+                          <strong>Payment Status:</strong>{" "}
+                          {selectedReservation.payment.status}
+                        </p>
+                        <p>
+                          <strong>Amount:</strong> €
+                          {Number(selectedReservation.payment.amount).toFixed(
+                            2
+                          )}
+                        </p>
                         {selectedReservation.payment.paymentDate && (
-                          <p><strong>Payment Date:</strong> {formatDate(selectedReservation.payment.paymentDate)}</p>
+                          <p>
+                            <strong>Payment Date:</strong>{" "}
+                            {formatDate(
+                              selectedReservation.payment.paymentDate
+                            )}
+                          </p>
                         )}
                         {selectedReservation.payment.paymentCardLast4 && (
-                          <p><strong>Card:</strong> **** **** **** {selectedReservation.payment.paymentCardLast4}</p>
+                          <p>
+                            <strong>Card:</strong> **** **** ****{" "}
+                            {selectedReservation.payment.paymentCardLast4}
+                          </p>
                         )}
                       </>
                     ) : (
-                      <p className="text-muted">No payment information available</p>
+                      <p className="text-muted">
+                        No payment information available
+                      </p>
                     )}
                   </div>
                 </div>
@@ -250,10 +340,19 @@ const ReservationManagement = () => {
                   <div className="row mt-3">
                     <div className="col-12">
                       <h6>Ticket Information</h6>
-                      <p><strong>Ticket Number:</strong> {selectedReservation.ticket.ticketNumber}</p>
-                      <p><strong>Status:</strong> {selectedReservation.ticket.status}</p>
+                      <p>
+                        <strong>Ticket Number:</strong>{" "}
+                        {selectedReservation.ticket.ticketNumber}
+                      </p>
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        {selectedReservation.ticket.status}
+                      </p>
                       {selectedReservation.ticket.generatedAt && (
-                        <p><strong>Generated:</strong> {formatDate(selectedReservation.ticket.generatedAt)}</p>
+                        <p>
+                          <strong>Generated:</strong>{" "}
+                          {formatDate(selectedReservation.ticket.generatedAt)}
+                        </p>
                       )}
                     </div>
                   </div>
