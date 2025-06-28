@@ -31,4 +31,10 @@ export class UserService {
     });
     return this.users.save(user);
   }
+
+  async getAllUsers(): Promise<User[]> {
+    return this.users.find({
+      order: { name: 'ASC' }
+    });
+  }
 }

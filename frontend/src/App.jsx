@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import AppRoutes from "./routes/Routes";
 import { useAuth0 } from "@auth0/auth0-react";
 import { PageLoader } from "./components/PageLoader";
-import { setTokenGetter } from "./services/api";
+import { setTokenGetter, clearTokenCache } from "./services/api";
 
 function App() {
   const { isLoading, error, getAccessTokenSilently, isAuthenticated } = useAuth0();
@@ -10,6 +10,8 @@ function App() {
   useEffect(() => {
     if (isAuthenticated) {
       setTokenGetter(getAccessTokenSilently);
+    } else {
+      clearTokenCache();
     }
   }, [isAuthenticated, getAccessTokenSilently]);
 
