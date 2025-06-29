@@ -3,9 +3,12 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { AuthButtons } from "./AuthButtons";
 import { Link } from "react-router-dom";
 import { useUserRoles } from '../hooks/useUserRoles';
+import { useAuth0 } from '@auth0/auth0-react';
+import { NotificationBell } from './notificationBell';
 
 export function NavBar() {
     const { isAdmin } = useUserRoles();
+    const { isAuthenticated } = useAuth0();
 
     return (
         <nav className="navbar navbar-expand-lg navbar-light" style={{
@@ -162,9 +165,16 @@ export function NavBar() {
                             </li>
                         )}
 
+
                         <li className="nav-item">
                             <AuthButtons />
                         </li>
+                        
+                        {isAuthenticated && (
+                            <li className="nav-item d-flex align-items-center">
+                                <NotificationBell />
+                            </li>
+                        )}
                     </ul>
                 </div>
             </div>

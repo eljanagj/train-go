@@ -12,6 +12,7 @@ import { PdfModule } from '../pdf/pdf.module';
 import { TicketModule } from '../ticket/ticket.module';
 import { AuthzModule } from '../authz/authz.module';
 import { DiscountCodeModule } from '../discountCode/discount.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { DiscountCodeModule } from '../discountCode/discount.module';
     TicketModule,
     AuthzModule,
     DiscountCodeModule,
+    NotificationsModule,
   ],
   controllers: [ReservationController],
   providers: [ReservationService],

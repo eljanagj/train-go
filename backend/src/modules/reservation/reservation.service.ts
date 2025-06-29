@@ -12,6 +12,7 @@ import { Payment, PaymentStatus } from '../payment/entities/payment.entity';
 import { TicketService } from '../ticket/ticket.service';
 import { CancelReservationDto } from './dto/cancel-reservation.dto';
 import { Logger } from '@nestjs/common';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // Simplified interface - Reservation entity now directly includes seats relation
 export interface ReservationWithSeat extends Reservation {
@@ -30,6 +31,7 @@ export class ReservationService {
     private seatsService: SeatsService,
     private paymentService: PaymentService,
     private ticketService: TicketService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(createReservationDto: CreateReservationDto, userId: string): Promise<ReservationWithSeat> {
@@ -137,6 +139,18 @@ export class ReservationService {
         ...savedReservation,
         clientSecret: payment.paymentIntentId ? `${payment.paymentIntentId}_secret_placeholder` : undefined
       };
+
+      // Send notifications to admins and user 
+      await this.notificationsService.sendNotification(
+        `New reservation created for ${createReservationDto.passengerName} ${createReservationDto.passengerSurname}`,
+        'Admin'
+      );
+
+      await this.notificationsService.sendNotification(
+        `Your trip has been reserved successfully!`,
+        'User',
+        userId
+      );
 
       return result;
 
@@ -298,7 +312,7 @@ export class ReservationService {
     // Load seats relation
     const reservation = await this.findOne(id);
 
-    if (reservation.status !== ReservationStatus.PENDING && reservation.status !== ReservationStatus.PAYMENT_PENDING) { // Allow confirming from PAYMENT_PENDING too
+    if (reservation.status !== ReservationStatus.PENDING && reservation.status !== ReservationStatus.PAYMENT_PENDING) {
       throw new BadRequestException('Only pending or payment_pending reservations can be confirmed');
     }
 
@@ -308,22 +322,20 @@ export class ReservationService {
 
     // Automatically create ticket when payment is confirmed (if not already created)
     if (confirmedReservation.payment?.status === PaymentStatus.COMPLETED) {
-        try {
-          // Check if ticket already exists to avoid duplicates
-          const existingTicket = await this.ticketService.findByReservationId(confirmedReservation.id);
-          if (!existingTicket) {
-            // Use confirmedReservation.id
-            const ticket = await this.ticketService.createTicket(confirmedReservation.id);
-             console.log('Ticket created automatically:', {
-               ticketId: ticket.id,
-               ticketNumber: ticket.ticketNumber,
-               reservationId: confirmedReservation.id
-             });
-          }
-        } catch (error) {
-          console.error('Error creating ticket after payment confirmation:', error);
-          // Don't fail the payment confirmation if ticket creation fails
+      try {
+        // Check if ticket already exists to avoid duplicates
+        const existingTicket = await this.ticketService.findByReservationId(confirmedReservation.id);
+        if (!existingTicket) {
+          const ticket = await this.ticketService.createTicket(confirmedReservation.id);
+          console.log('Ticket created automatically:', {
+            ticketId: ticket.id,
+            ticketNumber: ticket.ticketNumber,
+            reservationId: confirmedReservation.id
+          });
         }
+      } catch (error) {
+        console.error('Error creating ticket after payment confirmation:', error);
+      }
     }
 
     // Re-fetch to ensure relations are loaded for the return type
