@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 export interface ReviewWithUser {
   id: string;
@@ -26,6 +27,7 @@ export class ReviewService {
   constructor(
     @InjectRepository(Review)
     private reviewRepository: Repository<Review>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(createReviewDto: CreateReviewDto, userId: string): Promise<ReviewWithUser> {
@@ -36,6 +38,20 @@ export class ReviewService {
     });
 
     const savedReview = await this.reviewRepository.save(review);
+
+    // Send notification to admins
+    await this.notificationsService.sendNotification(
+      `${createReviewDto.rating} star review submitted: ${createReviewDto.title}`,
+      'Admin'
+    );
+
+    // Send confirmation to user
+    await this.notificationsService.sendNotification(
+      'Your review has been submitted successfully!',
+      'User',
+      userId
+    );
+
     return this.findOne(savedReview.id);
   }
 

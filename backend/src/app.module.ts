@@ -19,6 +19,7 @@ import { ReviewModule } from './modules/review/review.module';
 import { CancellationModule } from './modules/cancellations/cancellation.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { TermsConditionModule } from './modules/terms-and-conditions/terms-condition.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { TermsConditionModule } from './modules/terms-and-conditions/terms-condi
     CancellationModule,
     FaqModule,
     TermsConditionModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
