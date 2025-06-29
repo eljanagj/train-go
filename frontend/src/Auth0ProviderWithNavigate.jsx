@@ -26,10 +26,12 @@ export const Auth0ProviderWithNavigate = ({ children }) => {
     <Auth0Provider
       domain={domain}
       clientId={clientId}
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
       authorizationParams={{
         redirect_uri: redirectUri,
         audience: "http://traingo.ks",
-        scope: "openid profile email"
+        scope: "openid profile email",
       }}
       onRedirectCallback={onRedirectCallback}
     >
