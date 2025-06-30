@@ -20,6 +20,7 @@ import { CancellationModule } from './modules/cancellations/cancellation.module'
 import { FaqModule } from './modules/faq/faq.module';
 import { TermsConditionModule } from './modules/terms-and-conditions/terms-condition.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { StationModule } from './modules/station/station.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     AuthzModule,
     RouteModule,
     TrainModule,
+    StationModule,
     ScheduleModule,
     RedisModule,
     SeatsModule,

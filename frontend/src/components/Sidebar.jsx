@@ -1,8 +1,26 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { FaTrain, FaRoute, FaClock, FaCalendar, FaCreditCard, FaTicketAlt, FaTools, FaBars, FaTimes, FaHome, FaStar, FaPercent, FaBan, FaQuestionCircle, FaFileAlt, FaUsers } from 'react-icons/fa';
-import '../styles/Sidebar.css';
-import { useUserRoles } from '../hooks/useUserRoles';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  FaTrain,
+  FaMapMarkerAlt,
+  FaRoute,
+  FaClock,
+  FaCalendar,
+  FaCreditCard,
+  FaTicketAlt,
+  FaTools,
+  FaBars,
+  FaTimes,
+  FaHome,
+  FaStar,
+  FaPercent,
+  FaBan,
+  FaQuestionCircle,
+  FaFileAlt,
+  FaUsers,
+} from "react-icons/fa";
+import "../styles/Sidebar.css";
+import { useUserRoles } from "../hooks/useUserRoles";
 
 const Sidebar = () => {
   const location = useLocation();
@@ -14,13 +32,13 @@ const Sidebar = () => {
   };
 
   if (isLoading) return <div className="sidebar-loading">Loading...</div>;
-  
+
   if (!isAdmin()) {
     return <div className="sidebar-error">Access Denied</div>;
   }
 
   return (
-    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
       <div className="sidebar-header">
         <div className="sidebar-title">
           {!isCollapsed && (
@@ -32,10 +50,10 @@ const Sidebar = () => {
             </>
           )}
         </div>
-        <button 
+        <button
           className="sidebar-toggle"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? <FaBars /> : <FaTimes />}
         </button>
@@ -43,15 +61,29 @@ const Sidebar = () => {
       <nav className="sidebar-nav">
         <Link
           to="/admin/trains"
-          className={`sidebar-link ${isActive('/admin/trains') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/trains") ? "active" : ""
+          }`}
           title="Train Management"
         >
           <FaTrain />
           {!isCollapsed && <span>Train Management</span>}
         </Link>
         <Link
+          to="/admin/stations"
+          className={`sidebar-link ${
+            isActive("/admin/stations") ? "active" : ""
+          }`}
+          title="Station Management"
+        >
+          <FaMapMarkerAlt />
+          {!isCollapsed && <span>Station Management</span>}
+        </Link>
+        <Link
           to="/admin/routes"
-          className={`sidebar-link ${isActive('/admin/routes') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/routes") ? "active" : ""
+          }`}
           title="Route Management"
         >
           <FaRoute />
@@ -59,7 +91,9 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/schedules"
-          className={`sidebar-link ${isActive('/admin/schedules') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/schedules") ? "active" : ""
+          }`}
           title="Schedule Management"
         >
           <FaClock />
@@ -67,7 +101,9 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/reservations"
-          className={`sidebar-link ${isActive('/admin/reservations') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/reservations") ? "active" : ""
+          }`}
           title="Reservation Management"
         >
           <FaCalendar />
@@ -75,7 +111,9 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/payments"
-          className={`sidebar-link ${isActive('/admin/payments') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/payments") ? "active" : ""
+          }`}
           title="Payment Management"
         >
           <FaCreditCard />
@@ -83,7 +121,9 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/tickets"
-          className={`sidebar-link ${isActive('/admin/tickets') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/tickets") ? "active" : ""
+          }`}
           title="Ticket Management"
         >
           <FaTicketAlt />
@@ -91,7 +131,7 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/users"
-          className={`sidebar-link ${isActive('/admin/users') ? 'active' : ''}`}
+          className={`sidebar-link ${isActive("/admin/users") ? "active" : ""}`}
           title="User Management"
         >
           <FaUsers />
@@ -99,7 +139,9 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/reviews"
-          className={`sidebar-link ${isActive('/admin/reviews') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/reviews") ? "active" : ""
+          }`}
           title="Review Management"
         >
           <FaStar />
@@ -107,7 +149,9 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/maintenance"
-          className={`sidebar-link ${isActive('/admin/maintenance') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/maintenance") ? "active" : ""
+          }`}
           title="Maintenance Management"
         >
           <FaTools />
@@ -115,7 +159,9 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/discount-codes"
-          className={`sidebar-link ${isActive('/admin/discount-codes') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/discount-codes") ? "active" : ""
+          }`}
           title="Discount Code Management"
         >
           <FaPercent />
@@ -123,7 +169,9 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/cancellations"
-          className={`sidebar-link ${isActive('/admin/cancellations') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/cancellations") ? "active" : ""
+          }`}
           title="Cancellation Management"
         >
           <FaBan />
@@ -131,7 +179,7 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/faqs"
-          className={`sidebar-link ${isActive('/admin/faqs') ? 'active' : ''}`}
+          className={`sidebar-link ${isActive("/admin/faqs") ? "active" : ""}`}
           title="FAQ Management"
         >
           <FaQuestionCircle />
@@ -139,17 +187,23 @@ const Sidebar = () => {
         </Link>
         <Link
           to="/admin/terms-conditions"
-          className={`sidebar-link ${isActive('/admin/terms-conditions') ? 'active' : ''}`}
+          className={`sidebar-link ${
+            isActive("/admin/terms-conditions") ? "active" : ""
+          }`}
           title="Terms & Conditions Management"
         >
           <FaFileAlt />
           {!isCollapsed && <span>Terms & Conditions</span>}
         </Link>
       </nav>
-      
+
       {isCollapsed && (
         <div className="sidebar-bottom">
-          <Link to="/" className="back-to-main-collapsed" title="Back to Main App">
+          <Link
+            to="/"
+            className="back-to-main-collapsed"
+            title="Back to Main App"
+          >
             <FaHome />
           </Link>
         </div>
