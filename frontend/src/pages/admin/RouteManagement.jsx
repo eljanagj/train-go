@@ -4,6 +4,7 @@ import { PageLoader } from "../../components/PageLoader";
 import Sidebar from "../../components/Sidebar";
 import { routeService } from "../../services/routeService";
 import { trainService } from "../../services/trainService";
+import { stationService } from "../../services/stationService";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import {
   FaRoute,
@@ -19,9 +20,10 @@ import SearchBar from "../../components/SearchBar";
 const RouteManagement = ({ theme, toggleTheme }) => {
   const [routes, setRoutes] = useState([]);
   const [trains, setTrains] = useState([]);
+  const [stations, setStations] = useState([]);
   const [newRoute, setNewRoute] = useState({
-    departureStation: "",
-    arrivalStation: "",
+    departureStationId: "",
+    arrivalStationId: "",
     price: "",
     trainID: "",
   });
@@ -38,7 +40,17 @@ const RouteManagement = ({ theme, toggleTheme }) => {
   useEffect(() => {
     fetchRoutes();
     fetchTrains();
+    fetchStations();
   }, []);
+
+  const fetchStations = async () => {
+    try {
+      const data = await stationService.getAllStations();
+      setStations(data);
+    } catch (error) {
+      console.error("Error fetching stations:", error);
+    }
+  };
 
   const fetchTrains = async () => {
     try {
@@ -61,12 +73,12 @@ const RouteManagement = ({ theme, toggleTheme }) => {
   const validateForm = () => {
     const errors = {};
 
-    if (!newRoute.departureStation.trim()) {
-      errors.departureStation = "Departure station is required";
+    if (!newRoute.departureStationId) {
+      errors.departureStationId = "Departure station is required";
     }
 
-    if (!newRoute.arrivalStation.trim()) {
-      errors.arrivalStation = "Arrival station is required";
+    if (!newRoute.arrivalStationId) {
+      errors.arrivalStationId = "Arrival station is required";
     }
 
     if (!newRoute.price || parseFloat(newRoute.price) <= 0) {
@@ -88,16 +100,16 @@ const RouteManagement = ({ theme, toggleTheme }) => {
 
     try {
       const routeData = {
-        departureStation: newRoute.departureStation,
-        arrivalStation: newRoute.arrivalStation,
+        departureStationId: parseInt(newRoute.departureStationId),
+        arrivalStationId: parseInt(newRoute.arrivalStationId),
         price: parseFloat(newRoute.price),
         trainID: parseInt(newRoute.trainID),
       };
       await routeService.createRoute(routeData);
       fetchRoutes();
       setNewRoute({
-        departureStation: "",
-        arrivalStation: "",
+        departureStationId: "",
+        arrivalStationId: "",
         price: "",
         trainID: "",
       });
@@ -119,8 +131,11 @@ const RouteManagement = ({ theme, toggleTheme }) => {
         createdAt,
         updatedAt,
         schedules,
+        departureStation,
+        arrivalStation,
         ...updateData
       } = editingRoute;
+
       const selectedTrain = trains.find(
         (train) => train.trainID === parseInt(updateData.trainID)
       );
@@ -129,8 +144,8 @@ const RouteManagement = ({ theme, toggleTheme }) => {
       }
 
       const finalUpdateData = {
-        departureStation: updateData.departureStation,
-        arrivalStation: updateData.arrivalStation,
+        departureStationId: updateData.departureStationId,
+        arrivalStationId: updateData.arrivalStationId,
         price: parseFloat(updateData.price),
         trainID: parseInt(updateData.trainID),
       };
@@ -143,7 +158,13 @@ const RouteManagement = ({ theme, toggleTheme }) => {
   };
 
   const handleDeleteClick = (route) => {
-    const routeName = `${route.departureStation} - ${route.arrivalStation}`;
+    const departureStation =
+      stations.find((s) => s.stationID === route.departureStation?.stationID)
+        ?.name || "Unknown";
+    const arrivalStation =
+      stations.find((s) => s.stationID === route.arrivalStation?.stationID)
+        ?.name || "Unknown";
+    const routeName = `${departureStation} - ${arrivalStation}`;
     setDeleteModal({
       isOpen: true,
       routeId: route.id,
@@ -181,7 +202,9 @@ const RouteManagement = ({ theme, toggleTheme }) => {
   const startEditing = (route) => {
     setEditingRoute({
       ...route,
-      trainID: route.trainID || "", // Set to empty string if null/undefined
+      departureStationId: route.departureStation?.stationID || "",
+      arrivalStationId: route.arrivalStation?.stationID || "",
+      trainID: route.trainID || "",
     });
   };
 
@@ -200,16 +223,23 @@ const RouteManagement = ({ theme, toggleTheme }) => {
     return train || { trainName: "Unknown", totalCapacity: "N/A" };
   };
 
+  const getStationName = (station) => {
+    if (!station) return "Unknown";
+    return station.name || "Unknown";
+  };
+
   const handleSearch = (term) => {
     setSearchTerm(term);
   };
 
   const filteredRoutes = routes.filter(
     (route) =>
-      route.departureStation
-        ?.toLowerCase()
+      getStationName(route.departureStation)
+        .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      route.arrivalStation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getStationName(route.arrivalStation)
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       getTrainInfo(route.trainID)
         ?.trainName?.toLowerCase()
         .includes(searchTerm.toLowerCase())
@@ -232,38 +262,51 @@ const RouteManagement = ({ theme, toggleTheme }) => {
             <div className="form-grid">
               <div className="form-group">
                 <label className="form-label">Departure Station *</label>
-                <input
-                  type="text"
-                  placeholder="Enter departure station"
-                  value={newRoute.departureStation}
+                <select
+                  value={newRoute.departureStationId}
                   onChange={(e) =>
                     setNewRoute({
                       ...newRoute,
-                      departureStation: e.target.value,
+                      departureStationId: e.target.value,
                     })
                   }
-                  className={formErrors.departureStation ? "error" : ""}
-                />
-                {formErrors.departureStation && (
+                  className={formErrors.departureStationId ? "error" : ""}
+                >
+                  <option value="">Select departure station</option>
+                  {stations.map((station) => (
+                    <option key={station.stationID} value={station.stationID}>
+                      {station.name}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.departureStationId && (
                   <span className="error-message">
-                    {formErrors.departureStation}
+                    {formErrors.departureStationId}
                   </span>
                 )}
               </div>
               <div className="form-group">
                 <label className="form-label">Arrival Station *</label>
-                <input
-                  type="text"
-                  placeholder="Enter arrival station"
-                  value={newRoute.arrivalStation}
+                <select
+                  value={newRoute.arrivalStationId}
                   onChange={(e) =>
-                    setNewRoute({ ...newRoute, arrivalStation: e.target.value })
+                    setNewRoute({
+                      ...newRoute,
+                      arrivalStationId: e.target.value,
+                    })
                   }
-                  className={formErrors.arrivalStation ? "error" : ""}
-                />
-                {formErrors.arrivalStation && (
+                  className={formErrors.arrivalStationId ? "error" : ""}
+                >
+                  <option value="">Select arrival station</option>
+                  {stations.map((station) => (
+                    <option key={station.stationID} value={station.stationID}>
+                      {station.name}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.arrivalStationId && (
                   <span className="error-message">
-                    {formErrors.arrivalStation}
+                    {formErrors.arrivalStationId}
                   </span>
                 )}
               </div>
@@ -309,8 +352,8 @@ const RouteManagement = ({ theme, toggleTheme }) => {
                   className="add-button"
                   onClick={createRoute}
                   disabled={
-                    !newRoute.departureStation.trim() ||
-                    !newRoute.arrivalStation.trim() ||
+                    !newRoute.departureStationId ||
+                    !newRoute.arrivalStationId ||
                     !newRoute.price ||
                     !newRoute.trainID
                   }
@@ -351,28 +394,44 @@ const RouteManagement = ({ theme, toggleTheme }) => {
                     {editingRoute && editingRoute.id === route.id ? (
                       <>
                         <td>
-                          <input
-                            type="text"
-                            value={editingRoute.departureStation}
+                          <select
+                            value={editingRoute.departureStationId}
                             onChange={(e) =>
                               setEditingRoute({
                                 ...editingRoute,
-                                departureStation: e.target.value,
+                                departureStationId: e.target.value,
                               })
                             }
-                          />
+                          >
+                            {stations.map((station) => (
+                              <option
+                                key={station.stationID}
+                                value={station.stationID}
+                              >
+                                {station.name}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td>
-                          <input
-                            type="text"
-                            value={editingRoute.arrivalStation}
+                          <select
+                            value={editingRoute.arrivalStationId}
                             onChange={(e) =>
                               setEditingRoute({
                                 ...editingRoute,
-                                arrivalStation: e.target.value,
+                                arrivalStationId: e.target.value,
                               })
                             }
-                          />
+                          >
+                            {stations.map((station) => (
+                              <option
+                                key={station.stationID}
+                                value={station.stationID}
+                              >
+                                {station.name}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td>
                           <input
@@ -397,7 +456,6 @@ const RouteManagement = ({ theme, toggleTheme }) => {
                               })
                             }
                           >
-                            <option value="">Select a train</option>
                             {trains.map((train) => (
                               <option key={train.trainID} value={train.trainID}>
                                 {train.trainName}
@@ -406,47 +464,47 @@ const RouteManagement = ({ theme, toggleTheme }) => {
                           </select>
                         </td>
                         <td>
-                          {trains.find(
-                            (t) => t.trainID === parseInt(editingRoute.trainID)
-                          )?.totalCapacity || "N/A"}
+                          {getTrainInfo(editingRoute.trainID).totalCapacity}
                         </td>
-                        <td className="action-buttons">
-                          <button
-                            className="save-button"
-                            onClick={() => updateRoute(route.id)}
-                          >
-                            <FaEdit /> Save
-                          </button>
-                          <button
-                            className="cancel-button"
-                            onClick={cancelEditing}
-                          >
-                            <FaTrash /> Cancel
-                          </button>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              className="save-button"
+                              onClick={() => updateRoute(route.id)}
+                            >
+                              <FaEdit /> Save
+                            </button>
+                            <button
+                              className="cancel-button"
+                              onClick={cancelEditing}
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </td>
                       </>
                     ) : (
                       <>
-                        <td>{route.departureStation}</td>
-                        <td>{route.arrivalStation}</td>
-                        <td>
-                          <FaEuroSign /> {parseFloat(route.price).toFixed(2)}
-                        </td>
+                        <td>{getStationName(route.departureStation)}</td>
+                        <td>{getStationName(route.arrivalStation)}</td>
+                        <td>€{route.price}</td>
                         <td>{getTrainInfo(route.trainID).trainName}</td>
                         <td>{getTrainInfo(route.trainID).totalCapacity}</td>
-                        <td className="action-buttons">
-                          <button
-                            className="edit-button"
-                            onClick={() => startEditing(route)}
-                          >
-                            <FaEdit /> Edit
-                          </button>
-                          <button
-                            className="delete-button"
-                            onClick={() => handleDeleteClick(route)}
-                          >
-                            <FaTrash /> Delete
-                          </button>
+                        <td>
+                          <div className="action-buttons">
+                            <button
+                              className="edit-button"
+                              onClick={() => startEditing(route)}
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              className="delete-button"
+                              onClick={() => handleDeleteClick(route)}
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
                         </td>
                       </>
                     )}
@@ -460,11 +518,10 @@ const RouteManagement = ({ theme, toggleTheme }) => {
 
       <DeleteConfirmationModal
         isOpen={deleteModal.isOpen}
-        onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
         title="Delete Route"
-        message="Are you sure you want to delete this route?"
-        itemName={deleteModal.routeName}
+        message={`Are you sure you want to delete the route "${deleteModal.routeName}"?`}
         isLoading={deleteModal.isLoading}
       />
     </div>

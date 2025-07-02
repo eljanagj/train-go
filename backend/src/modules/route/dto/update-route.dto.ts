@@ -1,13 +1,13 @@
-import { IsOptional, IsString, IsNumber, Min } from 'class-validator';
+import { IsOptional, IsNumber, Min } from 'class-validator';
 
 export class UpdateRouteDto {
   @IsOptional()
-  @IsString()
-  readonly departureStation?: string;
+  @IsNumber()
+  readonly departureStationId?: number;
 
   @IsOptional()
-  @IsString()
-  readonly arrivalStation?: string;
+  @IsNumber()
+  readonly arrivalStationId?: number;
 
   @IsOptional()
   @IsNumber()

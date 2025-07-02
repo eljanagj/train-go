@@ -7,8 +7,8 @@ import { Link } from "react-router-dom";
 import { FaTrain, FaClock } from "react-icons/fa";
 import { useAuth0 } from "@auth0/auth0-react";
 import { PageLoader } from "../components/PageLoader";
-import { routeService } from '../services/routeService';
-import { scheduleService } from '../services/scheduleService';
+import { routeService } from "../services/routeService";
+import { scheduleService } from "../services/scheduleService";
 
 function TrainSearchPage() {
   const [from, setFrom] = useState("");
@@ -16,7 +16,7 @@ function TrainSearchPage() {
   const [travelDate, setTravelDate] = useState(() => {
     const today = new Date();
     today.setDate(today.getDate());
-    return today.toISOString().split('T')[0];
+    return today.toISOString().split("T")[0];
   });
   const [fromOptions, setFromOptions] = useState([]);
   const [toOptions, setToOptions] = useState([]);
@@ -33,15 +33,15 @@ function TrainSearchPage() {
 
   React.useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.dropdown-container')) {
+      if (!event.target.closest(".dropdown-container")) {
         setShowFromDropdown(false);
         setShowToDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -50,10 +50,12 @@ function TrainSearchPage() {
       const data = await routeService.getAllRoutes();
       setAllRoutes(data);
 
-      const uniqueFromStations = [...new Set(data.map(route => route.departureStation))];
+      const uniqueFromStations = [
+        ...new Set(data.map((route) => route.departureStation?.name)),
+      ];
       setFromOptions(uniqueFromStations.sort());
     } catch (error) {
-      console.error('Error fetching routes:', error);
+      console.error("Error fetching routes:", error);
     }
   };
 
@@ -64,8 +66,8 @@ function TrainSearchPage() {
 
     // Filter routes that depart from selected station and get unique destinations
     const availableDestinations = allRoutes
-      .filter(route => route.departureStation === station)
-      .map(route => route.arrivalStation);
+      .filter((route) => route.departureStation?.name === station)
+      .map((route) => route.arrivalStation?.name);
 
     const uniqueDestinations = [...new Set(availableDestinations)];
     setToOptions(uniqueDestinations.sort());
@@ -82,8 +84,10 @@ function TrainSearchPage() {
     setResults([]);
     try {
       // Filter routes locally instead of making a search API call
-      const routes = allRoutes.filter(route => 
-        route.departureStation === from && route.arrivalStation === to
+      const routes = allRoutes.filter(
+        (route) =>
+          route.departureStation?.name === from &&
+          route.arrivalStation?.name === to
       );
 
       if (routes.length === 0) {
@@ -96,10 +100,10 @@ function TrainSearchPage() {
           const schedules = await scheduleService.getSchedulesByRoute(route.id);
 
           // Store the travel date with each schedule for reservation purposes
-          return schedules.map(schedule => ({
+          return schedules.map((schedule) => ({
             ...schedule,
             route: route,
-            travelDate: new Date(travelDate).toISOString() // Ensure proper date format
+            travelDate: new Date(travelDate).toISOString(), // Ensure proper date format
           }));
         } catch (err) {
           console.error(`Error fetching schedules for route ${route.id}:`, err);
@@ -122,15 +126,23 @@ function TrainSearchPage() {
   };
 
   const formatTime = (timeString) => {
-    if (!timeString || typeof timeString !== 'string' || !timeString.match(/^\d{2}:\d{2}$/)) {
-      return 'Invalid Time';
+    if (
+      !timeString ||
+      typeof timeString !== "string" ||
+      !timeString.match(/^\d{2}:\d{2}$/)
+    ) {
+      return "Invalid Time";
     }
-    const [hours, minutes] = timeString.split(':');
+    const [hours, minutes] = timeString.split(":");
     const date = new Date(); // Use a dummy date to leverage toLocaleTimeString
     date.setHours(parseInt(hours, 10));
     date.setMinutes(parseInt(minutes, 10));
     date.setSeconds(0);
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
 
   return (
@@ -140,7 +152,9 @@ function TrainSearchPage() {
       <header className="search-header text-center">
         <div className="search-container">
           <h1 className="search-title display-4 mb-3">Plan Your Journey</h1>
-          <p className="lead text-light">Discover Your Next Adventure by Rail</p>
+          <p className="lead text-light">
+            Discover Your Next Adventure by Rail
+          </p>
 
           <div className="container mt-5">
             <div className="row g-3 justify-content-center">
@@ -154,7 +168,7 @@ function TrainSearchPage() {
                       setShowFromDropdown(!showFromDropdown);
                       setShowToDropdown(false);
                     }}
-                    onChange={e => setFrom(e.target.value)}
+                    onChange={(e) => setFrom(e.target.value)}
                     readOnly
                   />
                   {showFromDropdown && (
@@ -184,7 +198,7 @@ function TrainSearchPage() {
                         setShowFromDropdown(false);
                       }
                     }}
-                    onChange={e => setTo(e.target.value)}
+                    onChange={(e) => setTo(e.target.value)}
                     readOnly
                     disabled={!from}
                   />
@@ -209,7 +223,7 @@ function TrainSearchPage() {
                   className="form-control"
                   value={travelDate}
                   onChange={(e) => setTravelDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={new Date().toISOString().split("T")[0]}
                 />
               </div>
               <div className="col-md-3 d-grid">
@@ -252,9 +266,13 @@ function TrainSearchPage() {
                       <tr key={schedule.id}>
                         <td>
                           <div className="route-info">
-                            <strong>{schedule.route.departureStation}</strong>
+                            <strong>
+                              {schedule.route.departureStation?.name}
+                            </strong>
                             <span className="text-muted mx-2">→</span>
-                            <strong>{schedule.route.arrivalStation}</strong>
+                            <strong>
+                              {schedule.route.arrivalStation?.name}
+                            </strong>
                           </div>
                         </td>
                         <td>
@@ -270,18 +288,30 @@ function TrainSearchPage() {
                         <td>
                           <div className="train-info">
                             <div>
-                              <div className="fw-bold">{schedule.train.trainName}</div>
-                              <small className="text-muted">{schedule.train.trainNumber}</small>
+                              <div className="fw-bold">
+                                {schedule.train.trainName}
+                              </div>
+                              <small className="text-muted">
+                                {schedule.train.trainNumber}
+                              </small>
                             </div>
                           </div>
                         </td>
                         <td>
-                          <span className={`badge ${(schedule.train.availableSeats || 0) > 0 ? 'bg-success' : 'bg-danger'}`}>
+                          <span
+                            className={`badge ${
+                              (schedule.train.availableSeats || 0) > 0
+                                ? "bg-success"
+                                : "bg-danger"
+                            }`}
+                          >
                             {schedule.train.availableSeats || 0}
                           </span>
                         </td>
                         <td>
-                          <span className="fw-bold text-primary">€{schedule.route.price}</span>
+                          <span className="fw-bold text-primary">
+                            €{schedule.route.price}
+                          </span>
                         </td>
                         <td>
                           {(schedule.train.availableSeats || 0) > 0 ? (
@@ -309,11 +339,16 @@ function TrainSearchPage() {
             </div>
           )}
 
-          {results.length === 0 && from && to && travelDate && !loading && !error && (
-            <div className="text-center text-muted mt-4">
-              <p>No trains found for the selected route and date.</p>
-            </div>
-          )}
+          {results.length === 0 &&
+            from &&
+            to &&
+            travelDate &&
+            !loading &&
+            !error && (
+              <div className="text-center text-muted mt-4">
+                <p>No trains found for the selected route and date.</p>
+              </div>
+            )}
         </div>
       </section>
 
