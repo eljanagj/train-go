@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Station } from './entities/station.entity';
+import { Route } from '../route/route.entity';
 import { CreateStationDto } from './dto/create-station.dto';
 import { UpdateStationDto } from './dto/update-station.dto';
 
@@ -12,6 +18,8 @@ export class StationService {
   constructor(
     @InjectRepository(Station)
     private readonly stationRepo: Repository<Station>,
+    @InjectRepository(Route)
+    private readonly routeRepo: Repository<Route>,
   ) {}
 
   async create(dto: CreateStationDto): Promise<Station> {
@@ -49,8 +57,28 @@ export class StationService {
   async remove(id: number): Promise<void> {
     const station = await this.findOne(id);
 
-    // For now, allow deletion of any station
-    // In the future, you can add route checking logic here
+    // Check if station is being used by any routes
+    const routesUsingStation = await this.routeRepo.find({
+      where: [
+        { departureStation: { stationID: id } },
+        { arrivalStation: { stationID: id } },
+      ],
+      relations: ['departureStation', 'arrivalStation'],
+    });
+
+    if (routesUsingStation.length > 0) {
+      const routeDetails = routesUsingStation
+        .map(
+          (route) =>
+            `${route.departureStation?.name} → ${route.arrivalStation?.name}`,
+        )
+        .join(', ');
+
+      throw new BadRequestException(
+        `Cannot delete station "${station.name}" because it is being used by the following routes: ${routeDetails}. Please delete or update these routes first.`,
+      );
+    }
+
     const result = await this.stationRepo.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Station with ID ${id} not found`);
