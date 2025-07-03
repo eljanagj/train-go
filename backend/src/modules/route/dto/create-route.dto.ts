@@ -1,13 +1,13 @@
-import { IsNotEmpty, IsNumber, Min } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, Min } from 'class-validator';
 
 export class CreateRouteDto {
   @IsNotEmpty()
-  @IsNumber()
-  readonly departureStationId: number;
+  @IsString()
+  readonly departureStation: string;
 
   @IsNotEmpty()
-  @IsNumber()
-  readonly arrivalStationId: number;
+  @IsString()
+  readonly arrivalStation: string;
 
   @IsNotEmpty()
   @IsNumber()

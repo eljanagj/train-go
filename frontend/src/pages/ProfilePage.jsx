@@ -5,24 +5,7 @@ import { NavBar } from "../components/NavBar";
 import { Footer } from "../components/Footer";
 import "../styles/Profile.css";
 import { PageLoader } from "../components/PageLoader";
-import {
-  FaCalendarAlt,
-  FaTrain,
-  FaMapMarkerAlt,
-  FaClock,
-  FaEuroSign,
-  FaChair,
-  FaDownload,
-  FaEye,
-  FaTimes,
-  FaCreditCard,
-  FaSync,
-  FaStar,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaBan,
-} from "react-icons/fa";
+import { FaCalendarAlt, FaTrain, FaMapMarkerAlt, FaClock, FaEuroSign, FaChair, FaDownload, FaEye, FaTimes, FaCreditCard, FaSync, FaStar, FaPlus, FaEdit, FaTrash, FaBan } from "react-icons/fa";
 import { reservationService } from "../services/reservationService";
 import { ticketService } from "../services/ticketService";
 import { reviewService } from "../services/reviewService";
@@ -31,21 +14,14 @@ import ReviewForm from "../components/ReviewForm";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import StarRating from "../components/StarRating";
 import DiscountCodeCard from "../components/DiscountCodeCard";
-import { paymentService } from "../services/paymentService";
-import api from "../services/api";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-} from "@mui/material";
+import { paymentService } from '../services/paymentService';
+import api from '../services/api';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
 
 const ProfileComponent = ({ theme, toggleTheme }) => {
   const { user, isAuthenticated, isLoading } = useAuth0();
   const navigate = useNavigate();
-
+  
   const [nickname, setNickname] = useState("");
   const [editing, setEditing] = useState(false);
   const [reservations, setReservations] = useState([]);
@@ -59,6 +35,8 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const [discountCode, setDiscountCode] = useState(null);
   const [discountEligibility, setDiscountEligibility] = useState(null);
   const [discountLoading, setDiscountLoading] = useState(false);
+
+
 
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -74,7 +52,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [selectedReservationId, setSelectedReservationId] = useState(null);
-  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancellationReason, setCancellationReason] = useState('');
 
   // Update nickname when user becomes available
   useEffect(() => {
@@ -106,12 +84,12 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
       }
     };
 
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
@@ -123,11 +101,14 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
       setReservations(data);
     } catch (err) {
       setError("Failed to load reservations");
-      console.error("Error fetching reservations:", err);
+      console.error('Error fetching reservations:', err);
     } finally {
       setLoading(false);
     }
   };
+
+
+
 
   const fetchReviews = async () => {
     try {
@@ -137,7 +118,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
       setReviews(data);
     } catch (err) {
       setReviewsError("Failed to load reviews");
-      console.error("Error fetching reviews:", err);
+      console.error('Error fetching reviews:', err);
     } finally {
       setReviewsLoading(false);
     }
@@ -145,32 +126,30 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
 
   const fetchDiscountCode = async () => {
     if (!user?.sub) return;
-
+    
     try {
       setDiscountLoading(true);
       const [userCode, eligibility] = await Promise.all([
         discountService.getUserDiscountCode(user.sub),
-        discountService.getUserEligibility(user.sub),
+        discountService.getUserEligibility(user.sub)
       ]);
-
+      
       // If user is eligible but doesn't have a code, automatically generate one
       if (!userCode && eligibility.isEligible) {
         try {
-          const newCode = await discountService.checkAndUpdateUserDiscount(
-            user.sub
-          );
+          const newCode = await discountService.checkAndUpdateUserDiscount(user.sub);
           setDiscountCode(newCode);
         } catch (err) {
-          console.error("Error generating discount code:", err);
+          console.error('Error generating discount code:', err);
           setDiscountCode(null);
         }
       } else {
         setDiscountCode(userCode);
       }
-
+      
       setDiscountEligibility(eligibility);
     } catch (err) {
-      console.error("Error fetching discount code:", err);
+      console.error('Error fetching discount code:', err);
     } finally {
       setDiscountLoading(false);
     }
@@ -178,7 +157,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
 
   const handleReviewSubmitted = (newReview) => {
     if (editingReview) {
-      setReviews(reviews.map((r) => (r.id === newReview.id ? newReview : r)));
+      setReviews(reviews.map(r => r.id === newReview.id ? newReview : r));
       setEditingReview(null);
     } else {
       setReviews([newReview, ...reviews]);
@@ -193,10 +172,10 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const handleDeleteReview = async () => {
     try {
       await reviewService.deleteReview(deleteReviewId);
-      setReviews(reviews.filter((r) => r.id !== deleteReviewId));
+      setReviews(reviews.filter(r => r.id !== deleteReviewId));
       setDeleteReviewId(null);
     } catch (err) {
-      setReviewsError("Failed to delete review");
+      setReviewsError('Failed to delete review');
     }
   };
 
@@ -213,25 +192,20 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     });
   };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
-      case "confirmed":
-        return "#10b981";
-      case "pending":
-        return "#f59e0b";
-      case "payment_pending":
-        return "#3b82f6";
-      case "cancelled":
-        return "#ef4444";
-      default:
-        return "#64748b";
+      case 'confirmed': return '#10b981';
+      case 'pending': return '#f59e0b';
+      case 'payment_pending': return '#3b82f6';
+      case 'cancelled': return '#ef4444';
+      default: return '#64748b';
     }
   };
 
@@ -253,52 +227,46 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     try {
       setDownloadingPdf(reservationId);
 
-      const reservation = reservations.find((r) => r.id === reservationId);
+      const reservation = reservations.find(r => r.id === reservationId);
       if (!reservation) {
-        throw new Error("Reservation not found");
+        throw new Error('Reservation not found');
       }
       // Use the new ticket service to download the ticket
-      const pdfBlob = await ticketService.downloadTicketByReservation(
-        reservationId
-      );
+      const pdfBlob = await ticketService.downloadTicketByReservation(reservationId);
 
-      const url = window.URL.createObjectURL(
-        new Blob([pdfBlob], { type: "application/pdf" })
-      );
-      const link = document.createElement("a");
+      const url = window.URL.createObjectURL(new Blob([pdfBlob], { type: 'application/pdf' }));
+      const link = document.createElement('a');
       link.href = url;
-      link.setAttribute(
-        "download",
-        `train-ticket-${reservationId.substring(0, 8)}.pdf`
-      );
+      link.setAttribute('download', `train-ticket-${reservationId.substring(0, 8)}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+
     } catch (error) {
-      console.error("Error downloading ticket:", {
+      console.error('Error downloading ticket:', {
         error: error,
         message: error.message,
         response: error.response?.data,
-        status: error.response?.status,
+        status: error.response?.status
       });
 
-      let errorMessage = "Failed to download ticket. ";
+      let errorMessage = 'Failed to download ticket. ';
       if (error.response?.status === 400) {
-        errorMessage += "Passenger information is missing.";
+        errorMessage += 'Passenger information is missing.';
       } else if (error.response?.status === 403) {
-        errorMessage += "Payment must be completed before downloading ticket.";
+        errorMessage += 'Payment must be completed before downloading ticket.';
       } else if (error.response?.status === 404) {
-        errorMessage += "Reservation not found.";
+        errorMessage += 'Reservation not found.';
       } else if (error.response?.status === 500) {
-        errorMessage += "Server error occurred.";
+        errorMessage += 'Server error occurred.';
       } else {
-        errorMessage += "Please try again or contact support.";
+        errorMessage += 'Please try again or contact support.';
       }
 
       setError(errorMessage);
 
-      setTimeout(() => setError(""), 5000);
+      setTimeout(() => setError(''), 5000);
     } finally {
       setDownloadingPdf(null);
     }
@@ -306,7 +274,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
 
   const handleCancelClick = (reservationId) => {
     setSelectedReservationId(reservationId);
-    setCancellationReason("");
+    setCancellationReason('');
     setCancelModalOpen(true);
   };
 
@@ -319,22 +287,22 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
     try {
       setCancellingReservation(selectedReservationId);
       // Create a cancellation request using the configured api instance
-      await api.post("/cancellations", {
+      await api.post('/cancellations', {
         reservationId: selectedReservationId,
-        reason: cancellationReason.trim(),
+        reason: cancellationReason.trim()
       });
-
+      
       // Show success message
       setError("Cancellation request submitted successfully");
       setTimeout(() => setError(""), 3000);
-
+      
       // Close modal and refresh reservations
       setCancelModalOpen(false);
       setSelectedReservationId(null);
-      setCancellationReason("");
+      setCancellationReason('');
       fetchReservations();
     } catch (error) {
-      console.error("Error creating cancellation request:", error);
+      console.error('Error creating cancellation request:', error);
       setError("Failed to submit cancellation request");
       setTimeout(() => setError(""), 3000);
     } finally {
@@ -345,22 +313,22 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
   const handleRefundRequest = async (reservationId) => {
     try {
       setProcessingRefund(reservationId);
-      const reservation = reservations.find((r) => r.id === reservationId);
-
+      const reservation = reservations.find(r => r.id === reservationId);
+      
       if (!reservation.payment) {
-        throw new Error("No payment found for this reservation");
+        throw new Error('No payment found for this reservation');
       }
 
       await paymentService.requestRefund(reservation.payment.id);
-
+      
       // Refresh reservations to show updated status
       await fetchReservations();
-
+      
       setError("Refund request processed successfully");
       setTimeout(() => setError(""), 3000);
     } catch (err) {
-      console.error("Error requesting refund:", err);
-      setCancelError(err.message || "Failed to process refund request");
+      console.error('Error requesting refund:', err);
+      setCancelError(err.message || 'Failed to process refund request');
       setTimeout(() => setCancelError(""), 3000);
     } finally {
       setProcessingRefund(null);
@@ -384,13 +352,16 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
       <div className="profile-page-light">
         <NavBar theme={theme} onToggleTheme={toggleTheme} />
         <div className="profile-container">
-          <div className="alert alert-info">Loading user information...</div>
+          <div className="alert alert-info">
+            Loading user information...
+          </div>
         </div>
         <Footer />
       </div>
     );
   }
 
+  
   return (
     <div className="profile-page-light">
       <NavBar theme={theme} onToggleTheme={toggleTheme} />
@@ -404,15 +375,17 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
             />
           </div>
           <div className="profile-info">
-            <h1 className="profile-name">{nickname}</h1>
+            <h1 className="profile-name">
+              {nickname} 
+            </h1>
             <p className="profile-email">{user.email}</p>
           </div>
         </div>
 
         {/* Discount Code Section */}
         {!discountLoading && (
-          <DiscountCodeCard
-            discountCode={discountCode}
+          <DiscountCodeCard 
+            discountCode={discountCode} 
             eligibility={discountEligibility}
             userId={user?.sub}
             onRefresh={fetchDiscountCode}
@@ -421,14 +394,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
 
         {/* Reservations Section */}
         <section className="reservations-section mt-4">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1rem",
-            }}
-          >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 className="section-title mb-0">Your Reservations</h3>
             <button
               className="refresh-btn"
@@ -436,38 +402,30 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
               disabled={loading}
               title="Refresh reservations"
               style={{
-                background: "none",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                padding: "8px 12px",
-                cursor: loading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                fontSize: "14px",
-                color: "#666",
+                background: 'none',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                padding: '8px 12px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '14px',
+                color: '#666'
               }}
             >
-              <FaSync
-                style={{
-                  transform: loading ? "rotate(360deg)" : "none",
-                  transition: "transform 0.5s",
-                }}
-              />
-              {loading ? "Refreshing..." : "Refresh"}
+              <FaSync style={{ transform: loading ? 'rotate(360deg)' : 'none', transition: 'transform 0.5s' }} />
+              {loading ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
           {error && (
-            <div
-              className="alert alert-danger mb-3"
-              style={{
-                background: "#f8d7da",
-                color: "#721c24",
-                padding: "0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #f5c6cb",
-              }}
-            >
+            <div className="alert alert-danger mb-3" style={{
+              background: '#f8d7da',
+              color: '#721c24',
+              padding: '0.75rem',
+              borderRadius: '0.5rem',
+              border: '1px solid #f5c6cb'
+            }}>
               {error}
             </div>
           )}
@@ -483,8 +441,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                 </div>
                 <h4 className="empty-state-title">No Reservations Yet</h4>
                 <p className="empty-state-description">
-                  You haven't made any train reservations yet. Start planning
-                  your journey today!
+                  You haven't made any train reservations yet. Start planning your journey today!
                 </p>
                 <a href="/search" className="empty-state-button">
                   <FaMapMarkerAlt /> Search Routes
@@ -508,14 +465,15 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                 <tbody>
                   {reservations.map((reservation) => (
                     <tr key={reservation.id} className="reservation-row">
-                      <td className="reservation-id">{reservation.id}</td>
+                      <td className="reservation-id">
+                        {reservation.id}
+                      </td>
                       <td className="reservation-date">
                         {formatDateShort(reservation.travelDate)}
                       </td>
                       <td className="route-info">
                         <span className="route-text">
-                          {reservation.schedule.route.departureStation?.name} →{" "}
-                          {reservation.schedule.route.arrivalStation?.name}
+                          {reservation.schedule.route.departureStation} → {reservation.schedule.route.arrivalStation}
                         </span>
                       </td>
                       <td className="train-name">
@@ -527,11 +485,9 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                       <td className="status">
                         <span
                           className="status-badge"
-                          style={{
-                            backgroundColor: getStatusColor(reservation.status),
-                          }}
+                          style={{ backgroundColor: getStatusColor(reservation.status) }}
                         >
-                          {reservation.status.replace("_", " ")}
+                          {reservation.status.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="actions">
@@ -542,62 +498,43 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                         >
                           <FaEye />
                         </button>
-                        {reservation.status === "payment_pending" ? (
+                        {reservation.status === 'payment_pending' ? (
                           <button
                             className="action-btn payment-btn"
-                            onClick={() =>
-                              handleContinuePayment(reservation.id)
-                            }
+                            onClick={() => handleContinuePayment(reservation.id)}
                             title="Continue Payment"
                           >
                             <FaCreditCard />
                           </button>
-                        ) : reservation.status === "confirmed" ? (
+                        ) : reservation.status === 'confirmed' ? (
                           <>
                             <button
                               className="action-btn download-btn"
-                              onClick={() =>
-                                handleDownloadTicket(reservation.id)
-                              }
+                              onClick={() => handleDownloadTicket(reservation.id)}
                               disabled={downloadingPdf === reservation.id}
                               title="Download Ticket"
                             >
-                              {downloadingPdf === reservation.id ? (
-                                "..."
-                              ) : (
-                                <FaDownload />
-                              )}
+                              {downloadingPdf === reservation.id ? '...' : <FaDownload />}
                             </button>
                             <button
                               className="action-btn cancel-btn"
                               onClick={() => handleCancelClick(reservation.id)}
-                              disabled={
-                                cancellingReservation === reservation.id ||
-                                reservation.status === "cancelled" ||
-                                new Date(reservation.travelDate) - new Date() <
-                                  2 * 60 * 60 * 1000
-                              }
+                              disabled={cancellingReservation === reservation.id || 
+                                      reservation.status === 'cancelled' ||
+                                      new Date(reservation.travelDate) - new Date() < 2 * 60 * 60 * 1000}
                               title={
-                                reservation.status === "cancelled"
-                                  ? "Already cancelled"
-                                  : new Date(reservation.travelDate) -
-                                      new Date() <
-                                    2 * 60 * 60 * 1000
-                                  ? "Cannot cancel less than 2 hours before departure"
-                                  : "Request Cancellation"
+                                reservation.status === 'cancelled' ? 'Already cancelled' :
+                                new Date(reservation.travelDate) - new Date() < 2 * 60 * 60 * 1000 ? 
+                                'Cannot cancel less than 2 hours before departure' : 
+                                'Request Cancellation'
                               }
                               style={{
-                                backgroundColor: "#dc3545",
-                                borderColor: "#dc3545",
-                                opacity:
-                                  reservation.status === "cancelled" ? 0.5 : 1,
+                                backgroundColor: '#dc3545',
+                                borderColor: '#dc3545',
+                                opacity: reservation.status === 'cancelled' ? 0.5 : 1
                               }}
                             >
-                              {cancellingReservation === reservation.id ? (
-                                "..."
-                              ) : (
-                                <FaBan />
-                              )}
+                              {cancellingReservation === reservation.id ? '...' : <FaBan />}
                             </button>
                           </>
                         ) : null}
@@ -612,46 +549,36 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
 
         {/* Reviews Section */}
         <section className="reviews-section mt-4">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1rem",
-            }}
-          >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 className="section-title mb-0">Your Reviews</h3>
             <button
               className="refresh-btn"
               onClick={() => setShowReviewForm(true)}
               title="Write a new review"
               style={{
-                background: "none",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                padding: "8px 12px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                fontSize: "14px",
-                color: "#666",
+                background: 'none',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '14px',
+                color: '#666'
               }}
             >
               <FaPlus /> Write Review
             </button>
           </div>
           {reviewsError && (
-            <div
-              className="alert alert-danger mb-3"
-              style={{
-                background: "#f8d7da",
-                color: "#721c24",
-                padding: "0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #f5c6cb",
-              }}
-            >
+            <div className="alert alert-danger mb-3" style={{
+              background: '#f8d7da',
+              color: '#721c24',
+              padding: '0.75rem',
+              borderRadius: '0.5rem',
+              border: '1px solid #f5c6cb'
+            }}>
               {reviewsError}
             </div>
           )}
@@ -667,24 +594,23 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                 </div>
                 <h4 className="empty-state-title">No Reviews Yet</h4>
                 <p className="empty-state-description">
-                  Share your experience with our train service to help other
-                  travelers!
+                  Share your experience with our train service to help other travelers!
                 </p>
-                <button
+                <button 
                   className="empty-state-button"
                   onClick={() => setShowReviewForm(true)}
                   style={{
-                    background: "#3b82f6",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "12px 24px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "16px",
-                    textDecoration: "none",
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '12px 24px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '16px',
+                    textDecoration: 'none'
                   }}
                 >
                   <FaPlus /> Write Your First Review
@@ -705,7 +631,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {reviews.map((review) => (
+                  {reviews.map(review => (
                     <tr key={review.id} className="reservation-row">
                       <td className="reservation-date">
                         {formatDateShort(review.createdAt)}
@@ -714,31 +640,27 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                         <StarRating rating={review.rating} readonly size="sm" />
                       </td>
                       <td className="review-title">
-                        {review.title || "No title"}
+                        {review.title || 'No title'}
                       </td>
                       <td className="review-comment">
-                        <div
-                          style={{
-                            maxWidth: "300px",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
+                        <div style={{ 
+                          maxWidth: '300px', 
+                          overflow: 'hidden', 
+                          textOverflow: 'ellipsis', 
+                          whiteSpace: 'nowrap' 
+                        }}>
                           {review.comment}
                         </div>
                       </td>
                       <td className="status">
                         <span
                           className="status-badge"
-                          style={{
-                            backgroundColor: review.isApproved
-                              ? "#28a745"
-                              : "#ffc107",
-                            color: review.isApproved ? "white" : "#212529",
+                          style={{ 
+                            backgroundColor: review.isApproved ? '#28a745' : '#ffc107',
+                            color: review.isApproved ? 'white' : '#212529'
                           }}
                         >
-                          {review.isApproved ? "Approved" : "Pending"}
+                          {review.isApproved ? 'Approved' : 'Pending'}
                         </span>
                       </td>
                       <td className="actions">
@@ -754,8 +676,8 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                           onClick={() => setDeleteReviewId(review.id)}
                           title="Delete review"
                           style={{
-                            backgroundColor: "#dc3545",
-                            borderColor: "#dc3545",
+                            backgroundColor: '#dc3545',
+                            borderColor: '#dc3545'
                           }}
                         >
                           <FaTrash />
@@ -788,8 +710,8 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
         />
 
         {/* Cancellation Request Modal */}
-        <Dialog
-          open={cancelModalOpen}
+        <Dialog 
+          open={cancelModalOpen} 
           onClose={() => setCancelModalOpen(false)}
           maxWidth="sm"
           fullWidth
@@ -808,20 +730,18 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setCancelModalOpen(false)} color="inherit">
+            <Button 
+              onClick={() => setCancelModalOpen(false)}
+              color="inherit"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleCancelReservation}
               color="error"
-              disabled={
-                !cancellationReason.trim() ||
-                cancellingReservation === selectedReservationId
-              }
+              disabled={!cancellationReason.trim() || cancellingReservation === selectedReservationId}
             >
-              {cancellingReservation === selectedReservationId
-                ? "Submitting..."
-                : "Submit Request"}
+              {cancellingReservation === selectedReservationId ? 'Submitting...' : 'Submit Request'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -848,10 +768,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                   <label>Route:</label>
                   <span className="detail-value">
                     <FaMapMarkerAlt className="detail-icon" />
-                    {
-                      selectedReservation.schedule.route.departureStation?.name
-                    }{" "}
-                    → {selectedReservation.schedule.route.arrivalStation?.name}
+                    {selectedReservation.schedule.route.departureStation} → {selectedReservation.schedule.route.arrivalStation}
                   </span>
                 </div>
                 <div className="detail-group">
@@ -878,47 +795,40 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                 <div className="detail-group">
                   <label>Passenger Name:</label>
                   <span className="detail-value">
-                    {selectedReservation.passengerName &&
-                    selectedReservation.passengerSurname
+                    {selectedReservation.passengerName && selectedReservation.passengerSurname
                       ? `${selectedReservation.passengerName} ${selectedReservation.passengerSurname}`
-                      : "N/A"}
+                      : 'N/A'
+                    }
                   </span>
                 </div>
                 <div className="detail-group">
                   <label>Seat Number:</label>
                   <span className="detail-value">
                     <FaChair className="detail-icon" />
-                    {selectedReservation.seats
-                      .map((seat) => seat.seatNumber)
-                      .join(", ")}
+                    {selectedReservation.seats.map(seat => seat.seatNumber).join(', ')}
                   </span>
                 </div>
                 <div className="detail-group">
                   <label>Price:</label>
                   <span className="detail-value">
-                    <FaEuroSign className="detail-icon" />€
-                    {parseFloat(selectedReservation.price).toFixed(2)}
+                    <FaEuroSign className="detail-icon" />
+                    €{parseFloat(selectedReservation.price).toFixed(2)}
                   </span>
                 </div>
                 <div className="detail-group">
                   <label>Payment Method:</label>
                   <span className="detail-value">
-                    {selectedReservation.payment?.paymentMethod || "N/A"}
-                    {selectedReservation.payment?.paymentCardLast4 &&
-                      ` (****${selectedReservation.payment.paymentCardLast4})`}
+                    {selectedReservation.payment?.paymentMethod || 'N/A'}
+                    {selectedReservation.payment?.paymentCardLast4 && ` (****${selectedReservation.payment.paymentCardLast4})`}
                   </span>
                 </div>
                 <div className="detail-group">
                   <label>Status:</label>
                   <span
                     className="detail-value status-badge"
-                    style={{
-                      backgroundColor: getStatusColor(
-                        selectedReservation.status
-                      ),
-                    }}
+                    style={{ backgroundColor: getStatusColor(selectedReservation.status) }}
                   >
-                    {selectedReservation.status.replace("_", " ")}
+                    {selectedReservation.status.replace('_', ' ')}
                   </span>
                 </div>
                 {selectedReservation.payment && (
@@ -934,10 +844,8 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                         <label>Refund Status:</label>
                         <span className="detail-value">
                           {selectedReservation.payment.refundStatus}
-                          {selectedReservation.payment.refundDate &&
-                            ` (${formatDateShort(
-                              selectedReservation.payment.refundDate
-                            )})`}
+                          {selectedReservation.payment.refundDate && 
+                            ` (${formatDateShort(selectedReservation.payment.refundDate)})`}
                         </span>
                       </div>
                     )}
@@ -952,7 +860,7 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                 </div>
               </div>
               <div className="modal-actions">
-                {selectedReservation.status === "payment_pending" ? (
+                {selectedReservation.status === 'payment_pending' ? (
                   <button
                     className="modal-payment-btn"
                     onClick={() => {
@@ -963,37 +871,28 @@ const ProfileComponent = ({ theme, toggleTheme }) => {
                     <FaCreditCard className="btn-icon" />
                     Continue Payment
                   </button>
-                ) : selectedReservation.status === "confirmed" &&
-                  selectedReservation.payment?.status === "completed" ? (
+                ) : selectedReservation.status === 'confirmed' && selectedReservation.payment?.status === 'completed' ? (
                   <>
                     <button
                       className="modal-download-btn"
-                      onClick={() =>
-                        handleDownloadTicket(selectedReservation.id)
-                      }
+                      onClick={() => handleDownloadTicket(selectedReservation.id)}
                       disabled={downloadingPdf === selectedReservation.id}
                     >
                       <FaDownload className="btn-icon" />
-                      {downloadingPdf === selectedReservation.id
-                        ? "Downloading..."
-                        : "Download Ticket PDF"}
+                      {downloadingPdf === selectedReservation.id ? 'Downloading...' : 'Download Ticket PDF'}
                     </button>
                     {!selectedReservation.payment?.refundStatus && (
                       <button
                         className="modal-refund-btn"
-                        onClick={() =>
-                          handleRefundRequest(selectedReservation.id)
-                        }
+                        onClick={() => handleRefundRequest(selectedReservation.id)}
                         disabled={processingRefund === selectedReservation.id}
                         style={{
-                          backgroundColor: "#dc3545",
-                          color: "white",
-                          marginLeft: "10px",
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          marginLeft: '10px'
                         }}
                       >
-                        {processingRefund === selectedReservation.id
-                          ? "Processing..."
-                          : "Request Refund"}
+                        {processingRefund === selectedReservation.id ? 'Processing...' : 'Request Refund'}
                       </button>
                     )}
                   </>

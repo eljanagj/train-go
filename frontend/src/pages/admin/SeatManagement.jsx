@@ -502,8 +502,8 @@ const SeatManagement = () => {
               {schedules.map((schedule) => (
                 <option key={schedule.id} value={schedule.id}>
                   {schedule.departureTime} - {schedule.arrivalTime} (
-                  {schedule.route.departureStation?.name} to{" "}
-                  {schedule.route.arrivalStation?.name})
+                  {schedule.route.departureStation} to{" "}
+                  {schedule.route.arrivalStation})
                 </option>
               ))}
             </select>
