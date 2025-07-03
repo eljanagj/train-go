@@ -1,16 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  Delete,
-  Query,
-  ParseIntPipe,
-  BadRequestException,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, ParseIntPipe, BadRequestException, UseGuards } from '@nestjs/common';
 import { RouteService } from './route.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
@@ -20,7 +8,9 @@ import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('routes')
 export class RouteController {
-  constructor(private readonly routeService: RouteService) {}
+  constructor(
+    private readonly routeService: RouteService,
+  ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
@@ -37,7 +27,10 @@ export class RouteController {
 
   @UseGuards(JwtAuthGuard)
   @Get('search')
-  async search(@Query('from') from: string, @Query('to') to: string) {
+  async search(
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
     return this.routeService.search(from, to);
   }
 
@@ -55,18 +48,15 @@ export class RouteController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateRouteDto: UpdateRouteDto,
-  ) {
-    return this.routeService.update(id, updateRouteDto);
+  @Put(':id')
+  update(@Param('id') id: string, @Body() updateRouteDto: UpdateRouteDto) {
+    return this.routeService.update(Number(id), updateRouteDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.routeService.remove(id);
+  remove(@Param('id') id: string) {
+    return this.routeService.remove(Number(id));
   }
 }
