@@ -1120,6 +1120,60 @@
     }
   }
   
+  /* Seat admin modals — do not use Bootstrap's `.modal` (display: none by default) */
+.seat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.seat-modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.seat-modal-content h3 {
+  margin: 0 0 1.25rem;
+  color: #1e293b;
+}
+
+.seat-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  color: #64748b;
+}
+
+.seat-modal-close:hover {
+  color: #1e293b;
+}
+
+.seat-modal-content .alert-danger {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
   .management-content {
     display: flex;
     flex-direction: column;

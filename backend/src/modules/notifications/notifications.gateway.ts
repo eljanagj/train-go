@@ -6,13 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtStrategy } from '../authz/jwt.strategy';
-
-interface AuthenticatedUser {
-  sub: string;
-  email: string;
-  name: string;
-  roles: string[];
-}
+import { AUTH_DISABLED } from '../../config/auth.config';
 
 @WebSocketGateway({
   cors: {
@@ -29,6 +23,14 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   constructor(private jwtStrategy: JwtStrategy) {}
 
   async handleConnection(client: Socket) {
+    if (AUTH_DISABLED) {
+      const userId = (client.handshake.auth?.userId as string) || 'local-dev';
+      client.join(userId);
+      client.join('admin');
+      this.userSockets.set(userId, client);
+      return;
+    }
+
     try {
       const token = client.handshake.auth.token;
       if (!token) {
@@ -36,19 +38,17 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         return;
       }
 
-      // Use the existing JWT strategy to validate the token
       const payload = await this.jwtStrategy.validate(token);
-      const user = payload as AuthenticatedUser;
+      const user = payload as { sub: string; roles: string[] };
 
-      // Join only the appropriate room based on role
-      if (user.roles.includes('admin')) {
+      if (user.roles.includes('Admin') || user.roles.includes('admin')) {
         client.join('admin');
       } else {
-        client.join(user.sub); // Only join personal room for non-admin users
+        client.join(user.sub);
       }
 
       this.userSockets.set(user.sub, client);
-    } catch (error) {
+    } catch {
       client.disconnect();
     }
   }

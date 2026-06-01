@@ -9,7 +9,13 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      setTokenGetter(getAccessTokenSilently);
+      const audience =
+        import.meta.env.VITE_AUTH0_AUDIENCE || "http://traingo.ks";
+      setTokenGetter(() =>
+        getAccessTokenSilently({
+          authorizationParams: { audience },
+        }),
+      );
     } else {
       clearTokenCache();
     }

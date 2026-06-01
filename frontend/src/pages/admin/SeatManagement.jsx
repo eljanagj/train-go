@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import { withAuthenticationRequired } from "@auth0/auth0-react";
 import { PageLoader } from "../../components/PageLoader";
@@ -80,11 +81,12 @@ const SeatManagement = () => {
   const [newSeatError, setNewSeatError] = useState(null);
 
   const [addCoachError, setAddCoachError] = useState(null);
+  const [isSavingSeats, setIsSavingSeats] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    fetchTrainAndSeats();
+    fetchTrainAndSeats({ showPageLoader: true });
     fetchSchedules();
   }, [trainId]);
 
@@ -95,42 +97,31 @@ const SeatManagement = () => {
       if (data.length > 0) {
         setSelectedSchedule(data[0]);
       }
-      console.log("DEBUG: Schedules fetched: ", data);
     } catch (err) {
       console.error("Error fetching schedules:", err);
     }
   };
 
-  const fetchTrainAndSeats = async () => {
-    console.log("DEBUG: fetchTrainAndSeats called.");
+  const fetchTrainAndSeats = async ({ showPageLoader = false } = {}) => {
     try {
-      setLoading(true);
+      if (showPageLoader) setLoading(true);
       const trainData = await trainService.getTrain(trainId);
       setTrain(trainData);
 
-      if (selectedSchedule) {
-        console.log(
-          "DEBUG: Fetching seat details for date:",
-          selectedDate,
-          "time:",
-          selectedSchedule.departureTime
-        );
-        const seatsData = await seatService.getSeatDetails(
-          trainId,
-          selectedDate,
-          selectedSchedule.departureTime
-        );
-        console.log("DEBUG: Fetched seats data (raw):", seatsData);
-        setSeats(
-          Object.entries(seatsData).map(([seatNumber, config]) => ({
-            seatNumber,
-            ...config,
-          }))
-        );
-        console.log("DEBUG: Seats state updated.");
-      } else {
-        console.log("DEBUG: No schedule selected, not fetching seat details.");
-      }
+      const seatsData = selectedSchedule
+        ? await seatService.getSeatDetails(
+            trainId,
+            selectedDate,
+            selectedSchedule.departureTime
+          )
+        : await seatService.getSeatDetails(trainId);
+
+      setSeats(
+        Object.entries(seatsData || {}).map(([seatNumber, config]) => ({
+          seatNumber,
+          ...config,
+        }))
+      );
 
       // Populate priceConfig with current prices based on fetched seats
       const currentPriceConfig = {};
@@ -151,7 +142,7 @@ const SeatManagement = () => {
       setError("Failed to load train and seat data");
       console.error(err);
     } finally {
-      setLoading(false);
+      if (showPageLoader) setLoading(false);
     }
   };
 
@@ -159,7 +150,29 @@ const SeatManagement = () => {
     if (selectedSchedule) {
       fetchTrainAndSeats();
     }
-  }, [selectedDate, selectedSchedule]);
+  }, [selectedDate, selectedSchedule?.id]);
+
+  const renderModal = (open, onClose, children, maxWidth = 500) => {
+    if (!open) return null;
+    return createPortal(
+      <div
+        className="seat-modal-overlay"
+        onClick={onClose}
+        role="presentation"
+      >
+        <div
+          className="seat-modal-content"
+          style={{ maxWidth }}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          {children}
+        </div>
+      </div>,
+      document.body
+    );
+  };
 
   const getSeatsPerRowForClass = (classType) => {
     switch (classType) {
@@ -173,83 +186,75 @@ const SeatManagement = () => {
     }
   };
 
+  const resolveSeatType = (coachClass, seatLetter) => {
+    if (coachClass === COACH_CLASSES.ECONOMY) {
+      if (seatLetter === "A" || seatLetter === "F") return SEAT_TYPES.WINDOW;
+      if (seatLetter === "C" || seatLetter === "D") return SEAT_TYPES.AISLE;
+      if (seatLetter === "B" || seatLetter === "E") return SEAT_TYPES.MIDDLE;
+    } else {
+      if (seatLetter === "A" || seatLetter === "D") return SEAT_TYPES.WINDOW;
+      if (seatLetter === "B" || seatLetter === "C") return SEAT_TYPES.AISLE;
+    }
+    return SEAT_TYPES.MIDDLE;
+  };
+
   const handleAddCoach = async () => {
-    try {
-      setAddCoachError(null);
+    setAddCoachError(null);
 
-      const { class: coachClass, rows: numRows, startRow } = newCoach;
+    const coachClass = newCoach.class;
+    const numRows = Number(newCoach.rows);
+    const startRow = Number(newCoach.startRow);
 
-      // Get existing row numbers for the selected class
-      const existingRows = new Set(
-        seats
-          .filter((seat) => seat.class === coachClass)
-          .map((seat) => seat.row)
+    if (!Number.isFinite(numRows) || numRows < 1) {
+      setAddCoachError("Enter a valid number of rows (at least 1).");
+      return;
+    }
+    if (!Number.isFinite(startRow) || startRow < 1) {
+      setAddCoachError("Enter a valid starting row (at least 1).");
+      return;
+    }
+
+    const seatsPerRow = getSeatsPerRowForClass(coachClass);
+    const coachPrefix = coachClass.charAt(0).toUpperCase();
+    const existingSeatNumbers = new Set(seats.map((s) => s.seatNumber));
+    const seatConfigs = [];
+
+    for (let i = 0; i < numRows; i++) {
+      const row = startRow + i;
+      for (let pos = 0; pos < seatsPerRow; pos++) {
+        const seatLetter = String.fromCharCode(65 + pos);
+        const seatNumber = `${coachPrefix}${row}${seatLetter}`;
+
+        if (existingSeatNumbers.has(seatNumber)) {
+          continue;
+        }
+
+        seatConfigs.push({
+          seatNumber,
+          type: resolveSeatType(coachClass, seatLetter),
+          class: coachClass,
+          price: 0,
+          location:
+            row <= startRow + numRows / 3 - 1
+              ? "Front"
+              : row <= startRow + (numRows * 2) / 3 - 1
+              ? "Middle"
+              : "Back",
+          row,
+          position: seatLetter,
+        });
+      }
+    }
+
+    if (seatConfigs.length === 0) {
+      setAddCoachError(
+        "All seats in this range already exist. Change the starting row or class."
       );
+      return;
+    }
 
-      // Check for conflicts with existing rows
-      for (let i = 0; i < numRows; i++) {
-        const currentRow = startRow + i;
-        if (existingRows.has(currentRow)) {
-          setAddCoachError(
-            `Row ${currentRow} in ${coachClass.toUpperCase()} class already exists. Please choose a different starting row or fewer rows.`
-          );
-          return;
-        }
-      }
-
-      const seatConfigs = [];
-      const seatsPerRow = getSeatsPerRowForClass(newCoach.class);
-      const totalSeats = newCoach.rows * seatsPerRow;
-
-      // Get the prefix for the coach class
-      const coachPrefix = coachClass.charAt(0).toUpperCase(); // P for Premium, B for Business, E for Economy
-
-      for (let i = 0; i < newCoach.rows; i++) {
-        const row = newCoach.startRow + i;
-        for (let pos = 0; pos < seatsPerRow; pos++) {
-          const position = String.fromCharCode(65 + pos); // A, B, C, etc.
-          // Include coach class prefix in seat number
-          const seatNumber = `${coachPrefix}${row}${position}`;
-
-          let type;
-          const positionIndex = pos; // pos is the 0-based index (0 for A, 1 for B, etc.)
-          const coachClass = newCoach.class;
-
-          if (coachClass === COACH_CLASSES.ECONOMY) {
-            // Economy class (3+3)
-            if (position === "A" || position === "F") {
-              type = SEAT_TYPES.WINDOW;
-            } else if (position === "C" || position === "D") {
-              type = SEAT_TYPES.AISLE;
-            } else if (position === "B" || position === "E") {
-              type = SEAT_TYPES.MIDDLE;
-            }
-          } else {
-            // Business/Premium class (2+2)
-            if (position === "A" || position === "D") {
-              type = SEAT_TYPES.WINDOW;
-            } else if (position === "B" || position === "C") {
-              type = SEAT_TYPES.AISLE;
-            } // No middle seats in 2+2 layout
-          }
-
-          seatConfigs.push({
-            seatNumber,
-            type,
-            class: newCoach.class,
-            price: 0,
-            location:
-              row <= newCoach.rows / 3
-                ? "Front"
-                : row <= (newCoach.rows * 2) / 3
-                ? "Middle"
-                : "Back",
-            row,
-            position,
-          });
-        }
-      }
-
+    try {
+      setIsSavingSeats(true);
       await seatService.createSeatsForTrain(trainId, seatConfigs);
       await fetchTrainAndSeats();
       setShowAddCoach(false);
@@ -260,8 +265,12 @@ const SeatManagement = () => {
         startRow: 1,
       });
     } catch (err) {
-      setAddCoachError("Failed to add coach");
+      setAddCoachError(
+        err.response?.data?.message || "Failed to add coach. Check the backend is running."
+      );
       console.error(err);
+    } finally {
+      setIsSavingSeats(false);
     }
   };
 
@@ -333,11 +342,11 @@ const SeatManagement = () => {
     setNewSeatError(null); // Clear previous errors
     const { class: seatClass, seatNumber } = newSeat;
 
-    // Validate seat number format (e.g., B3A, E5B)
+    // Format: class letter + row + seat letter (e.g. E1A, B3C)
     const seatNumberRegex = /^[A-Z]\d+[A-Z]$/;
     if (!seatNumberRegex.test(seatNumber)) {
       setNewSeatError(
-        "Invalid seat number format. Please use the format like B3A or E5B."
+        "Use format: class letter + row + seat letter (e.g. E1A for economy row 1 seat A)."
       );
       return;
     }
@@ -368,45 +377,18 @@ const SeatManagement = () => {
     }
 
     try {
-      // Determine seat type based on position (assuming standard A, B, C, D, E, F)
-      let type = SEAT_TYPES.MIDDLE; // Default to middle
-      const positionIndex = position.charCodeAt(0) - 65;
-      const seatsPerRow = getSeatsPerRowForClass(seatClass);
-
-      if (seatsPerRow === 6) {
-        // Economy class
-        if (position === "A" || position === "F") {
-          type = SEAT_TYPES.WINDOW;
-        } else if (position === "C" || position === "D") {
-          type = SEAT_TYPES.AISLE;
-        } else if (position === "B" || position === "E") {
-          type = SEAT_TYPES.MIDDLE;
-        }
-      } else {
-        // Business/Premium class (2+2)
-        if (position === "A" || position === "D") {
-          type = SEAT_TYPES.WINDOW;
-        } else {
-          type = SEAT_TYPES.AISLE;
-        }
-      }
-
+      setIsSavingSeats(true);
       const seatConfig = {
         seatNumber,
-        type,
+        type: resolveSeatType(seatClass, position),
         class: seatClass,
-        price: 0, // Default price for a single added seat
-        location:
-          row <= (train?.totalRows || 0) / 3
-            ? "Front"
-            : row <= ((train?.totalRows || 0) * 2) / 3
-            ? "Middle"
-            : "Back", // Basic location logic
+        price: 0,
+        location: "Middle",
         row,
         position,
       };
 
-      await seatService.createSeatsForTrain(trainId, [seatConfig]); // API expects an array
+      await seatService.createSeatsForTrain(trainId, [seatConfig]);
       await fetchTrainAndSeats(); // Refresh seat data
       setShowAddSingleSeat(false); // Close modal
       setNewSeat({
@@ -414,8 +396,13 @@ const SeatManagement = () => {
         seatNumber: "",
       }); // Reset form
     } catch (err) {
-      setNewSeatError("Failed to add single seat");
+      setNewSeatError(
+        err.response?.data?.message ||
+          "Failed to add single seat. Check the backend is running."
+      );
       console.error(err);
+    } finally {
+      setIsSavingSeats(false);
     }
   };
 
@@ -474,6 +461,13 @@ const SeatManagement = () => {
         <div className="available-seats-info">
           <p>Total Available Seats: {availableSeatsCount}</p>
         </div>
+
+        {schedules.length === 0 && (
+          <div className="alert alert-warning" role="alert">
+            No schedules for this train yet. You can still add seats below; create a
+            schedule under Admin → Schedules to manage per-trip availability.
+          </div>
+        )}
 
         {/* Date and Schedule Selection */}
         <div className="schedule-selection">
@@ -714,355 +708,266 @@ const SeatManagement = () => {
         </div>
       </div>
 
-      {showAddCoach && (
-        <div className="modal">
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 9999,
+      {renderModal(
+        showAddCoach,
+        () => {
+          setShowAddCoach(false);
+          setAddCoachError(null);
+        },
+        <>
+          <button
+            type="button"
+            className="seat-modal-close"
+            onClick={() => {
+              setShowAddCoach(false);
+              setAddCoachError(null);
             }}
+            aria-label="Close"
           >
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "2rem",
-                borderRadius: "8px",
-                width: "90%",
-                maxWidth: "500px",
-                position: "relative",
-                zIndex: 10000,
+            <FaTimes />
+          </button>
+          <h3>Add New Coach</h3>
+          {addCoachError && (
+            <div className="alert-danger" role="alert">
+              {addCoachError}
+            </div>
+          )}
+          <div className="form-group">
+            <label>Class</label>
+            <select
+              value={newCoach.class}
+              onChange={(e) => {
+                const classType = e.target.value;
+                setNewCoach((prev) => ({
+                  ...prev,
+                  class: classType,
+                  seatsPerRow: getSeatsPerRowForClass(classType),
+                }));
               }}
             >
-              <button
-                style={{
-                  position: "absolute",
-                  top: "1rem",
-                  right: "1rem",
-                  background: "none",
-                  border: "none",
-                  fontSize: "1.2rem",
-                  cursor: "pointer",
-                  padding: "0.25rem",
-                  lineHeight: 1,
-                }}
-                onClick={() => {
-                  console.log("Closing modal...");
-                  setShowAddCoach(false);
-                  setAddCoachError(null);
-                }}
-              >
-                <FaTimes />
-              </button>
-              <h3>Add New Coach</h3>
-              {addCoachError && (
-                <div className="alert alert-danger" role="alert">
-                  {addCoachError}
-                </div>
-              )}
-              <div className="form-group">
-                <label>Class</label>
-                <select
-                  value={newCoach.class}
-                  onChange={(e) => {
-                    const classType = e.target.value;
-                    setNewCoach((prev) => ({
-                      ...prev,
-                      class: classType,
-                      seatsPerRow: getSeatsPerRowForClass(classType),
-                    }));
-                  }}
-                >
-                  {Object.entries(COACH_CLASSES).map(([key, value]) => (
-                    <option key={value} value={value}>
-                      {key}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Number of Rows</label>
-                <input
-                  type="number"
-                  value={newCoach.rows}
-                  onChange={(e) =>
-                    setNewCoach((prev) => ({
-                      ...prev,
-                      rows: parseInt(e.target.value),
-                    }))
-                  }
-                  min="1"
-                  max="20"
-                />
-              </div>
-              <div className="form-group">
-                <label>Starting Row Number</label>
-                <input
-                  type="number"
-                  value={newCoach.startRow}
-                  onChange={(e) =>
-                    setNewCoach((prev) => ({
-                      ...prev,
-                      startRow: parseInt(e.target.value),
-                    }))
-                  }
-                  min="1"
-                  max="100"
-                />
-              </div>
-              <div className="form-group">
-                <label>Seats per Row</label>
-                <input
-                  type="number"
-                  value={newCoach.seatsPerRow}
-                  disabled
-                  className="disabled-input"
-                />
-              </div>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  console.log("Adding coach...");
-                  handleAddCoach();
-                }}
-              >
-                Add Coach
-              </button>
-            </div>
+              {Object.entries(COACH_CLASSES).map(([key, value]) => (
+                <option key={value} value={value}>
+                  {key}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
+          <div className="form-group">
+            <label>Number of Rows</label>
+            <input
+              type="number"
+              value={newCoach.rows}
+              onChange={(e) =>
+                setNewCoach((prev) => ({
+                  ...prev,
+                  rows: parseInt(e.target.value, 10) || 0,
+                }))
+              }
+              min="1"
+              max="20"
+            />
+          </div>
+          <div className="form-group">
+            <label>Starting Row Number</label>
+            <input
+              type="number"
+              value={newCoach.startRow}
+              onChange={(e) =>
+                setNewCoach((prev) => ({
+                  ...prev,
+                  startRow: parseInt(e.target.value, 10) || 0,
+                }))
+              }
+              min="1"
+              max="100"
+            />
+          </div>
+          <div className="form-group">
+            <label>Seats per Row</label>
+            <input
+              type="number"
+              value={newCoach.seatsPerRow}
+              disabled
+              className="disabled-input"
+            />
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={isSavingSeats}
+            onClick={handleAddCoach}
+          >
+            {isSavingSeats ? "Saving..." : "Add Coach"}
+          </button>
+        </>
       )}
 
-      {showAddSingleSeat && (
-        <div className="modal">
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 9999,
+      {renderModal(
+        showAddSingleSeat,
+        () => {
+          setShowAddSingleSeat(false);
+          setNewSeatError(null);
+          setNewSeat({ class: COACH_CLASSES.ECONOMY, seatNumber: "" });
+        },
+        <>
+          <button
+            type="button"
+            className="seat-modal-close"
+            onClick={() => {
+              setShowAddSingleSeat(false);
+              setNewSeatError(null);
+              setNewSeat({ class: COACH_CLASSES.ECONOMY, seatNumber: "" });
             }}
+            aria-label="Close"
           >
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "2rem",
-                borderRadius: "8px",
-                width: "90%",
-                maxWidth: "400px",
-                position: "relative",
-                zIndex: 10000,
-              }}
-            >
-              <button
-                style={{
-                  position: "absolute",
-                  top: "1rem",
-                  right: "1rem",
-                  background: "none",
-                  border: "none",
-                  fontSize: "1.2rem",
-                  cursor: "pointer",
-                  padding: "0.25rem",
-                  lineHeight: 1,
-                }}
-                onClick={() => {
-                  setShowAddSingleSeat(false);
-                  setNewSeatError(null);
-                  setNewSeat({
-                    class: COACH_CLASSES.ECONOMY,
-                    seatNumber: "",
-                  });
-                }}
-              >
-                <FaTimes />
-              </button>
-              <h3>Add Single Seat</h3>
-              {newSeatError && (
-                <div className="alert alert-danger" role="alert">
-                  {newSeatError}
-                </div>
-              )}
-              <div className="form-group">
-                <label>Class</label>
-                <select
-                  value={newSeat.class}
-                  onChange={(e) =>
-                    setNewSeat((prev) => ({ ...prev, class: e.target.value }))
-                  }
-                >
-                  {Object.entries(COACH_CLASSES).map(([key, value]) => (
-                    <option key={value} value={value}>
-                      {key}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Seat Number (e.g., 1A, 5B)</label>
-                <input
-                  type="text"
-                  value={newSeat.seatNumber}
-                  onChange={(e) =>
-                    setNewSeat((prev) => ({
-                      ...prev,
-                      seatNumber: e.target.value.toUpperCase(),
-                    }))
-                  }
-                  placeholder="e.g., 1A"
-                />
-              </div>
-              <button className="btn btn-primary" onClick={handleAddSingleSeat}>
-                Add Seat
-              </button>
+            <FaTimes />
+          </button>
+          <h3>Add Single Seat</h3>
+          {newSeatError && (
+            <div className="alert-danger" role="alert">
+              {newSeatError}
             </div>
+          )}
+          <div className="form-group">
+            <label>Class</label>
+            <select
+              value={newSeat.class}
+              onChange={(e) =>
+                setNewSeat((prev) => ({ ...prev, class: e.target.value }))
+              }
+            >
+              {Object.entries(COACH_CLASSES).map(([key, value]) => (
+                <option key={value} value={value}>
+                  {key}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
+          <div className="form-group">
+            <label>Seat Number (e.g., E1A, B3C)</label>
+            <input
+              type="text"
+              value={newSeat.seatNumber}
+              onChange={(e) =>
+                setNewSeat((prev) => ({
+                  ...prev,
+                  seatNumber: e.target.value.toUpperCase(),
+                }))
+              }
+              placeholder="e.g., E1A"
+            />
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={isSavingSeats}
+            onClick={handleAddSingleSeat}
+          >
+            {isSavingSeats ? "Saving..." : "Add Seat"}
+          </button>
+        </>,
+        400
       )}
 
-      {showPriceConfig && (
-        <div className="modal">
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 9999,
-            }}
+      {renderModal(
+        showPriceConfig,
+        () => setShowPriceConfig(false),
+        <>
+          <button
+            type="button"
+            className="seat-modal-close"
+            onClick={() => setShowPriceConfig(false)}
+            aria-label="Close"
           >
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "2rem",
-                borderRadius: "8px",
-                width: "90%",
-                maxWidth: "750px",
-                position: "relative",
-                zIndex: 10000,
-              }}
-            >
-              <button
-                style={{
-                  position: "absolute",
-                  top: "1rem",
-                  right: "1rem",
-                  background: "none",
-                  border: "none",
-                  fontSize: "1.2rem",
-                  cursor: "pointer",
-                  padding: "0.25rem",
-                  lineHeight: 1,
-                }}
-                onClick={() => setShowPriceConfig(false)}
-              >
-                <FaTimes />
-              </button>
-              <h3>Price Configuration</h3>
-              <div className="price-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Class</th>
-                      <th>Window</th>
-                      <th>Aisle</th>
-                      {Object.values(COACH_CLASSES).some(
-                        (classType) => getSeatsPerRowForClass(classType) > 4
-                      ) && <th>Middle</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(COACH_CLASSES).map(([key, value]) => (
-                      <tr key={value}>
-                        <td>{key}</td>
-                        <td>
-                          <input
-                            type="number"
-                            value={priceConfig[value]?.window || ""}
-                            onChange={(e) =>
-                              setPriceConfig((prev) => ({
-                                ...prev,
-                                [value]: {
-                                  ...prev[value],
-                                  window: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="Price"
-                            min="0"
-                            step="0.01"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={priceConfig[value]?.aisle || ""}
-                            onChange={(e) =>
-                              setPriceConfig((prev) => ({
-                                ...prev,
-                                [value]: {
-                                  ...prev[value],
-                                  aisle: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="Price"
-                            min="0"
-                            step="0.01"
-                          />
-                        </td>
-                        {getSeatsPerRowForClass(value) > 4 && (
-                          <td>
-                            <input
-                              type="number"
-                              value={priceConfig[value]?.middle || ""}
-                              onChange={(e) =>
-                                setPriceConfig((prev) => ({
-                                  ...prev,
-                                  [value]: {
-                                    ...prev[value],
-                                    middle: e.target.value,
-                                  },
-                                }))
-                              }
-                              placeholder="Price"
-                              min="0"
-                              step="0.01"
-                            />
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <button
-                className="btn btn-primary"
-                onClick={handlePriceConfigUpdate}
-              >
-                Update Prices
-              </button>
-            </div>
+            <FaTimes />
+          </button>
+          <h3>Price Configuration</h3>
+          <div className="price-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Class</th>
+                  <th>Window</th>
+                  <th>Aisle</th>
+                  {Object.values(COACH_CLASSES).some(
+                    (classType) => getSeatsPerRowForClass(classType) > 4
+                  ) && <th>Middle</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(COACH_CLASSES).map(([key, value]) => (
+                  <tr key={value}>
+                    <td>{key}</td>
+                    <td>
+                      <input
+                        type="number"
+                        value={priceConfig[value]?.window || ""}
+                        onChange={(e) =>
+                          setPriceConfig((prev) => ({
+                            ...prev,
+                            [value]: {
+                              ...prev[value],
+                              window: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder="Price"
+                        min="0"
+                        step="0.01"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={priceConfig[value]?.aisle || ""}
+                        onChange={(e) =>
+                          setPriceConfig((prev) => ({
+                            ...prev,
+                            [value]: {
+                              ...prev[value],
+                              aisle: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder="Price"
+                        min="0"
+                        step="0.01"
+                      />
+                    </td>
+                    {getSeatsPerRowForClass(value) > 4 && (
+                      <td>
+                        <input
+                          type="number"
+                          value={priceConfig[value]?.middle || ""}
+                          onChange={(e) =>
+                            setPriceConfig((prev) => ({
+                              ...prev,
+                              [value]: {
+                                ...prev[value],
+                                middle: e.target.value,
+                              },
+                            }))
+                          }
+                          placeholder="Price"
+                          min="0"
+                          step="0.01"
+                        />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handlePriceConfigUpdate}
+          >
+            Update Prices
+          </button>
+        </>,
+        750
       )}
     </div>
   );
