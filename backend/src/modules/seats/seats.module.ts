@@ -1,16 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { SeatsService } from './seats.service';
 import { SeatsController } from './seats.controller';
-import { Seat } from './entities/seat.entity';
-import { ScheduleSeatStatus } from './entities/schedule-seat-status.entity';
+import { RedisModule } from '../redis/redis.module';
 import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Seat, ScheduleSeatStatus]),
-    UserModule,
-  ],
+  imports: [RedisModule, UserModule],
   controllers: [SeatsController],
   providers: [SeatsService],
   exports: [SeatsService],
